@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 class TaskTransformerConfig:
     """Configuration for the task transformer."""
     id_column: str
-    name_column: str
     start_column: str
     end_column: str
+    name_column: Optional[str] = None
     progress_column: Optional[str] = None
     dependencies_column: Optional[str] = None
     color_column: Optional[str] = None
@@ -178,7 +178,6 @@ class TaskTransformer:
         # Check required columns exist
         required_cols = [
             self.config.id_column,
-            self.config.name_column,
             self.config.start_column,
             self.config.end_column
         ]
@@ -192,6 +191,8 @@ class TaskTransformer:
 
         # Check optional columns if specified
         optional_cols = []
+        if self.config.name_column:
+            optional_cols.append(self.config.name_column)
         if self.config.progress_column:
             optional_cols.append(self.config.progress_column)
         if self.config.dependencies_column:
@@ -247,12 +248,15 @@ class TaskTransformer:
         else:
             task_id = str(task_id).strip()
 
-        # Extract task name (generate if null)
-        task_name = row[self.config.name_column]
-        if pd.isna(task_name) or str(task_name).strip() == '':
-            task_name = f"Task {row_idx}"
-        else:
-            task_name = str(task_name).strip()
+        # Extract task name (use ID if column not configured or value missing)
+        task_name = None
+        if self.config.name_column:
+            val = row[self.config.name_column]
+            if not pd.isna(val) and str(val).strip() != '':
+                task_name = str(val).strip()
+        
+        if not task_name:
+            task_name = task_id
 
         # Build task object
         task = {

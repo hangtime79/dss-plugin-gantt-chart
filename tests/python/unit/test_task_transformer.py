@@ -153,9 +153,10 @@ class TestTaskTransformer:
         transformer = TaskTransformer(config)
         result = transformer.transform(df)
 
-        # First two tasks should have generated names
-        assert result['tasks'][0]['name'].startswith('Task ')
-        assert result['tasks'][1]['name'].startswith('Task ')
+        # First two tasks should have ID as name (fallback)
+        assert result['tasks'][0]['name'] == 'A'
+        assert result['tasks'][1]['name'] == 'B'
+        # Third task has explicit name
         assert result['tasks'][2]['name'] == 'Task C'
 
     def test_duplicate_id_handling(self):
