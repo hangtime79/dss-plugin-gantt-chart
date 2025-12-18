@@ -1,17 +1,6 @@
 (function() {
     'use strict';
 
-    // DEBUG: Ping backend immediately to confirm JS is running
-    try {
-        if (typeof dataiku !== 'undefined' && dataiku.webappBackend) {
-            dataiku.webappBackend.get('frontend-log', {message: 'App.js starting execution'});
-        } else {
-            console.warn('dataiku object missing at startup');
-        }
-    } catch(e) {
-        console.error('Failed to log to backend', e);
-    }
-
     // ===== STATE =====
     let webAppConfig = {};
     try {
@@ -19,150 +8,102 @@
             webAppConfig = dataiku.getWebAppConfig()['webAppConfig'] || {};
         }
     } catch (e) {
-        console.warn('[Gantt Debug] Initial dataiku.getWebAppConfig failed:', e);
+        console.warn('Initial dataiku.getWebAppConfig failed:', e);
     }
     let ganttInstance = null;
 
     // ===== INITIALIZATION =====
 
-    console.log('[Gantt Debug] Gantt Chart webapp initializing...');
+    console.log('Gantt Chart webapp initializing...');
 
     try {
         // 1. Try to initialize immediately with synchronous config
         if (webAppConfig && Object.keys(webAppConfig).length > 0) {
-            console.log('[Gantt Debug] Found synchronous config, initializing...', webAppConfig);
+            console.log('Found synchronous config, initializing...', webAppConfig);
             try {
                 validateConfig(webAppConfig);
-                // Note: We might not have filters synchronously, so pass empty array or try to fetch?
-                // Standard webapps usually don't have synchronous access to filters, so we rely on backend default.
                 initializeChart(webAppConfig, []); 
             } catch (e) {
-                console.warn('[Gantt Debug] Initial config validation failed:', e);
+                console.warn('Initial config validation failed:', e);
             }
-        } else {
-            console.warn('[Gantt Debug] No synchronous config found or empty.');
         }
 
-        // 2. Request config from parent frame (for updates or missing data)
-        console.log('[Gantt Debug] Sending "sendConfig" to parent...');
+        // 2. Request config from parent frame
         window.parent.postMessage("sendConfig", "*");
     } catch (e) {
-        console.error('[Gantt Debug] Initialization error:', e);
+        console.error('Initialization error:', e);
     }
 
     // Listen for config updates
     window.addEventListener('message', function(event) {
-        console.log('[Gantt Debug] Received message event', {
-            origin: event.origin,
-            dataType: typeof event.data,
-            data: event.data
-        });
-
         if (event.data) {
             try {
                 const eventData = JSON.parse(event.data);
                 webAppConfig = eventData['webAppConfig'];
                 const filters = eventData['filters'] || [];
 
-                console.log('[Gantt Debug] Parsed config:', webAppConfig);
-                console.log('[Gantt Debug] Parsed filters:', filters);
+                console.log('Received updated config:', webAppConfig);
 
-                // Validate required parameters
-                console.log('[Gantt Debug] Validating config...');
                 validateConfig(webAppConfig);
-                console.log('[Gantt Debug] Config valid.');
-
-                // Initialize chart
                 initializeChart(webAppConfig, filters);
 
             } catch (error) {
-                console.error('[Gantt Debug] Configuration processing error:', error);
+                console.error('Configuration processing error:', error);
                 displayError('Configuration Error', error.message);
             }
-        } else {
-            console.warn('[Gantt Debug] Received empty message data');
         }
     });
 
     // ===== VALIDATION =====
 
     function validateConfig(config) {
-        console.log('[Gantt Debug] inside validateConfig', config);
         const required = ['dataset', 'idColumn', 'startColumn', 'endColumn'];
         const missing = required.filter(param => !config[param]);
 
         if (missing.length > 0) {
-            const msg = `Missing required parameters: ${missing.join(', ')}. Please configure all required columns.`;
-            console.error('[Gantt Debug] Validation failed:', msg);
-            throw new Error(msg);
+            throw new Error(`Missing required parameters: ${missing.join(', ')}. Please configure all required columns.`);
         }
     }
 
     // ===== CHART INITIALIZATION =====
 
     function initializeChart(config, filters) {
-        console.log('[Gantt Debug] initializeChart started');
         showLoading();
 
-        // Check if Frappe Gantt library loaded
         if (typeof Gantt === 'undefined') {
-            console.error('[Gantt Debug] Gantt library is undefined');
             hideLoading();
-            displayError(
-                'Library Error',
-                'Frappe Gantt library failed to load. Please refresh the page.'
-            );
+            displayError('Library Error', 'Frappe Gantt library failed to load.');
             return;
         }
 
-        console.log('[Gantt Debug] Fetching tasks and config...');
-        // Fetch data and config in parallel
+        // Fetch data and config
         Promise.all([
             fetchTasks(config, filters),
             fetchGanttConfig()
         ])
         .then(([tasksResponse, ganttConfig]) => {
-            console.log('[Gantt Debug] Promises resolved. Tasks:', tasksResponse, 'Config:', ganttConfig);
             hideLoading();
 
-            // Check for errors
             if (tasksResponse.error) {
-                console.error('[Gantt Debug] Backend returned error:', tasksResponse.error);
-                displayError(
-                    tasksResponse.error.code,
-                    tasksResponse.error.message,
-                    tasksResponse.error.details
-                );
+                displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                 return;
             }
 
-            // Check if we have tasks
             if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                console.warn('[Gantt Debug] No tasks returned');
-                displayError(
-                    'No Tasks',
-                    'No valid tasks to display. Check your data and column selections.'
-                );
+                displayError('No Tasks', 'No valid tasks to display.');
                 return;
             }
 
-            // Display metadata if tasks were skipped
             if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
                 displayMetadata(tasksResponse.metadata);
             }
 
-            // Render Gantt chart
             renderGantt(tasksResponse.tasks, ganttConfig);
-
         })
         .catch(error => {
-            console.error('[Gantt Debug] Promise.all failed:', error);
+            console.error('Chart load failed:', error);
             hideLoading();
-            displayError(
-                'Failed to load chart',
-                error.message || error,
-                error
-            );
+            displayError('Failed to load chart', error.message || error);
         });
     }
 
@@ -173,32 +114,11 @@
             config: JSON.stringify(config),
             filters: JSON.stringify(filters)
         };
-
-        console.log('[Gantt Debug] fetchTasks calling backend get-tasks with:', params);
-
-        return dataiku.webappBackend.get('get-tasks', params)
-            .then(response => {
-                console.log('[Gantt Debug] get-tasks response received');
-                return response;
-            })
-            .catch(error => {
-                console.error('[Gantt Debug] get-tasks failed:', error);
-                throw error;
-            });
+        return dataiku.webappBackend.get('get-tasks', params);
     }
 
     function fetchGanttConfig() {
-        console.log('Fetching Gantt config');
-
-        return dataiku.webappBackend.get('get-config', {})
-            .then(response => {
-                console.log('Config response:', response);
-                return response;
-            })
-            .catch(error => {
-                console.error('Error fetching config:', error);
-                throw error;
-            });
+        return dataiku.webappBackend.get('get-config', {});
     }
 
     // ===== GANTT RENDERING =====
