@@ -9,4 +9,3 @@ dash
 flask_caching
 dash_bootstrap_components
 datetime
-dataiku
