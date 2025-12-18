@@ -46,5 +46,13 @@ This document provides a detailed summary of the bugs resolved and structural im
     - Created `plan/Known Issues and Future Improvements.md` to track this for the next phase.
 - **Version**: Bumped plugin version to `0.0.2`.
 
+## 6. Regression Fix: Infinite Spinner Reappearance
+- **Issue**: After cleaning up debug artifacts, the infinite spinner returned.
+- **Root Cause**: The `dataiku.webappBackend` polyfill was accidentally removed during the cleanup of `body.html`, causing backend calls to fail silently (or throw synchronously) in environments where the standard object is missing or slow to load.
+- **Resolution**: 
+    - Restored the polyfill directly into `resource/webapp/app.js` (at the top of the execution scope).
+    - Updated `displayError` in `app.js` to explicitly call `hideLoading()`, ensuring that any future initialization errors remove the spinner and show the error message.
+- **Impact**: Restored functionality and improved error visibility.
+
 ## Final State
 The plugin is now functional, correctly loads data from the selected dataset, and renders an interactive Gantt chart.
