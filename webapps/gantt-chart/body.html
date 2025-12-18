@@ -6,74 +6,7 @@
 <div id="loading" class="loading-overlay">
     <div class="spinner"></div>
     <p>Loading Gantt chart...</p>
-    <p id="debug-status" style="font-size: 10px; color: #999; margin-top: 10px;">Initializing...</p>
 </div>
 
 <script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
-
-<!-- Inline Debug & Polyfill Script -->
-<script>
-    (function() {
-        console.log('[Inline Debug] Script running');
-        var statusEl = document.getElementById('debug-status');
-        
-        function updateStatus(msg) {
-            console.log('[Inline Debug] ' + msg);
-            if (statusEl) statusEl.textContent = msg;
-        }
-
-        updateStatus('Step 1: Checking libraries...');
-        
-        if (typeof dataiku === 'undefined') {
-            updateStatus('Error: dataiku object missing');
-            return;
-        }
-
-        // --- POLYFILL START ---
-        // If webappBackend is missing, create a simple one using the native getWebAppBackendUrl
-        if (!dataiku.webappBackend) {
-            console.warn('[Inline Debug] Polyfilling dataiku.webappBackend');
-            dataiku.webappBackend = {
-                get: function(path, params) {
-                    // Construct URL
-                    var url = dataiku.getWebAppBackendUrl(path);
-                    
-                    // Append query parameters
-                    if (params) {
-                        var queryString = Object.keys(params).map(function(key) {
-                            return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-                        }).join('&');
-                        if (queryString) {
-                            url += (url.indexOf('?') === -1 ? '?' : '&') + queryString;
-                        }
-                    }
-
-                    // Use standard fetch API
-                    return fetch(url)
-                        .then(function(response) {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok: ' + response.statusText);
-                            }
-                            return response.json();
-                        });
-                }
-            };
-            updateStatus('Polyfilled dataiku.webappBackend');
-        }
-        // --- POLYFILL END ---
-
-        updateStatus('Step 2: Checking backend connection...');
-
-        // Now try to ping
-        dataiku.webappBackend.get('frontend-log', {message: 'Inline script running (polyfilled)'})
-            .then(function() {
-                updateStatus('Backend connected. Loading app...');
-            })
-            .catch(function(err) {
-                updateStatus('Backend ping failed: ' + err);
-                console.error('Backend ping failed', err);
-            });
-    })();
-</script>
-
 <script src="/plugins/gantt-chart/resource/webapp/app.js"></script>
