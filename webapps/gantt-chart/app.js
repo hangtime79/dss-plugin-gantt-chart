@@ -1,6 +1,17 @@
 (function() {
     'use strict';
 
+    // DEBUG: Ping backend immediately to confirm JS is running
+    try {
+        if (typeof dataiku !== 'undefined' && dataiku.webappBackend) {
+            dataiku.webappBackend.get('frontend-log', {message: 'App.js starting execution'});
+        } else {
+            console.warn('dataiku object missing at startup');
+        }
+    } catch(e) {
+        console.error('Failed to log to backend', e);
+    }
+
     // ===== STATE =====
     let webAppConfig = {};
     try {
