@@ -184,3 +184,62 @@ Add to plugin template's `README.md` or `CONTRIBUTING.md`:
 - `plugin-spec.md` - Current plugin state (living document)
 - `plan/releases/` - Version-specific planning and release notes
 ```
+
+## 4. Git Branch Naming Convention
+
+### Format
+
+```
+<type>/<version>-<short-description>
+```
+
+### Branch Types
+
+| Prefix | Use Case | Example |
+|--------|----------|---------|
+| `feature/` | New functionality | `feature/v0.1.0-ux-improvements` |
+| `bugfix/` | Bug fixes | `bugfix/v0.0.3-spinner-fix` |
+| `release/` | Release prep, final polish | `release/v0.1.0` |
+| `hotfix/` | Urgent production fixes | `hotfix/v0.0.2-backend-crash` |
+
+### Guidelines
+
+1. **Always use a type prefix** - Communicates intent at a glance
+2. **Include target version** - Ties work to release planning
+3. **Short description** - 2-4 words, summarizes scope
+4. **Lowercase + hyphens** - Universal compatibility, no spaces or special chars
+
+### Examples
+
+```bash
+# Feature work for next minor release
+git checkout -b feature/v0.1.0-custom-tooltips
+
+# Bug fix for patch release
+git checkout -b bugfix/v0.0.3-date-parsing
+
+# Preparing a release (version bump, changelog finalization)
+git checkout -b release/v0.1.0
+
+# Urgent fix for production issue
+git checkout -b hotfix/v0.0.2-crash-on-empty-data
+```
+
+### Template Addition
+
+Add to plugin template's `CONTRIBUTING.md`:
+
+```markdown
+## Branch Naming
+
+Use this format: `<type>/<version>-<short-description>`
+
+| Type | Purpose |
+|------|---------|
+| `feature/` | New functionality |
+| `bugfix/` | Bug fixes |
+| `release/` | Release preparation |
+| `hotfix/` | Urgent production fixes |
+
+Example: `feature/v0.1.0-ux-improvements`
+```

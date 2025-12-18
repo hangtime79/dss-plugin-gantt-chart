@@ -138,6 +138,23 @@ Based on typical usage, prioritize learning these:
 - Integration tests use DSS scenarios via `dataiku-plugin-tests-utils`
 - See [Testing Guide](cli-docs/guides/testing.md)
 
+### Git Branch Naming
+Use format: `<type>/<version>-<short-description>`
+
+| Prefix | Use Case |
+|--------|----------|
+| `feature/` | New functionality |
+| `bugfix/` | Bug fixes |
+| `release/` | Release preparation |
+| `hotfix/` | Urgent production fixes |
+
+Example: `feature/v0.1.0-ux-improvements`
+
+### Documentation Structure
+- `CHANGELOG.md` - Version history (Keep a Changelog format)
+- `plugin-spec.md` - Living document, current state only
+- `plan/releases/vX.Y.Z-notes.md` - Version-specific planning
+
 ---
 
 ## Common Patterns
