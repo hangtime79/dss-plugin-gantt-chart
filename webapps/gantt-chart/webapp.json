@@ -7,6 +7,11 @@
 
     "baseType": "STANDARD",
     "hasBackend": "true",
+    "noJSSecurity": "true",
+    "standardWebAppLibraries": [
+        "jquery",
+        "dataiku"
+    ],
 
     "chart": {
         "datasetParamName": "dataset",

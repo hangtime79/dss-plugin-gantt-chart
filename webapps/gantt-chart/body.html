@@ -1,26 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt Chart</title>
+<link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
+<link rel="stylesheet" href="/plugins/gantt-chart/resource/webapp/style.css">
 
-    <!-- Load Frappe Gantt library from bundled resources -->
-    <link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
-    <script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
-    
-    <!-- Load Webapp Logic and Styles -->
-    <link rel="stylesheet" href="style.css">
-    <script src="app.js"></script>
-</head>
-<body>
-    <!-- Main Gantt container -->
-    <div id="gantt-container"></div>
+<div id="gantt-container"></div>
 
-    <!-- Loading indicator -->
-    <div id="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Loading Gantt chart...</p>
-    </div>
-</body>
-</html>
+<div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Loading Gantt chart...</p>
+</div>
+
+<script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
+<script src="/plugins/gantt-chart/resource/webapp/app.js"></script>
