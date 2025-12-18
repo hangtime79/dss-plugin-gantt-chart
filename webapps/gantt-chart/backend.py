@@ -58,6 +58,8 @@ def get_tasks():
         logger.info(f"Reading dataset: {dataset_name}")
         try:
             dataset = dataiku.Dataset(dataset_name)
+            # TODO: Potential scalability issue. Loading the entire dataframe into memory can cause OOM errors for large datasets.
+            # Consider using get_dataframe(limit=N) or implementing pagination/sampling if max_tasks is intended to be a hard limit on input rows.
             df = dataset.get_dataframe()
         except Exception as e:
             logger.error(f"Failed to read dataset: {e}")
