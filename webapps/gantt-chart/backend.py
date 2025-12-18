@@ -28,7 +28,9 @@ def frontend_log():
     """
     try:
         message = request.args.get('message', '')
-        logger.info(f"[FRONTEND] {message}")
+        log_msg = f"[FRONTEND] {message}"
+        logger.info(log_msg)
+        print(log_msg) # Force to stdout as well
         return json.dumps({'status': 'ok'})
     except Exception as e:
         logger.error(f"Error in frontend-log: {e}")

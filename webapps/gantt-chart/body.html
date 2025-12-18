@@ -6,7 +6,53 @@
 <div id="loading" class="loading-overlay">
     <div class="spinner"></div>
     <p>Loading Gantt chart...</p>
+    <p id="debug-status" style="font-size: 10px; color: #999; margin-top: 10px;">Initializing...</p>
 </div>
 
 <script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
+
+<!-- Inline Debug Script to verify environment -->
+<script>
+    (function() {
+        console.log('[Inline Debug] Script running');
+        var statusEl = document.getElementById('debug-status');
+        
+        function updateStatus(msg) {
+            console.log('[Inline Debug] ' + msg);
+            if (statusEl) statusEl.textContent = msg;
+        }
+
+        updateStatus('Verifying libraries...');
+        
+        // Check Dataiku object
+        if (typeof dataiku === 'undefined') {
+            updateStatus('Error: dataiku object missing');
+            console.error('dataiku object missing');
+        } else {
+            console.log('dataiku object present');
+        }
+
+        // Check Gantt library
+        if (typeof Gantt === 'undefined') {
+            updateStatus('Error: Frappe Gantt library missing');
+            console.error('Frappe Gantt library missing');
+        } else {
+            console.log('Frappe Gantt library present');
+        }
+
+        // Try to ping backend
+        if (typeof dataiku !== 'undefined' && dataiku.webappBackend) {
+            updateStatus('Pinging backend...');
+            dataiku.webappBackend.get('frontend-log', {message: 'Inline script running'})
+                .then(function() {
+                    updateStatus('Backend connected. Loading app...');
+                })
+                .catch(function(err) {
+                    updateStatus('Backend ping failed: ' + err);
+                    console.error('Backend ping failed', err);
+                });
+        }
+    })();
+</script>
+
 <script src="/plugins/gantt-chart/resource/webapp/app.js"></script>
