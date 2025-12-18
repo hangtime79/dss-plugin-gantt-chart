@@ -1,0 +1,332 @@
+"""
+Task transformation logic for Gantt chart plugin.
+
+Main orchestrator that transforms DataFrame rows into Frappe Gantt task objects.
+Handles all edge cases and coordinates date parsing, color mapping, and dependency validation.
+"""
+
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+import pandas as pd
+import logging
+
+from ganttchart.date_parser import parse_date_to_iso, validate_date_range
+from ganttchart.color_mapper import create_color_mapping, get_task_color_class
+from ganttchart.dependency_validator import validate_all_dependencies
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TaskTransformerConfig:
+    """Configuration for the task transformer."""
+    id_column: str
+    name_column: str
+    start_column: str
+    end_column: str
+    progress_column: Optional[str] = None
+    dependencies_column: Optional[str] = None
+    color_column: Optional[str] = None
+    max_tasks: int = 1000
+
+
+class TaskTransformer:
+    """
+    Transform DataFrame rows into Frappe Gantt task objects.
+
+    Pipeline:
+    1. Validate configuration
+    2. Create color mapping (if colorColumn specified)
+    3. Process each row
+    4. Validate dependencies
+    5. Apply maxTasks limit
+    6. Return {tasks, metadata}
+    """
+
+    def __init__(self, config: TaskTransformerConfig):
+        """
+        Initialize transformer with configuration.
+
+        Args:
+            config: TaskTransformerConfig object
+        """
+        self.config = config
+        self.stats = {
+            'total_rows': 0,
+            'displayed_rows': 0,
+            'skipped_rows': 0,
+            'skip_reasons': {}
+        }
+        self.warnings = []
+
+    def transform(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Main transformation method.
+
+        Args:
+            df: Input DataFrame with task data
+
+        Returns:
+            Dictionary with structure:
+            {
+                'tasks': [Task, ...],
+                'metadata': {
+                    'totalRows': int,
+                    'displayedRows': int,
+                    'skippedRows': int,
+                    'skipReasons': {...},
+                    'warnings': [...]
+                },
+                'colorMapping': {...}  # Optional, if color column specified
+            }
+
+        Raises:
+            ValueError: If configuration is invalid or DataFrame is empty
+        """
+        # Reset stats
+        self.stats = {
+            'total_rows': 0,
+            'displayed_rows': 0,
+            'skipped_rows': 0,
+            'skip_reasons': {}
+        }
+        self.warnings = []
+
+        # Validate
+        self._validate_config(df)
+
+        self.stats['total_rows'] = len(df)
+
+        # Create color mapping if needed
+        color_mapping = None
+        if self.config.color_column:
+            color_mapping = create_color_mapping(df, self.config.color_column)
+            if color_mapping:
+                logger.info(f"Created color mapping with {len(color_mapping)} categories")
+
+        # Process rows
+        tasks = []
+        seen_ids = {}  # Track duplicate IDs
+
+        for row_idx, row in df.iterrows():
+            task = self._process_row(row, row_idx, color_mapping)
+            if task:
+                # Handle duplicate IDs
+                task_id = task['id']
+                if task_id in seen_ids:
+                    seen_ids[task_id] += 1
+                    task['id'] = f"{task_id}_{seen_ids[task_id]}"
+                    self.warnings.append(
+                        f"Duplicate task ID '{task_id}' at row {row_idx}. "
+                        f"Renamed to '{task['id']}'."
+                    )
+                else:
+                    seen_ids[task_id] = 0
+
+                tasks.append(task)
+
+        logger.info(f"Processed {len(tasks)} valid tasks from {self.stats['total_rows']} rows")
+
+        # Validate dependencies
+        if tasks:
+            tasks, dep_warnings = validate_all_dependencies(tasks)
+            self.warnings.extend(dep_warnings)
+
+        # Apply maxTasks limit
+        if self.config.max_tasks > 0 and len(tasks) > self.config.max_tasks:
+            original_count = len(tasks)
+            tasks = tasks[:self.config.max_tasks]
+            self.warnings.append(
+                f"Dataset has {original_count} tasks. Displaying first {self.config.max_tasks} "
+                f"due to maxTasks limit. Consider filtering the data or increasing maxTasks."
+            )
+
+        # Update stats
+        self.stats['displayed_rows'] = len(tasks)
+        self.stats['skipped_rows'] = self.stats['total_rows'] - self.stats['displayed_rows']
+
+        # Build result
+        result = {
+            'tasks': tasks,
+            'metadata': {
+                'totalRows': self.stats['total_rows'],
+                'displayedRows': self.stats['displayed_rows'],
+                'skippedRows': self.stats['skipped_rows'],
+                'skipReasons': self.stats['skip_reasons'],
+                'warnings': self.warnings
+            }
+        }
+
+        if color_mapping:
+            result['colorMapping'] = color_mapping
+
+        return result
+
+    def _validate_config(self, df: pd.DataFrame) -> None:
+        """
+        Validate configuration and DataFrame.
+
+        Args:
+            df: Input DataFrame
+
+        Raises:
+            ValueError: If validation fails
+        """
+        if df.empty:
+            raise ValueError("DataFrame is empty")
+
+        # Check required columns exist
+        required_cols = [
+            self.config.id_column,
+            self.config.name_column,
+            self.config.start_column,
+            self.config.end_column
+        ]
+
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            raise ValueError(
+                f"Required columns not found: {', '.join(missing_cols)}. "
+                f"Available columns: {', '.join(df.columns)}"
+            )
+
+        # Check optional columns if specified
+        optional_cols = []
+        if self.config.progress_column:
+            optional_cols.append(self.config.progress_column)
+        if self.config.dependencies_column:
+            optional_cols.append(self.config.dependencies_column)
+        if self.config.color_column:
+            optional_cols.append(self.config.color_column)
+
+        missing_optional = [col for col in optional_cols if col not in df.columns]
+        if missing_optional:
+            logger.warning(f"Optional columns not found: {', '.join(missing_optional)}")
+
+    def _process_row(
+        self,
+        row: pd.Series,
+        row_idx: int,
+        color_mapping: Optional[Dict[Any, str]]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Process a single DataFrame row into a task object.
+
+        Args:
+            row: DataFrame row
+            row_idx: Row index for generating fallback values
+            color_mapping: Optional color mapping dictionary
+
+        Returns:
+            Task dictionary or None if row should be skipped
+        """
+        # Parse dates
+        start_val = row[self.config.start_column]
+        end_val = row[self.config.end_column]
+
+        start_date, start_error = parse_date_to_iso(start_val)
+        end_date, end_error = parse_date_to_iso(end_val)
+
+        # Skip if dates invalid
+        if not start_date or not end_date:
+            self._increment_skip_reason('invalid_dates')
+            return None
+
+        # Skip if start > end
+        if not validate_date_range(start_date, end_date):
+            self._increment_skip_reason('start_after_end')
+            logger.warning(
+                f"Row {row_idx}: Start date {start_date} is after end date {end_date}. Skipping."
+            )
+            return None
+
+        # Extract task ID (generate if null)
+        task_id = row[self.config.id_column]
+        if pd.isna(task_id) or str(task_id).strip() == '':
+            task_id = f"task_{row_idx}"
+        else:
+            task_id = str(task_id).strip()
+
+        # Extract task name (generate if null)
+        task_name = row[self.config.name_column]
+        if pd.isna(task_name) or str(task_name).strip() == '':
+            task_name = f"Task {row_idx}"
+        else:
+            task_name = str(task_name).strip()
+
+        # Build task object
+        task = {
+            'id': task_id,
+            'name': task_name,
+            'start': start_date,
+            'end': end_date
+        }
+
+        # Add progress if column specified
+        if self.config.progress_column:
+            progress = self._extract_progress(row[self.config.progress_column])
+            if progress is not None:
+                task['progress'] = progress
+
+        # Add dependencies if column specified
+        if self.config.dependencies_column:
+            deps = self._extract_dependencies(row[self.config.dependencies_column])
+            task['dependencies'] = deps  # Always add, even if empty
+
+        # Add color class if column specified
+        if self.config.color_column and color_mapping:
+            color_value = row[self.config.color_column]
+            color_class = get_task_color_class(color_value, color_mapping)
+            task['custom_class'] = color_class
+
+        return task
+
+    def _extract_progress(self, value: Any) -> Optional[int]:
+        """
+        Extract and validate progress value (0-100).
+
+        Args:
+            value: Progress value from DataFrame
+
+        Returns:
+            Integer 0-100 or None if invalid
+        """
+        if pd.isna(value):
+            return None
+
+        try:
+            progress = int(float(value))
+            # Clamp to [0, 100]
+            progress = max(0, min(100, progress))
+            return progress
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid progress value: {value}. Using None.")
+            return None
+
+    def _extract_dependencies(self, value: Any) -> str:
+        """
+        Extract dependencies as comma-separated string.
+
+        Args:
+            value: Dependencies value from DataFrame
+
+        Returns:
+            Comma-separated string of task IDs, or empty string
+        """
+        if pd.isna(value) or value == '':
+            return ''
+
+        if isinstance(value, str):
+            # Split by comma, strip whitespace, filter empty
+            deps_list = [d.strip() for d in value.split(',') if d.strip()]
+            return ','.join(deps_list)
+
+        # Try converting to string
+        try:
+            return str(value).strip()
+        except Exception:
+            return ''
+
+    def _increment_skip_reason(self, reason: str) -> None:
+        """Increment skip reason counter."""
+        self.stats['skip_reasons'][reason] = self.stats['skip_reasons'].get(reason, 0) + 1

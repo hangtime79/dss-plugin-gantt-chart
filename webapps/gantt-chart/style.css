@@ -1,0 +1,260 @@
+/* ===== LAYOUT ===== */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#gantt-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    position: relative;
+}
+
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+/* ===== CUSTOM COLOR CLASSES (12-color palette) ===== */
+.bar-blue .bar {
+    fill: #3498db !important;
+}
+
+.bar-green .bar {
+    fill: #2ecc71 !important;
+}
+
+.bar-orange .bar {
+    fill: #e67e22 !important;
+}
+
+.bar-purple .bar {
+    fill: #9b59b6 !important;
+}
+
+.bar-red .bar {
+    fill: #e74c3c !important;
+}
+
+.bar-teal .bar {
+    fill: #1abc9c !important;
+}
+
+.bar-pink .bar {
+    fill: #e91e63 !important;
+}
+
+.bar-indigo .bar {
+    fill: #3f51b5 !important;
+}
+
+.bar-cyan .bar {
+    fill: #00bcd4 !important;
+}
+
+.bar-amber .bar {
+    fill: #ffc107 !important;
+}
+
+.bar-lime .bar {
+    fill: #cddc39 !important;
+}
+
+.bar-gray .bar {
+    fill: #607d8b !important;
+}
+
+/* ===== METADATA BANNER ===== */
+.metadata-banner {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    max-width: 300px;
+    z-index: 1000;
+}
+
+.metadata-banner.warning {
+    background: rgba(255, 243, 205, 0.98);
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.metadata-banner .close-btn {
+    float: right;
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #999;
+}
+
+.metadata-banner .close-btn:hover {
+    color: #333;
+}
+
+/* ===== GANTT CHART CUSTOMIZATIONS ===== */
+.gantt-container {
+    font-family: inherit;
+}
+
+.gantt .bar-label {
+    fill: #fff;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.gantt .bar-progress {
+    fill: rgba(0, 0, 0, 0.2);
+}
+
+.gantt .bar-invalid {
+    fill: transparent;
+    stroke: #e74c3c;
+    stroke-width: 2;
+    stroke-dasharray: 5,5;
+}
+
+/* Custom popup styling */
+.gantt-popup {
+    font-family: inherit;
+}
+
+.popup-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.popup-dates {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.popup-progress {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.popup-deps {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+/* ===== ERROR DISPLAY ===== */
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 48px;
+    color: #e74c3c;
+    margin-bottom: 16px;
+}
+
+.error-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.error-message {
+    font-size: 14px;
+    color: #666;
+    max-width: 600px;
+    line-height: 1.5;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+    #gantt-container {
+        font-size: 10px;
+    }
+
+    .metadata-banner {
+        font-size: 11px;
+        padding: 8px 12px;
+        max-width: 200px;
+    }
+
+    .bar-label {
+        font-size: 10px !important;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+.gantt .bar:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .gantt .grid-row {
+        stroke: #000;
+        stroke-width: 1.5;
+    }
+
+    .gantt .bar {
+        stroke: #000;
+        stroke-width: 2;
+    }
+}

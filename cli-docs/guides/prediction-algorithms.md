@@ -1,0 +1,448 @@
+# Prediction Algorithms Guide
+
+Custom prediction algorithms extend Dataiku's Visual ML tool. They appear alongside built-in algorithms like Random Forest and XGBoost in the Design tab.
+
+---
+
+## Overview
+
+A prediction algorithm consists of files in `python-prediction-algos/{algo-name}/`:
+- **algo.json** - Configuration: prediction types, parameters, grid search settings
+- **algo.py** - Python class implementing the algorithm
+
+---
+
+## Algorithm Configuration (algo.json)
+
+### Complete Structure
+
+```json
+{
+    "meta": {
+        "label": "My Algorithm",
+        "description": "Description of what this algorithm does",
+        "icon": "fas fa-puzzle-piece"
+    },
+
+    "predictionTypes": ["BINARY_CLASSIFICATION", "MULTICLASS", "REGRESSION"],
+
+    "gridSearchMode": "MANAGED",
+
+    "supportsSampleWeights": true,
+
+    "acceptsSparseMatrix": false,
+
+    "params": [
+        {
+            "name": "n_estimators",
+            "label": "Number of Estimators",
+            "description": "Number of trees in the ensemble",
+            "type": "DOUBLES",
+            "defaultValue": [100],
+            "allowDuplicates": false,
+            "gridParam": true
+        },
+        {
+            "name": "max_depth",
+            "label": "Maximum Depth",
+            "description": "Maximum depth of each tree",
+            "type": "DOUBLES",
+            "defaultValue": [5],
+            "allowDuplicates": false,
+            "gridParam": true
+        },
+        {
+            "name": "learning_rate",
+            "label": "Learning Rate",
+            "description": "Step size shrinkage",
+            "type": "DOUBLES",
+            "defaultValue": [0.1],
+            "allowDuplicates": false,
+            "gridParam": true
+        }
+    ]
+}
+```
+
+### Key Configuration Fields
+
+| Field | Description | Values |
+|-------|-------------|--------|
+| `predictionTypes` | Types of ML problems supported | Array of: `BINARY_CLASSIFICATION`, `MULTICLASS`, `REGRESSION` |
+| `gridSearchMode` | How grid search is handled | `NONE`, `MANAGED`, `CUSTOM` |
+| `supportsSampleWeights` | Whether algorithm supports sample weights | `true` or `false` |
+| `acceptsSparseMatrix` | Whether algorithm accepts sparse input | `true` or `false` |
+
+### Grid Search Modes
+
+| Mode | Description |
+|------|-------------|
+| `NONE` | No grid search - use single parameter values |
+| `MANAGED` | Dataiku handles grid search from params with `gridParam: true` |
+| `CUSTOM` | Algorithm handles its own grid search |
+
+### Parameter Types for Grid Search
+
+```json
+// Single value
+{
+    "name": "param",
+    "type": "DOUBLE",
+    "defaultValue": 0.1
+}
+
+// Multiple values for grid search
+{
+    "name": "param",
+    "type": "DOUBLES",
+    "defaultValue": [0.01, 0.1, 1.0],
+    "allowDuplicates": false,
+    "gridParam": true
+}
+
+// Multi-select for categorical grid search
+{
+    "name": "solver",
+    "type": "MULTISELECT",
+    "defaultValue": ["svd"],
+    "selectChoices": [
+        {"value": "svd", "label": "SVD"},
+        {"value": "lsqr", "label": "Least Squares"},
+        {"value": "eigen", "label": "Eigenvalue Decomposition"}
+    ],
+    "gridParam": true
+}
+```
+
+---
+
+## Algorithm Code (algo.py)
+
+### Basic Structure
+
+```python
+from dataiku.doctor.plugins.custom_prediction_algorithm import BaseCustomPredictionAlgorithm
+
+
+class CustomPredictionAlgorithm(BaseCustomPredictionAlgorithm):
+    """
+    Custom prediction algorithm for Dataiku Visual ML.
+
+    Must implement:
+    - __init__: Initialize the estimator
+    - get_clf: Return a scikit-learn compatible estimator
+
+    Args:
+        prediction_type: Type of prediction (BINARY_CLASSIFICATION, MULTICLASS, REGRESSION)
+        params: Dictionary of parameters from algo.json
+    """
+
+    def __init__(self, prediction_type=None, params=None):
+        # Initialize your algorithm here
+        self.clf = YourAlgorithm()
+        super(CustomPredictionAlgorithm, self).__init__(prediction_type, params)
+
+    def get_clf(self):
+        """
+        Return a scikit-learn compatible estimator.
+
+        Must have:
+        - fit(X, y) method (or fit(X, y, sample_weight=None) if supportsSampleWeights=true)
+        - predict(X) method
+        - get_params() and set_params(**params) methods
+        """
+        return self.clf
+```
+
+### Requirements for the Estimator
+
+The estimator returned by `get_clf()` must be scikit-learn compatible:
+
+1. **fit(X, y)** - Train the model
+   - If `supportsSampleWeights: true`, must accept `sample_weight` parameter
+2. **predict(X)** - Make predictions
+3. **get_params()** - Return parameter dictionary
+4. **set_params(**params)** - Set parameters (for grid search)
+
+For classifiers, also implement:
+- **predict_proba(X)** - Return class probabilities (optional but recommended)
+
+---
+
+## Complete Examples
+
+### Example 1: Linear Discriminant Analysis
+
+**algo.json:**
+```json
+{
+    "meta": {
+        "label": "Linear Discriminant Analysis",
+        "description": "A classifier with a linear decision boundary, generated by fitting class conditional densities to the data and using Bayes' rule.",
+        "icon": "fas fa-puzzle-piece"
+    },
+
+    "predictionTypes": ["BINARY_CLASSIFICATION", "MULTICLASS"],
+
+    "gridSearchMode": "MANAGED",
+
+    "supportsSampleWeights": false,
+
+    "acceptsSparseMatrix": false,
+
+    "params": [
+        {
+            "name": "solver",
+            "label": "Solver",
+            "description": "Solver to use",
+            "type": "MULTISELECT",
+            "defaultValue": ["svd"],
+            "selectChoices": [
+                {"value": "svd", "label": "Singular Value Decomposition"},
+                {"value": "lsqr", "label": "Least Squares"},
+                {"value": "eigen", "label": "Eigenvalue Decomposition"}
+            ],
+            "gridParam": true
+        },
+        {
+            "name": "n_components",
+            "label": "Number of Components",
+            "description": "Number of components for dimensionality reduction. If None, will be set to min(n_classes - 1, n_features).",
+            "type": "DOUBLES",
+            "defaultValue": [1],
+            "allowDuplicates": false,
+            "gridParam": true
+        },
+        {
+            "name": "tol",
+            "label": "Tolerance",
+            "description": "Threshold for rank estimation in SVD solver",
+            "type": "DOUBLES",
+            "defaultValue": [0.0001],
+            "allowDuplicates": false,
+            "gridParam": true
+        }
+    ]
+}
+```
+
+**algo.py:**
+```python
+from dataiku.doctor.plugins.custom_prediction_algorithm import BaseCustomPredictionAlgorithm
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+
+class CustomPredictionAlgorithm(BaseCustomPredictionAlgorithm):
+    """
+    Linear Discriminant Analysis classifier.
+
+    A classifier with a linear decision boundary, generated by fitting
+    class conditional densities to the data and using Bayes' rule.
+    """
+
+    def __init__(self, prediction_type=None, params=None):
+        self.clf = LinearDiscriminantAnalysis()
+        super(CustomPredictionAlgorithm, self).__init__(prediction_type, params)
+
+    def get_clf(self):
+        return self.clf
+```
+
+### Example 2: Custom Ensemble with Sample Weights
+
+**algo.json:**
+```json
+{
+    "meta": {
+        "label": "Weighted Gradient Boosting",
+        "description": "Gradient boosting with sample weight support",
+        "icon": "fas fa-code-branch"
+    },
+
+    "predictionTypes": ["BINARY_CLASSIFICATION", "MULTICLASS", "REGRESSION"],
+
+    "gridSearchMode": "MANAGED",
+
+    "supportsSampleWeights": true,
+
+    "acceptsSparseMatrix": false,
+
+    "params": [
+        {
+            "name": "n_estimators",
+            "label": "Number of Estimators",
+            "type": "DOUBLES",
+            "defaultValue": [50, 100, 200],
+            "allowDuplicates": false,
+            "gridParam": true
+        },
+        {
+            "name": "learning_rate",
+            "label": "Learning Rate",
+            "type": "DOUBLES",
+            "defaultValue": [0.05, 0.1, 0.2],
+            "allowDuplicates": false,
+            "gridParam": true
+        },
+        {
+            "name": "max_depth",
+            "label": "Maximum Depth",
+            "type": "DOUBLES",
+            "defaultValue": [3, 5, 7],
+            "allowDuplicates": false,
+            "gridParam": true
+        }
+    ]
+}
+```
+
+**algo.py:**
+```python
+from dataiku.doctor.plugins.custom_prediction_algorithm import BaseCustomPredictionAlgorithm
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+
+
+class CustomPredictionAlgorithm(BaseCustomPredictionAlgorithm):
+    """
+    Gradient Boosting with sample weight support.
+
+    Automatically selects classifier or regressor based on prediction type.
+    """
+
+    def __init__(self, prediction_type=None, params=None):
+        # Choose model based on prediction type
+        if prediction_type == "REGRESSION":
+            self.clf = GradientBoostingRegressor()
+        else:
+            self.clf = GradientBoostingClassifier()
+
+        super(CustomPredictionAlgorithm, self).__init__(prediction_type, params)
+
+    def get_clf(self):
+        return self.clf
+```
+
+### Example 3: Custom Algorithm with Parameter Processing
+
+**algo.py:**
+```python
+from dataiku.doctor.plugins.custom_prediction_algorithm import BaseCustomPredictionAlgorithm
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+
+
+class CustomPredictionAlgorithm(BaseCustomPredictionAlgorithm):
+    """
+    Neural Network with custom parameter processing.
+    """
+
+    def __init__(self, prediction_type=None, params=None):
+        # Process parameters before creating model
+        processed_params = self._process_params(params or {})
+
+        if prediction_type == "REGRESSION":
+            self.clf = MLPRegressor(**processed_params)
+        else:
+            self.clf = MLPClassifier(**processed_params)
+
+        super(CustomPredictionAlgorithm, self).__init__(prediction_type, params)
+
+    def _process_params(self, params):
+        """Convert plugin params to sklearn params."""
+        result = {}
+
+        # Convert hidden layer sizes from string to tuple
+        layers = params.get('hidden_layers', '100,50')
+        if isinstance(layers, str):
+            result['hidden_layer_sizes'] = tuple(int(x) for x in layers.split(','))
+
+        # Direct mappings
+        if 'learning_rate_init' in params:
+            result['learning_rate_init'] = float(params['learning_rate_init'])
+        if 'max_iter' in params:
+            result['max_iter'] = int(params['max_iter'])
+
+        return result
+
+    def get_clf(self):
+        return self.clf
+```
+
+---
+
+## Using in Dataiku
+
+1. **Install the plugin** with your algorithm
+2. **Create a Visual ML model** (Lab > AutoML Prediction)
+3. **Go to the Algorithms panel** in the Design tab
+4. **Find your algorithm** in the list and enable it
+5. **Configure parameters** as needed
+6. **Train the model**
+
+The trained model can be deployed and used like any other Dataiku model.
+
+---
+
+## Best Practices
+
+### 1. Support Multiple Prediction Types
+
+```python
+def __init__(self, prediction_type=None, params=None):
+    if prediction_type == "REGRESSION":
+        self.clf = MyRegressor()
+    elif prediction_type == "MULTICLASS":
+        self.clf = MyMulticlassClassifier()
+    else:  # BINARY_CLASSIFICATION
+        self.clf = MyBinaryClassifier()
+```
+
+### 2. Validate Parameters
+
+```python
+def __init__(self, prediction_type=None, params=None):
+    params = params or {}
+
+    n_estimators = int(params.get('n_estimators', 100))
+    if n_estimators < 1:
+        raise ValueError("n_estimators must be positive")
+
+    self.clf = MyModel(n_estimators=n_estimators)
+```
+
+### 3. Use Logging
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+class CustomPredictionAlgorithm(BaseCustomPredictionAlgorithm):
+    def __init__(self, prediction_type=None, params=None):
+        logger.info(f"Initializing algorithm for {prediction_type}")
+        logger.info(f"Parameters: {params}")
+        # ...
+```
+
+### 4. Document Your Algorithm
+
+Include clear descriptions in `algo.json`:
+- What the algorithm does
+- When to use it
+- What each parameter controls
+
+---
+
+## Folder Structure
+
+```
+python-prediction-algos/
+└── my-algorithm/
+    ├── algo.json
+    └── algo.py
+```
+
+**Note:** Add any required packages to `code-env/python/spec/requirements.txt`:
+```
+scikit-learn>=1.0.0
+xgboost  # if using XGBoost
+lightgbm  # if using LightGBM
+```
