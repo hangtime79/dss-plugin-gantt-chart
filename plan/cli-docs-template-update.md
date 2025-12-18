@@ -99,3 +99,88 @@ window.addEventListener('message', function(event) {
     // ... parse and initialize ...
 });
 ```
+
+## 3. Release Documentation Structure
+
+### Context
+During development, we found that a single monolithic specification document becomes unwieldy. It mixes "what we planned" with "what exists" and makes it hard to track version history. AI assistants also benefit from smaller, focused documents.
+
+### Recommended Structure
+
+```
+your-plugin/
+├── CHANGELOG.md              # Version history (Keep a Changelog format)
+├── plugin-spec.md            # Living document: current state only
+└── plan/
+    └── releases/
+        ├── v0.0.1-notes.md   # What was built in v0.0.1
+        ├── v0.0.2-notes.md   # Bug fixes in v0.0.2
+        └── v0.1.0-notes.md   # Feature plan for next release
+```
+
+### CHANGELOG.md
+
+Use [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
+
+```markdown
+# Changelog
+
+All notable changes to this plugin will be documented in this file.
+
+## [Unreleased]
+
+### Planned
+- Feature X
+- Feature Y
+
+---
+
+## [0.0.2] - 2025-12-18
+
+### Fixed
+- Bug A description
+- Bug B description
+
+### Changed
+- Change C description
+
+---
+
+## [0.0.1] - 2025-12-18
+
+### Added
+- Initial implementation
+- Feature list...
+```
+
+### plugin-spec.md
+
+This should be a **living document** reflecting **current state only**:
+- Remove future plans (those go in release notes)
+- Mark user stories as Done/Not Implemented
+- List known issues
+- Update after each release
+
+### plan/releases/vX.Y.Z-notes.md
+
+Version-specific planning documents:
+- **For past versions:** Summary of what was built, files modified, lessons learned
+- **For future versions:** Feature specs, implementation plans, success criteria
+
+Benefits:
+1. **Clear separation:** Spec = what exists, Release notes = what changed/will change
+2. **AI-friendly:** Smaller files, focused context
+3. **Audit trail:** Each release has its own planning document
+4. **Progressive disclosure:** Read CHANGELOG for overview, dive into release notes for details
+
+### Template Addition
+
+Add to plugin template's `README.md` or `CONTRIBUTING.md`:
+
+```markdown
+## Documentation
+
+- `CHANGELOG.md` - Version history (update with each release)
+- `plugin-spec.md` - Current plugin state (living document)
+- `plan/releases/` - Version-specific planning and release notes
+```
