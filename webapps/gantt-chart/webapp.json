@@ -1,0 +1,208 @@
+{
+    "meta": {
+        "label": "Gantt Chart",
+        "description": "Interactive Gantt chart visualization with task dependencies, progress tracking, and color coding",
+        "icon": "icon-calendar"
+    },
+
+    "baseType": "STANDARD",
+    "hasBackend": "true",
+
+    "chart": {
+        "datasetParamName": "dataset",
+        "leftBarLabel": "Chart Configuration",
+        "topBar": "NONE",
+        "leftBarParams": [
+            {
+                "type": "SEPARATOR",
+                "label": "Data Columns"
+            },
+            {
+                "name": "idColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Task ID",
+                "description": "Unique identifier for each task (required for dependencies)",
+                "mandatory": true
+            },
+            {
+                "name": "nameColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Task Name",
+                "description": "Display name for each task",
+                "mandatory": true
+            },
+            {
+                "name": "startColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Start Date",
+                "description": "Task start date",
+                "mandatory": true
+            },
+            {
+                "name": "endColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "End Date",
+                "description": "Task end date",
+                "mandatory": true
+            },
+            {
+                "name": "progressColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Progress (%)",
+                "description": "Completion percentage (0-100)",
+                "mandatory": false
+            },
+            {
+                "name": "dependenciesColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Dependencies",
+                "description": "Comma-separated task IDs that must complete first",
+                "mandatory": false
+            },
+            {
+                "name": "colorColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Color By",
+                "description": "Categorical column for color-coding tasks",
+                "mandatory": false
+            },
+
+            {
+                "type": "SEPARATOR",
+                "label": "View Settings"
+            },
+            {
+                "name": "viewMode",
+                "type": "SELECT",
+                "label": "Default View",
+                "description": "Initial time scale",
+                "mandatory": true,
+                "defaultValue": "Week",
+                "selectChoices": [
+                    {"value": "Hour", "label": "Hour"},
+                    {"value": "Quarter Day", "label": "Quarter Day"},
+                    {"value": "Half Day", "label": "Half Day"},
+                    {"value": "Day", "label": "Day"},
+                    {"value": "Week", "label": "Week"},
+                    {"value": "Month", "label": "Month"},
+                    {"value": "Year", "label": "Year"}
+                ]
+            },
+            {
+                "name": "viewModeSelect",
+                "type": "BOOLEAN",
+                "label": "Show view mode dropdown",
+                "description": "Allow users to change time scale",
+                "defaultValue": true
+            },
+            {
+                "name": "scrollTo",
+                "type": "SELECT",
+                "label": "Initial scroll position",
+                "defaultValue": "today",
+                "selectChoices": [
+                    {"value": "today", "label": "Today"},
+                    {"value": "start", "label": "First task"},
+                    {"value": "end", "label": "Last task"}
+                ]
+            },
+
+            {
+                "type": "SEPARATOR",
+                "label": "Appearance"
+            },
+            {
+                "name": "barHeight",
+                "type": "INT",
+                "label": "Bar Height",
+                "description": "Height of task bars in pixels",
+                "defaultValue": 30,
+                "minI": 15,
+                "maxI": 60
+            },
+            {
+                "name": "barCornerRadius",
+                "type": "INT",
+                "label": "Bar Corner Radius",
+                "description": "Roundness of bar corners",
+                "defaultValue": 3,
+                "minI": 0,
+                "maxI": 15
+            },
+            {
+                "name": "columnWidth",
+                "type": "INT",
+                "label": "Column Width",
+                "description": "Width of time columns",
+                "defaultValue": 45,
+                "minI": 20,
+                "maxI": 100
+            },
+            {
+                "name": "padding",
+                "type": "INT",
+                "label": "Padding",
+                "description": "Padding between elements",
+                "defaultValue": 18,
+                "minI": 5,
+                "maxI": 40
+            },
+
+            {
+                "type": "SEPARATOR",
+                "label": "Behavior"
+            },
+            {
+                "name": "readonly",
+                "type": "BOOLEAN",
+                "label": "Read-only",
+                "description": "Disable all editing",
+                "defaultValue": true
+            },
+            {
+                "name": "popupOn",
+                "type": "SELECT",
+                "label": "Show task details on",
+                "defaultValue": "click",
+                "selectChoices": [
+                    {"value": "click", "label": "Click"},
+                    {"value": "hover", "label": "Hover"}
+                ]
+            },
+            {
+                "name": "todayButton",
+                "type": "BOOLEAN",
+                "label": "Show 'Today' button",
+                "defaultValue": true
+            },
+            {
+                "name": "highlightWeekends",
+                "type": "BOOLEAN",
+                "label": "Highlight weekends",
+                "defaultValue": true
+            },
+
+            {
+                "type": "SEPARATOR",
+                "label": "Performance"
+            },
+            {
+                "name": "maxTasks",
+                "type": "INT",
+                "label": "Max tasks to display",
+                "description": "0 = unlimited (use with caution on large datasets)",
+                "defaultValue": 1000,
+                "minI": 0
+            }
+        ],
+        "canFilter": true,
+        "canFacet": false
+    }
+}
