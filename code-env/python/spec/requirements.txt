@@ -1,2 +1,11 @@
 pandas
 numpy
+MarkupSafe
+flask
+itsdangerous
+scipy
+statsmodels
+dash
+flask_caching
+dash_bootstrap_components
+datetime
