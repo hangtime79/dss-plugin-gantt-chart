@@ -21,6 +21,19 @@ logger = logging.getLogger(__name__)
 logger.info("Gantt Chart backend module loading...")
 
 
+@app.route('/frontend-log')
+def frontend_log():
+    """
+    Endpoint for frontend to log messages to backend.
+    """
+    try:
+        message = request.args.get('message', '')
+        logger.info(f"[FRONTEND] {message}")
+        return json.dumps({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"Error in frontend-log: {e}")
+        return json.dumps({'error': str(e)}), 500
+
 @app.route('/get-tasks')
 def get_tasks():
     """
