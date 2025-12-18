@@ -18,6 +18,7 @@ from functools import reduce
 from ganttchart.task_transformer import TaskTransformer, TaskTransformerConfig
 
 logger = logging.getLogger(__name__)
+logger.info("Gantt Chart backend module loading...")
 
 
 @app.route('/get-tasks')
