@@ -24,29 +24,23 @@ logger = logging.getLogger(__name__)
 def get_tasks():
     """
     Transform dataset rows into Frappe Gantt task format.
-
-    Query params:
-        config (JSON string): Webapp configuration
-        filters (JSON string): Applied filters from Dataiku UI
-
-    Returns:
-        Success: {
-            'tasks': [...],
-            'metadata': {...},
-            'colorMapping': {...}
-        }
-        Error: {
-            'error': {'code': str, 'message': str, 'details': {...}}
-        }, HTTP status code
     """
+    logger.info("ENTER /get-tasks")
     try:
         # Parse request parameters
-        config = json.loads(request.args.get('config', '{}'))
-        filters = json.loads(request.args.get('filters', '[]'))
+        config_str = request.args.get('config', '{}')
+        filters_str = request.args.get('filters', '[]')
+        logger.info(f"Received params - config: {len(config_str)} chars, filters: {len(filters_str)} chars")
+        
+        config = json.loads(config_str)
+        filters = json.loads(filters_str)
 
         # Extract dataset name
         dataset_name = config.get('dataset')
+        logger.info(f"Target dataset: {dataset_name}")
+        
         if not dataset_name:
+            logger.error("Dataset name missing in config")
             return json.dumps({
                 'error': {
                     'code': 'DATASET_NOT_SPECIFIED',
