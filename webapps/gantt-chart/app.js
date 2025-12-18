@@ -38,7 +38,7 @@
     // ===== VALIDATION =====
 
     function validateConfig(config) {
-        const required = ['dataset', 'idColumn', 'nameColumn', 'startColumn', 'endColumn'];
+        const required = ['dataset', 'idColumn', 'startColumn', 'endColumn'];
         const missing = required.filter(param => !config[param]);
 
         if (missing.length > 0) {
