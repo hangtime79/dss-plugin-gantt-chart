@@ -22,36 +22,42 @@
             if (statusEl) statusEl.textContent = msg;
         }
 
-        updateStatus('Verifying libraries...');
+        updateStatus('Step 1: Checking libraries...');
         
         // Check Dataiku object
         if (typeof dataiku === 'undefined') {
             updateStatus('Error: dataiku object missing');
-            console.error('dataiku object missing');
-        } else {
-            console.log('dataiku object present');
+            return;
         }
-
+        
         // Check Gantt library
         if (typeof Gantt === 'undefined') {
             updateStatus('Error: Frappe Gantt library missing');
-            console.error('Frappe Gantt library missing');
-        } else {
-            console.log('Frappe Gantt library present');
+            return;
         }
 
-        // Try to ping backend
-        if (typeof dataiku !== 'undefined' && dataiku.webappBackend) {
-            updateStatus('Pinging backend...');
-            dataiku.webappBackend.get('frontend-log', {message: 'Inline script running'})
-                .then(function() {
-                    updateStatus('Backend connected. Loading app...');
-                })
-                .catch(function(err) {
-                    updateStatus('Backend ping failed: ' + err);
-                    console.error('Backend ping failed', err);
-                });
+        updateStatus('Step 2: Checking backend connection...');
+
+        if (!dataiku.webappBackend) {
+            updateStatus('Warning: dataiku.webappBackend missing. Checking dependencies...');
+            if (typeof $ === 'undefined') {
+                updateStatus('Error: jQuery missing (required for webappBackend)');
+                return;
+            }
+            // Attempt to construct if missing (rare case for standard webapps)
+            updateStatus('Error: dataiku.webappBackend is undefined. Cannot fetch data.');
+            return;
         }
+
+        updateStatus('Step 3: Pinging backend...');
+        dataiku.webappBackend.get('frontend-log', {message: 'Inline script running'})
+            .then(function() {
+                updateStatus('Backend connected. Loading app...');
+            })
+            .catch(function(err) {
+                updateStatus('Backend ping failed: ' + JSON.stringify(err));
+                console.error('Backend ping failed', err);
+            });
     })();
 </script>
 
