@@ -10,11 +10,26 @@
     console.log('[Gantt Debug] Gantt Chart webapp initializing...');
 
     try {
-        // Request config from parent frame
+        // 1. Try to initialize immediately with synchronous config
+        if (webAppConfig && Object.keys(webAppConfig).length > 0) {
+            console.log('[Gantt Debug] Found synchronous config, initializing...', webAppConfig);
+            try {
+                validateConfig(webAppConfig);
+                // Note: We might not have filters synchronously, so pass empty array or try to fetch?
+                // Standard webapps usually don't have synchronous access to filters, so we rely on backend default.
+                initializeChart(webAppConfig, []); 
+            } catch (e) {
+                console.warn('[Gantt Debug] Initial config validation failed:', e);
+            }
+        } else {
+            console.warn('[Gantt Debug] No synchronous config found or empty.');
+        }
+
+        // 2. Request config from parent frame (for updates or missing data)
         console.log('[Gantt Debug] Sending "sendConfig" to parent...');
         window.parent.postMessage("sendConfig", "*");
     } catch (e) {
-        console.error('[Gantt Debug] Failed to send postMessage:', e);
+        console.error('[Gantt Debug] Initialization error:', e);
     }
 
     // Listen for config updates
