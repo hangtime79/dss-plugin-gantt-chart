@@ -2,7 +2,7 @@
 pandas>=2.2.0
 numpy>=1.18.0
 MarkupSafe<2.2.0
-itsdangerous<2.1.0
+itsdangerous>=2.2.0
 scipy>=1.13,<1.14
 dash>=3.0.0
 flask>=3.1.0
