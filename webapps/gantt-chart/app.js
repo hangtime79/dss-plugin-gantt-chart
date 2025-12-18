@@ -7,58 +7,73 @@
 
     // ===== INITIALIZATION =====
 
-    console.log('Gantt Chart webapp initializing...');
+    console.log('[Gantt Debug] Gantt Chart webapp initializing...');
 
-    // Request config from parent frame
-    window.parent.postMessage("sendConfig", "*");
+    try {
+        // Request config from parent frame
+        console.log('[Gantt Debug] Sending "sendConfig" to parent...');
+        window.parent.postMessage("sendConfig", "*");
+    } catch (e) {
+        console.error('[Gantt Debug] Failed to send postMessage:', e);
+    }
 
     // Listen for config updates
     window.addEventListener('message', function(event) {
+        console.log('[Gantt Debug] Received message event', {
+            origin: event.origin,
+            dataType: typeof event.data,
+            data: event.data
+        });
+
         if (event.data) {
             try {
                 const eventData = JSON.parse(event.data);
                 webAppConfig = eventData['webAppConfig'];
                 const filters = eventData['filters'] || [];
 
-                console.log('Received config:', webAppConfig);
+                console.log('[Gantt Debug] Parsed config:', webAppConfig);
+                console.log('[Gantt Debug] Parsed filters:', filters);
 
                 // Validate required parameters
+                console.log('[Gantt Debug] Validating config...');
                 validateConfig(webAppConfig);
+                console.log('[Gantt Debug] Config valid.');
 
                 // Initialize chart
                 initializeChart(webAppConfig, filters);
 
             } catch (error) {
-                console.error('Configuration error:', error);
+                console.error('[Gantt Debug] Configuration processing error:', error);
                 displayError('Configuration Error', error.message);
             }
+        } else {
+            console.warn('[Gantt Debug] Received empty message data');
         }
     });
 
     // ===== VALIDATION =====
 
     function validateConfig(config) {
+        console.log('[Gantt Debug] inside validateConfig', config);
         const required = ['dataset', 'idColumn', 'startColumn', 'endColumn'];
         const missing = required.filter(param => !config[param]);
 
         if (missing.length > 0) {
-            throw new Error(
-                `Missing required parameters: ${missing.join(', ')}. ` +
-                `Please configure all required columns in the left panel.`
-            );
+            const msg = `Missing required parameters: ${missing.join(', ')}. Please configure all required columns.`;
+            console.error('[Gantt Debug] Validation failed:', msg);
+            throw new Error(msg);
         }
-
-        console.log('Config validation passed');
     }
 
     // ===== CHART INITIALIZATION =====
 
     function initializeChart(config, filters) {
-        console.log('Initializing chart with config and filters');
+        console.log('[Gantt Debug] initializeChart started');
         showLoading();
 
         // Check if Frappe Gantt library loaded
         if (typeof Gantt === 'undefined') {
+            console.error('[Gantt Debug] Gantt library is undefined');
             hideLoading();
             displayError(
                 'Library Error',
@@ -67,17 +82,19 @@
             return;
         }
 
+        console.log('[Gantt Debug] Fetching tasks and config...');
         // Fetch data and config in parallel
         Promise.all([
             fetchTasks(config, filters),
             fetchGanttConfig()
         ])
         .then(([tasksResponse, ganttConfig]) => {
-            console.log('Received tasks and config:', tasksResponse, ganttConfig);
+            console.log('[Gantt Debug] Promises resolved. Tasks:', tasksResponse, 'Config:', ganttConfig);
             hideLoading();
 
             // Check for errors
             if (tasksResponse.error) {
+                console.error('[Gantt Debug] Backend returned error:', tasksResponse.error);
                 displayError(
                     tasksResponse.error.code,
                     tasksResponse.error.message,
@@ -88,6 +105,7 @@
 
             // Check if we have tasks
             if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
+                console.warn('[Gantt Debug] No tasks returned');
                 displayError(
                     'No Tasks',
                     'No valid tasks to display. Check your data and column selections.'
@@ -105,7 +123,7 @@
 
         })
         .catch(error => {
-            console.error('Error loading chart:', error);
+            console.error('[Gantt Debug] Promise.all failed:', error);
             hideLoading();
             displayError(
                 'Failed to load chart',
@@ -123,15 +141,15 @@
             filters: JSON.stringify(filters)
         };
 
-        console.log('Fetching tasks with params:', params);
+        console.log('[Gantt Debug] fetchTasks calling backend get-tasks with:', params);
 
         return dataiku.webappBackend.get('get-tasks', params)
             .then(response => {
-                console.log('Tasks response:', response);
+                console.log('[Gantt Debug] get-tasks response received');
                 return response;
             })
             .catch(error => {
-                console.error('Error fetching tasks:', error);
+                console.error('[Gantt Debug] get-tasks failed:', error);
                 throw error;
             });
     }

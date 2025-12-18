@@ -31,7 +31,7 @@
                 "datasetParamName": "dataset",
                 "label": "Task Name",
                 "description": "Display name for each task",
-                "mandatory": true
+                "mandatory": false
             },
             {
                 "name": "startColumn",
