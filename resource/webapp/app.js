@@ -1,37 +1,6 @@
 (function() {
     'use strict';
 
-    // ===== POLYFILL =====
-    // Ensure dataiku.webappBackend exists
-    if (typeof dataiku !== 'undefined' && !dataiku.webappBackend) {
-        console.warn('Polyfilling dataiku.webappBackend');
-        dataiku.webappBackend = {
-            get: function(path, params) {
-                // Construct URL using native helper
-                let url = dataiku.getWebAppBackendUrl(path);
-                
-                // Append query parameters
-                if (params) {
-                    const queryString = Object.keys(params).map(function(key) {
-                        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-                    }).join('&');
-                    if (queryString) {
-                        url += (url.indexOf('?') === -1 ? '?' : '&') + queryString;
-                    }
-                }
-
-                // Use standard fetch API
-                return fetch(url)
-                    .then(function(response) {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.statusText);
-                        }
-                        return response.json();
-                    });
-            }
-        };
-    }
-
     // ===== STATE =====
     let webAppConfig = {};
     try {

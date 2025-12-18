@@ -46,13 +46,14 @@ This document provides a detailed summary of the bugs resolved and structural im
     - Created `plan/Known Issues and Future Improvements.md` to track this for the next phase.
 - **Version**: Bumped plugin version to `0.0.2`.
 
-## 6. Regression Fix: Infinite Spinner Reappearance
-- **Issue**: After cleaning up debug artifacts, the infinite spinner returned.
-- **Root Cause**: The `dataiku.webappBackend` polyfill was accidentally removed during the cleanup of `body.html`, causing backend calls to fail silently (or throw synchronously) in environments where the standard object is missing or slow to load.
+## 6. Architecture: Standardized Backend Helpers
+- **Issue**: The webapp failed to load because `dataiku.webappBackend` was undefined. This was initially thought to be a race condition, but investigation revealed that this helper object is not automatically provided by the platform and must be manually defined.
 - **Resolution**: 
-    - Restored the polyfill directly into `resource/webapp/app.js` (at the top of the execution scope).
-    - Updated `displayError` in `app.js` to explicitly call `hideLoading()`, ensuring that any future initialization errors remove the spinner and show the error message.
-- **Impact**: Restored functionality and improved error visibility.
+    - Created `resource/webapp/dku-helpers.js` to define `dataiku.webappBackend` (a standard pattern used in other Dataiku plugins like `waterfall-chart` and `geospatial-toolkit`).
+    - Updated `body.html` to load this helper script before `app.js`.
+    - Removed the inline polyfill from `app.js`.
+    - Updated `displayError` in `app.js` to explicitly call `hideLoading()` to prevent infinite spinning on failure.
+- **Impact**: The plugin now follows standard Dataiku plugin architectural patterns, ensuring robust backend communication without "hacky" inline fixes.
 
 ## Final State
 The plugin is now functional, correctly loads data from the selected dataset, and renders an interactive Gantt chart.
