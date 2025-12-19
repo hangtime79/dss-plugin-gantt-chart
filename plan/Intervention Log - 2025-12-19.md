@@ -160,21 +160,6 @@ User reported "No change" with v0.1.4. Suggested forcing the height to 2000px to
 ### Purpose
 To definitively prove if the container *can* scroll vertically when content is confirmed to be large. If this works, the problem is in how Frappe/JS reports the height. If this fails, the problem is in CSS overflow rules.
 
-## 12. Task Duration Filter Fix (Root Cause)
-
-### Issue
-User reported "no larger interior chart size" even with forced height, and identified a console error: `duration of task "0" is too long (above ten years)`. This Frappe Gantt error caused the library to abort rendering rows, resulting in a chart with only a header (the "sliver"), regardless of the container settings.
-
-### Resolution
-*   **Backend Filtering (`task_transformer.py`):** Added logic to calculate duration (`end - start`) for each task. If duration > 3650 days (~10 years), the task is skipped, and a `duration_too_long` warning is logged.
-*   **App Logic (`app.js`):** Removed the forced 2000px height (debug step) and restored the correct height parsing logic.
-*   **Version Bump:** Updated to `v0.1.6-DEBUG`.
-
-### Verification
-*   **Chart Content:** Frappe should now successfully render all valid tasks without crashing.
-*   **Dimensions:** Once rendered, the chart will report its true pixel height, which `app.js` will apply to the SVG, triggering the scrollbars handled by the inner container.
-
-
 
 
 
