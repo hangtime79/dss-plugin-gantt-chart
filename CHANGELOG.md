@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional columns (Name, Progress, Dependencies, Color) remain in sidebar
 - Renamed "Data Columns" separator to "Optional Columns"
 
+### Testing
+- All 90 unit tests passing
+- Manual testing completed and accepted
+- No regressions in existing functionality
+
 ---
 
 ## [0.0.2] - 2025-12-18
