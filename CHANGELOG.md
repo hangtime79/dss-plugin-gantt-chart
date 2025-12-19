@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
-- Move data column parameters to top bar for better UX
-- Address OOM risk with large datasets
+---
+
+## [0.1.1] - 2025-12-19
+
+### Added
+- Task sorting with 10 options (start/end date, name, duration, dependencies)
+- Topological sort using Kahn's algorithm for dependency-based ordering
+- `sortBy` parameter in View Settings section
+
+### Changed
+- Moved mandatory columns (Task ID, Start Date, End Date) to top bar
+- Optional columns (Name, Progress, Dependencies, Color) remain in sidebar
+- Renamed "Data Columns" separator to "Optional Columns"
 
 ---
 

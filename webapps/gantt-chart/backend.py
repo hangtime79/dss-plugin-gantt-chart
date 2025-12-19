@@ -16,6 +16,7 @@ from functools import reduce
 
 # Import our transformation logic
 from ganttchart.task_transformer import TaskTransformer, TaskTransformerConfig
+from ganttchart.sort_utils import sort_tasks
 
 logger = logging.getLogger(__name__)
 logger.info("Gantt Chart backend module loading...")
@@ -111,6 +112,11 @@ def get_tasks():
 
         try:
             result = transformer.transform(df)
+
+            # Apply sorting if specified
+            sort_by = config.get('sortBy', 'none')
+            if sort_by and sort_by != 'none':
+                result['tasks'] = sort_tasks(result['tasks'], sort_by)
         except ValueError as e:
             # Configuration validation error
             logger.error(f"Validation error: {e}")
