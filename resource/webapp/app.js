@@ -3,8 +3,6 @@
 
     // ===== STATE =====
     let webAppConfig = {};
-    let currentTasks = [];
-    let currentGanttConfig = {};
     try {
         if (typeof dataiku !== 'undefined' && dataiku.getWebAppConfig) {
             webAppConfig = dataiku.getWebAppConfig()['webAppConfig'] || {};
@@ -13,24 +11,11 @@
         console.warn('Initial dataiku.getWebAppConfig failed:', e);
     }
     let ganttInstance = null;
+    let taskDataMap = {}; // Store original task data by ID before Frappe mutates it
 
     // ===== INITIALIZATION =====
 
     console.log('Gantt Chart webapp initializing...');
-    
-    // Initialize UI controls
-    const gotoBtn = document.getElementById('goto-btn');
-    if (gotoBtn) {
-        gotoBtn.addEventListener('click', function() {
-            const dateInput = document.getElementById('goto-date');
-            if (dateInput && dateInput.value && ganttInstance) {
-                 // Frappe Gantt usually has a scroll logic. 
-                 // We can use the 'scroll_to' option but that's init-only.
-                 // We might need to manually scroll the container.
-                 scrollToDate(dateInput.value);
-            }
-        });
-    }
 
     try {
         // 1. Try to initialize immediately with synchronous config
@@ -98,17 +83,14 @@
             fetchGanttConfig()
         ])
         .then(([tasksResponse, ganttConfig]) => {
-            // Loading is now hidden inside renderGantt to prevent layout flash
-            // hideLoading(); 
+            hideLoading();
 
             if (tasksResponse.error) {
-                hideLoading(); // Ensure hidden on error
                 displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                 return;
             }
 
             if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                hideLoading(); // Ensure hidden on empty
                 displayError('No Tasks', 'No valid tasks to display.');
                 return;
             }
@@ -142,13 +124,8 @@
 
     // ===== GANTT RENDERING =====
 
-    function renderGantt(tasks, config, isRetry = false) {
-        console.log(`Rendering Gantt with ${tasks.length} tasks (Retry: ${isRetry})`);
-        
-        // Update state for resize handling
-        currentTasks = tasks;
-        currentGanttConfig = config;
-        
+    function renderGantt(tasks, config) {
+        console.log(`Rendering Gantt with ${tasks.length} tasks`);
         const container = document.getElementById('gantt-container');
 
         // Clear previous instance
@@ -160,20 +137,23 @@
         // Create SVG element for Gantt
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.id = 'gantt-svg';
-        // Remove explicit 100% width/height to allow library to set correct dimensions
-        // and enable scrolling for wide charts (e.g. Day view)
-        // svg.style.width = '100%'; 
-        // svg.style.height = '100%';
+        svg.style.width = '100%';
         container.appendChild(svg);
 
-        // Determine column width
-        // If retrying, use the auto-calculated width stored in config
-        // Otherwise, use the configured minimum width
-        let columnWidth = config._autoWidth || config.column_width || 45;
+        // Store original task data before Frappe mutates it
+        taskDataMap = {};
+        tasks.forEach(task => {
+            taskDataMap[task.id] = {
+                name: task.name,
+                start: task.start,
+                end: task.end,
+                custom_fields: task.custom_fields || {}
+            };
+        });
 
         // Initialize Frappe Gantt
         try {
-            ganttInstance = new Gantt('#gantt-svg', tasks, {
+            const options = {
                 // View settings
                 view_mode: config.view_mode || 'Week',
                 view_mode_select: config.view_mode_select !== false,
@@ -181,7 +161,7 @@
                 // Appearance
                 bar_height: config.bar_height || 30,
                 bar_corner_radius: config.bar_corner_radius || 3,
-                column_width: columnWidth,
+                column_width: config.column_width || 45, // This is minColumnWidth
                 padding: config.padding || 18,
 
                 // Behavior
@@ -198,8 +178,6 @@
 
                 // Custom popup content
                 popup: function(task) {
-                    console.log('Popup task object:', task); // Debug: Inspect full task object
-                    if (task.custom_fields) console.log('Custom fields:', task.custom_fields);
                     return buildPopupHTML(task);
                 },
 
@@ -218,181 +196,193 @@
 
                 on_view_change: function(mode) {
                     console.log('View changed:', mode);
+                    updateSvgDimensions();
                 }
-            });
+            };
 
-            // Feature 4: Always Fit to Screen (Robust 2-Pass Approach)
-            // Measure actual rendered width and scale if it's smaller than viewport
-            if (!isRetry) {
-                // We need to wait a tick for DOM update usually, but Frappe renders synchronously-ish
-                setTimeout(() => {
-                    try {
-                        const renderedSvg = document.querySelector('#gantt-svg');
-                        if (renderedSvg) {
-                            // Frappe Gantt usually sets a specific pixel width on the SVG
-                            // But getting BBox is safer to know content size
-                            const contentWidth = renderedSvg.getBBox().width;
-                            const containerWidth = container.clientWidth;
-                            
-                            // If content is significantly smaller than container (with some threshold)
-                            // And checking if we actually have tasks (contentWidth > 0)
-                            if (contentWidth > 0 && contentWidth < containerWidth - 20) {
-                                const ratio = containerWidth / contentWidth;
-                                const newWidth = Math.floor(columnWidth * ratio);
-                                
-                                console.log(`Auto-fit: Scaling up. Content=${contentWidth}, Container=${containerWidth}, Ratio=${ratio}, NewWidth=${newWidth}`);
-                                
-                                // Store new width and re-render
-                                config._autoWidth = newWidth;
-                                renderGantt(tasks, config, true);
-                                return; // Don't hide loading yet, we are re-rendering
-                            } else {
-                                console.log(`Auto-fit: No scaling needed. Content=${contentWidth}, Container=${containerWidth}`);
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('Auto-fit measurement failed:', e);
-                    }
-                    hideLoading(); // Done rendering (Pass 1)
-                }, 0);
-            } else {
-                 console.log(`Gantt chart rendered successfully (Scaled) with ${tasks.length} tasks`);
-                 hideLoading(); // Done rendering (Pass 2)
+            ganttInstance = new Gantt('#gantt-svg', tasks, options);
+
+            // Auto-fit Logic: Scale column width to fill screen if content is smaller than viewport
+            if (ganttInstance.dates && ganttInstance.dates.length > 0) {
+                 const viewportWidth = container.clientWidth;
+                 const minColumnWidth = config.column_width || 45;
+                 const dateCount = ganttInstance.dates.length;
+                 
+                 // Calculate width to fit screen (subtracting padding)
+                 const calculatedWidth = Math.floor((viewportWidth - 20) / dateCount);
+                 const finalWidth = Math.max(minColumnWidth, calculatedWidth);
+                 
+                 if (finalWidth > minColumnWidth) {
+                     console.log(`Auto-fitting: scaling column width from ${minColumnWidth} to ${finalWidth}px`);
+                     ganttInstance.options.column_width = finalWidth;
+                     ganttInstance.refresh(tasks); 
+                 }
             }
+
+            console.log(`Gantt chart rendered successfully with ${tasks.length} tasks`);
+            
+            // Force SVG to explicit pixel width for horizontal scrolling
+            setTimeout(updateSvgDimensions, 200);
+
+            // Setup date navigation
+            setupDateNavigation();
+            
+            // Expose for debugging
+            window.ganttInstance = ganttInstance;
 
         } catch (error) {
             console.error('Error rendering Gantt:', error);
-            hideLoading(); // Ensure hidden on error
             displayError('Rendering Error', error.message, error);
+        }
+    }
+
+    function updateSvgDimensions() {
+        const svg = document.getElementById('gantt-svg');
+        if (svg && ganttInstance && ganttInstance.dates && ganttInstance.options) {
+            const totalWidth = ganttInstance.dates.length * ganttInstance.options.column_width;
+            // Use standard height or container height logic
+            // Frappe sets internal height on .gantt-container svg, but we want to ensure it matches
+            const currentHeight = svg.clientHeight || svg.offsetHeight || 600;
+
+            // Force explicit pixel dimensions to trigger scrollbar
+            svg.style.width = totalWidth + 'px';
+            // svg.style.height = currentHeight + 'px'; // Let height be determined by content usually
+            svg.setAttribute('width', totalWidth);
+            // svg.setAttribute('height', currentHeight);
+            
+            console.log(`Updated SVG dimensions to ${totalWidth}px width`);
+        }
+    }
+
+    // ===== DATE NAVIGATION =====
+
+    function setupDateNavigation() {
+        const gotoBtn = document.getElementById('goto-btn');
+        const gotoDate = document.getElementById('goto-date');
+
+        if (!gotoBtn || !gotoDate) {
+            return;
+        }
+
+        // Set input date range based on chart data
+        if (ganttInstance && ganttInstance.dates && ganttInstance.dates.length > 0) {
+            const minDate = ganttInstance.dates[0];
+            const maxDate = ganttInstance.dates[ganttInstance.dates.length - 1];
+            gotoDate.min = formatDateToISO(minDate);
+            gotoDate.max = formatDateToISO(maxDate);
+        }
+
+        gotoBtn.onclick = function() {
+            const selectedDate = gotoDate.value;
+            if (selectedDate) {
+                scrollToDate(selectedDate);
+            }
+        };
+
+        // Allow Enter key to trigger navigation
+        gotoDate.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                gotoBtn.click();
+            }
+        };
+    }
+
+    function scrollToDate(dateStr) {
+        if (!ganttInstance || !ganttInstance.dates) {
+            console.error('Gantt instance or dates not available');
+            return;
+        }
+
+        try {
+            const targetDate = new Date(dateStr);
+            targetDate.setHours(0, 0, 0, 0);
+
+            if (isNaN(targetDate.getTime())) return;
+
+            // Find closest date column index
+            let closestIndex = 0;
+            let minDiff = Math.abs(ganttInstance.dates[0] - targetDate);
+
+            for (let i = 1; i < ganttInstance.dates.length; i++) {
+                const diff = Math.abs(ganttInstance.dates[i] - targetDate);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = i;
+                }
+            }
+
+            // Calculate pixel offset
+            const columnWidth = ganttInstance.options.column_width || 45;
+            const scrollOffset = closestIndex * columnWidth;
+            
+            // Scroll container
+            const container = document.getElementById('gantt-container');
+            const centerOffset = Math.max(0, scrollOffset - (container.clientWidth / 2));
+            
+            console.log(`Scrolling to ${dateStr} (offset: ${centerOffset}px)`);
+            
+            container.scrollTo({
+                left: centerOffset,
+                behavior: 'smooth'
+            });
+
+        } catch (error) {
+            console.error('Error scrolling to date:', error);
         }
     }
 
     // ===== POPUP BUILDER =====
 
     function buildPopupHTML(task) {
-        // Robust name handling
-        const name = task.name || task.id || 'Untitled Task';
-        
-        let html = `
-            <div class="gantt-popup">
-                <div class="popup-title">${escapeHtml(name)}</div>
-        `;
+        // Get original data from storage
+        const originalData = taskDataMap[task.id] || {};
 
-        // Date range handling
-        let startStr = task.start;
-        let endStr = task.end;
-        
-        // Debug date values
-        if (!startStr && !task._start) console.warn('Task missing start date:', task);
+        // Use stored values or Frappe's converted values
+        const taskName = originalData.name || task.name || task.id || 'Untitled Task';
+        const startDate = originalData.start || (task._start ? formatDateToISO(task._start) : 'N/A');
+        const endDate = originalData.end || (task._end ? formatDateToISO(task._end) : 'N/A');
+        const customFields = originalData.custom_fields || task.custom_fields || {};
 
-        // If they are Date objects (Frappe often converts them)
-        if (task._start && task._end) {
-            startStr = formatDate(task._start);
-            endStr = formatDate(task._end);
-        }
+        // Build subtitle with dates
+        let subtitle = `${startDate} to ${endDate}`;
 
-        html += `<div class="popup-dates">${escapeHtml(startStr)} to ${escapeHtml(endStr)}</div>`;
+        // Build details with progress, dependencies, and custom fields
+        let details = '';
 
-        // Progress (if available)
         if (task.progress !== undefined && task.progress !== null) {
-            html += `<div class="popup-progress">Progress: ${task.progress}%</div>`;
+            details += `Progress: ${task.progress}%<br>`;
         }
 
-        // Custom fields (Feature 2)
-        // Check both custom_fields (our property) and direct properties if flattened
-        const customFields = task.custom_fields || {};
-        
-        if (Object.keys(customFields).length > 0) {
-            html += '<div class="popup-custom-fields">';
-            for (const [key, value] of Object.entries(customFields)) {
-                html += `<div class="custom-field"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</div>`;
-            }
-            html += '</div>';
-        } else {
-             // Fallback: check if they are top-level properties (in case Frappe flattened them)
-             // This is harder without knowing the keys.
-             console.log('No custom_fields found on task');
-        }
-
-        // Dependencies (if any)
-        if (task.dependencies) {
+        if (task.dependencies && task.dependencies.length > 0) {
             const depsList = Array.isArray(task.dependencies)
                 ? task.dependencies.join(', ')
                 : task.dependencies;
             if (depsList) {
-                html += `<div class="popup-deps">Depends on: ${escapeHtml(depsList)}</div>`;
+                details += `Depends on: ${escapeHtml(depsList)}<br>`;
             }
         }
 
-        html += '</div>';
-        return html;
-    }
+        // Add custom fields (sorted alphabetically)
+        if (customFields && typeof customFields === 'object') {
+            const sortedKeys = Object.keys(customFields).sort();
+            if (sortedKeys.length > 0) {
+                if (details) details += '<br>';
+                for (const key of sortedKeys) {
+                    const value = customFields[key];
+                    details += `<strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}<br>`;
+                }
+            }
+        }
 
-    function formatDate(date) {
-        if (!date) return '';
-        if (typeof date === 'string') return date;
-        // Simple YYYY-MM-DD format
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        // Return simple HTML (Frappe Gantt will wrap it)
+        return `
+            <div class="popup-title">${escapeHtml(taskName)}</div>
+            <div class="popup-subtitle">${subtitle}</div>
+            <div class="popup-details">${details}</div>
+        `;
     }
 
     // ===== UI HELPERS =====
-
-    function scrollToDate(targetDateStr) {
-        if (!ganttInstance) {
-            console.error('Scroll failed: Gantt instance not initialized');
-            return;
-        }
-        
-        try {
-            const targetDate = new Date(targetDateStr);
-            // Frappe Gantt 0.6.1+ uses `gantt_start`
-            // Older versions might use `start`
-            const startDate = ganttInstance.gantt_start || ganttInstance.start; 
-            
-            if (!startDate) {
-                console.warn('Cannot scroll: Gantt start date not found. Instance keys:', Object.keys(ganttInstance));
-                return;
-            }
-
-            const diffTime = targetDate - startDate;
-            const diffDays = diffTime / (1000 * 60 * 60 * 24);
-            
-            // Get column width from config or instance
-            const columnWidth = ganttInstance.options.column_width;
-            const viewMode = ganttInstance.options.view_mode;
-            
-            console.log(`Scrolling to ${targetDateStr}. Start: ${startDate}, DiffDays: ${diffDays}, ColWidth: ${columnWidth}, Mode: ${viewMode}`);
-
-            let offset = 0;
-            
-            // Approximate offset calculation based on view mode
-            if (viewMode === 'Day') {
-                 offset = diffDays * columnWidth;
-            } else if (viewMode === 'Week') {
-                 offset = (diffDays / 7) * columnWidth;
-            } else if (viewMode === 'Month') {
-                 offset = (diffDays / 30) * columnWidth;
-            } else if (viewMode === 'Year') {
-                 offset = (diffDays / 365) * columnWidth;
-            } else if (viewMode === 'Quarter Day') {
-                 offset = (diffDays * 4) * columnWidth;
-            } else if (viewMode === 'Half Day') {
-                 offset = (diffDays * 2) * columnWidth;
-            } else if (viewMode === 'Hour') {
-                 offset = (diffDays * 24) * columnWidth;
-            }
-            
-            const container = document.getElementById('gantt-container');
-            // Center the date
-            container.scrollLeft = offset - (container.clientWidth / 2);
-            
-        } catch (e) {
-            console.error('Scroll to date failed:', e);
-        }
-    }
 
     function showLoading() {
         const loading = document.getElementById('loading');
@@ -409,26 +399,31 @@
     }
 
     function displayError(title, message, details) {
-        hideLoading();
         console.error('Error:', title, message, details);
 
         // Use Dataiku's error display
-        const errorMsg = `${title}: ${message}`;
-        dataiku.webappMessages.displayFatalError(errorMsg);
+        if (dataiku && dataiku.webappMessages) {
+             dataiku.webappMessages.displayFatalError(`${title}: ${message}`);
+        }
 
         // Also display in container
         const container = document.getElementById('gantt-container');
-        container.innerHTML = `
-            <div class="error-container">
-                <div class="error-icon">⚠️</div>
-                <div class="error-title">${escapeHtml(title)}</div>
-                <div class="error-message">${escapeHtml(message)}</div>
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-title">${escapeHtml(title)}</div>
+                    <div class="error-message">${escapeHtml(message)}</div>
+                </div>
+            `;
+        }
     }
 
     function displayMetadata(metadata) {
         console.log('Displaying metadata:', metadata);
+        // Clean up existing banner
+        const existing = document.querySelector('.metadata-banner');
+        if (existing) existing.remove();
 
         // Create metadata banner
         const banner = document.createElement('div');
@@ -470,35 +465,42 @@
 
         // Auto-hide after 10 seconds
         setTimeout(() => {
-            banner.style.transition = 'opacity 0.5s';
-            banner.style.opacity = '0';
-            setTimeout(() => banner.remove(), 500);
+            if (banner && banner.parentNode) {
+                banner.style.transition = 'opacity 0.5s';
+                banner.style.opacity = '0';
+                setTimeout(() => {
+                    if (banner.parentNode) banner.remove();
+                }, 500);
+            }
         }, 10000);
     }
 
     function escapeHtml(text) {
-        if (!text) return '';
+        if (!text && text !== 0) return '';
         const div = document.createElement('div');
         div.textContent = String(text);
         return div.innerHTML;
     }
 
+    function formatDateToISO(date) {
+        if (!date) return 'N/A';
+        if (typeof date === 'string') return date;
+        if (date instanceof Date) {
+            return date.toISOString().split('T')[0];
+        }
+        return 'N/A';
+    }
+
     // ===== WINDOW RESIZE HANDLER =====
 
-    let resizeTimeout;
     window.addEventListener('resize', function() {
-        // Debounce resize
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            if (currentTasks.length > 0 && currentGanttConfig) {
-                console.log('Window resized, re-rendering...');
-                // Reset cached auto-width to allow new calculation
-                delete currentGanttConfig._autoWidth; 
-                renderGantt(currentTasks, currentGanttConfig);
-            }
-        }, 200);
+        if (ganttInstance) {
+            // Re-render or update dimensions? 
+            // Frappe might handle some, but we need to enforce our Auto-Fit and SVG sizing
+            // Simplest is to just update dimensions for now, but auto-fit might need re-calc.
+            // Let's reload logic for simplicity or just update SVG
+            updateSvgDimensions();
+        }
     });
-
-    console.log('Gantt Chart webapp initialized');
 
 })();
