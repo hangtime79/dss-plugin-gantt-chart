@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import pandas as pd
 import logging
+from datetime import datetime
 
 from ganttchart.date_parser import parse_date_to_iso, validate_date_range
 from ganttchart.color_mapper import create_color_mapping, get_task_color_class
@@ -248,6 +249,20 @@ class TaskTransformer:
                 f"Row {row_idx}: Start date {start_date} is after end date {end_date}. Skipping."
             )
             return None
+
+        # Check duration (Frappe Gantt fails if duration > 10 years)
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            duration_days = (end_dt - start_dt).days
+            if duration_days > 3650: # ~10 years
+                self._increment_skip_reason('duration_too_long')
+                logger.warning(
+                    f"Row {row_idx}: Duration {duration_days} days exceeds limit (10 years). Skipping."
+                )
+                return None
+        except ValueError:
+            pass # Should not happen as dates are already validated ISO
 
         # Extract task ID (generate if null)
         task_id = row[self.config.id_column]
