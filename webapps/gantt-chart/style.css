@@ -11,51 +11,71 @@ html, body {
 }
 
 #control-bar {
-    height: 40px;
+    flex-shrink: 0;
+    padding: 12px 16px;
     background: #f8f9fa;
     border-bottom: 1px solid #ddd;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    flex-shrink: 0;
 }
 
-.control-group {
+#control-bar .control-group {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+}
+
+#control-bar label {
+    font-size: 14px;
+    font-weight: 500;
     color: #333;
+    margin: 0;
 }
 
-.date-input {
+#control-bar .date-input {
+    padding: 6px 10px;
     border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 4px 8px;
-    font-size: 13px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
 }
 
-.btn {
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 4px 12px;
+#control-bar .date-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+#control-bar .btn {
+    padding: 6px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 13px;
-    color: #333;
+    transition: background 0.2s;
 }
 
-.btn:hover {
-    background: #f0f0f0;
+#control-bar .btn:hover {
+    background: #2980b9;
+}
+
+#control-bar .btn:active {
+    background: #21618c;
 }
 
 #gantt-container {
+    flex: 1;
     width: 100%;
-    flex: 1; /* Take remaining height */
-    overflow: auto; /* Enable scrollbars */
+    overflow-x: scroll;
+    overflow-y: scroll;
     position: relative;
-    /* Ensure scrollbar doesn't get hidden */
-    padding-bottom: 2px; 
+    min-height: 0;
+}
+
+#gantt-container svg {
+    display: block;
+    min-width: max-content;
 }
 
 /* ===== LOADING OVERLAY ===== */
@@ -217,6 +237,23 @@ html, body {
     color: #333;
 }
 
+.popup-subtitle {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.popup-details {
+    font-size: 12px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.popup-details strong {
+    color: #333;
+    font-weight: 600;
+}
+
 .popup-dates {
     font-size: 12px;
     color: #666;
@@ -233,18 +270,24 @@ html, body {
     font-size: 12px;
     color: #666;
     font-style: italic;
+    margin-bottom: 8px;
 }
 
 .popup-custom-fields {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e0e0e0;
 }
 
-.custom-field {
+.popup-custom-field {
     font-size: 12px;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.popup-custom-field strong {
     color: #333;
-    margin-bottom: 2px;
+    font-weight: 600;
 }
 
 /* ===== ERROR DISPLAY ===== */
