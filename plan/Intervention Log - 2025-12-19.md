@@ -115,6 +115,24 @@ User reported "no values, anywhere" after the CSS override. Also identified a po
 *   **Reliability:** Chart should load consistently even if scripts load out of order.
 *   **Scrollbars:** `overflow: scroll` (forced) remains in effect.
 
+## 9. Inner Container Scrolling Fix
+
+### Issue
+User reported partial scrolling (Left/Right works via touchpad, Up/Down broken) and missing scrollbars. The "forced" outer scrolling approach likely conflicted with the library's internal `.gantt-container` wrapper, trapping vertical overflow.
+
+### Resolution
+*   **Strategy Shift:** Instead of fighting the library's wrapper, we now force it to behave correctly within our layout.
+*   **CSS Update (`style.css`):**
+    *   `#gantt-container` (Outer): `overflow: hidden`. It now acts purely as a bounding box.
+    *   `.gantt-container` (Inner Wrapper): `height: 100% !important`, `width: 100% !important`, `overflow: auto !important`. This forces the wrapper to fill the available screen space and handle scrolling natively.
+*   **Version Bump:** Updated indicator to `v0.1.3-DEBUG`.
+
+### Verification
+*   **Vertical Scroll:** The inner wrapper is now constrained to the viewport height (`100%`), so the taller SVG content inside it *must* trigger the wrapper's vertical scrollbar.
+*   **Horizontal Scroll:** Similarly, the wider SVG content will trigger the wrapper's horizontal scrollbar.
+*   **Visuals:** Scrollbar styles are applied to `.gantt-container`.
+
+
 
 
 
