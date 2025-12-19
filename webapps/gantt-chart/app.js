@@ -71,41 +71,58 @@
     function initializeChart(config, filters) {
         showLoading();
 
-        if (typeof Gantt === 'undefined') {
-            hideLoading();
-            displayError('Library Error', 'Frappe Gantt library failed to load.');
-            return;
+        // Retry mechanism for library loading
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds approx
+        
+        function checkLibrary() {
+            if (typeof Gantt !== 'undefined') {
+                proceedWithInit();
+            } else {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    console.log(`Waiting for Frappe Gantt library... (${attempts})`);
+                    setTimeout(checkLibrary, 100);
+                } else {
+                    hideLoading();
+                    displayError('Library Error', 'Frappe Gantt library failed to load after multiple attempts.');
+                }
+            }
         }
 
-        // Fetch data and config
-        Promise.all([
-            fetchTasks(config, filters),
-            fetchGanttConfig()
-        ])
-        .then(([tasksResponse, ganttConfig]) => {
-            hideLoading();
+        checkLibrary();
 
-            if (tasksResponse.error) {
-                displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
-                return;
-            }
+        function proceedWithInit() {
+            // Fetch data and config
+            Promise.all([
+                fetchTasks(config, filters),
+                fetchGanttConfig()
+            ])
+            .then(([tasksResponse, ganttConfig]) => {
+                hideLoading();
 
-            if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                displayError('No Tasks', 'No valid tasks to display.');
-                return;
-            }
+                if (tasksResponse.error) {
+                    displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
+                    return;
+                }
 
-            if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
-                displayMetadata(tasksResponse.metadata);
-            }
+                if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
+                    displayError('No Tasks', 'No valid tasks to display.');
+                    return;
+                }
 
-            renderGantt(tasksResponse.tasks, ganttConfig);
-        })
-        .catch(error => {
-            console.error('Chart load failed:', error);
-            hideLoading();
-            displayError('Failed to load chart', error.message || error);
-        });
+                if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
+                    displayMetadata(tasksResponse.metadata);
+                }
+
+                renderGantt(tasksResponse.tasks, ganttConfig);
+            })
+            .catch(error => {
+                console.error('Chart load failed:', error);
+                hideLoading();
+                displayError('Failed to load chart', error.message || error);
+            });
+        }
     }
 
     // ===== DATA FETCHING =====

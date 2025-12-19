@@ -76,14 +76,6 @@ html, body {
     -webkit-overflow-scrolling: touch;
 }
 
-/* OVERRIDE Frappe Gantt internal wrapper */
-.gantt-container {
-    height: auto !important;
-    width: auto !important;
-    overflow: visible !important;
-    border: none !important;
-}
-
 /* Ensure scrollbars are always visible and styled */
 #gantt-container::-webkit-scrollbar {
     width: 12px;
