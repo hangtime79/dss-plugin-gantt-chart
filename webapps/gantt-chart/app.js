@@ -238,19 +238,24 @@
 
     function updateSvgDimensions() {
         const svg = document.getElementById('gantt-svg');
+        const container = document.getElementById('gantt-container');
+        
         if (svg && ganttInstance && ganttInstance.dates && ganttInstance.options) {
             const totalWidth = ganttInstance.dates.length * ganttInstance.options.column_width;
             // Use standard height or container height logic
-            // Frappe sets internal height on .gantt-container svg, but we want to ensure it matches
             const currentHeight = svg.clientHeight || svg.offsetHeight || 600;
 
             // Force explicit pixel dimensions to trigger scrollbar
             svg.style.width = totalWidth + 'px';
-            // svg.style.height = currentHeight + 'px'; // Let height be determined by content usually
             svg.setAttribute('width', totalWidth);
-            // svg.setAttribute('height', currentHeight);
             
-            console.log(`Updated SVG dimensions to ${totalWidth}px width`);
+            // Log for debugging
+            console.log(`[Dimensions] SVG Width: ${totalWidth}px, Container Width: ${container.clientWidth}px`);
+            if (totalWidth > container.clientWidth) {
+                console.log('[Dimensions] Scrollbar should be visible.');
+            } else {
+                console.log('[Dimensions] Content fits in viewport (Auto-Fit active?)');
+            }
         }
     }
 

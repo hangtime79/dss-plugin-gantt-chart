@@ -67,15 +67,43 @@ html, body {
 #gantt-container {
     flex: 1;
     width: 100%;
-    overflow-x: scroll;
-    overflow-y: scroll;
+    overflow: auto; /* Use auto to show scrollbars only when needed, or scroll to force */
     position: relative;
     min-height: 0;
+    /* Force hardware acceleration for smoother scrolling */
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure scrollbars are always visible and styled */
+#gantt-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+#gantt-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#gantt-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    border: 2px solid #f1f1f1;
+}
+
+#gantt-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+#gantt-container::-webkit-scrollbar-corner {
+    background: #f1f1f1;
 }
 
 #gantt-container svg {
     display: block;
-    min-width: max-content;
+    /* Ensure SVG doesn't shrink */
+    min-width: 100%;
 }
 
 /* ===== LOADING OVERLAY ===== */
