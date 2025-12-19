@@ -53,9 +53,12 @@ def get_tasks():
         logger.info(f"Reading dataset: {dataset_name}")
         try:
             dataset = dataiku.Dataset(dataset_name)
-            # TODO: Potential scalability issue. Loading the entire dataframe into memory can cause OOM errors for large datasets.
-            # Consider using get_dataframe(limit=N) or implementing pagination/sampling if max_tasks is intended to be a hard limit on input rows.
-            df = dataset.get_dataframe()
+            
+            # Limit rows to avoid OOM
+            max_tasks = int(config.get('maxTasks', 1000))
+            limit = max_tasks if max_tasks > 0 else 10000
+            
+            df = dataset.get_dataframe(limit=limit)
         except Exception as e:
             logger.error(f"Failed to read dataset: {e}")
             return json.dumps({
@@ -94,6 +97,8 @@ def get_tasks():
                 progress_column=config.get('progressColumn'),
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
+                tooltip_columns=config.get('tooltipColumns'),
+                sort_by=config.get('sortBy', 'none'),
                 max_tasks=int(config.get('maxTasks', 1000))
             )
         except Exception as e:
@@ -180,7 +185,7 @@ def get_config():
             'view_mode_select': config.get('viewModeSelect', True),
             'bar_height': int(config.get('barHeight', 30)),
             'bar_corner_radius': int(config.get('barCornerRadius', 3)),
-            'column_width': int(config.get('columnWidth', 45)),
+            'column_width': int(config.get('minColumnWidth', 45)), # Renamed from columnWidth
             'padding': int(config.get('padding', 18)),
             'readonly': config.get('readonly', True),
             'popup_on': config.get('popupOn', 'click'),

@@ -16,12 +16,7 @@
     "chart": {
         "datasetParamName": "dataset",
         "leftBarLabel": "Chart Configuration",
-        "topBar": "NONE",
-        "leftBarParams": [
-            {
-                "type": "SEPARATOR",
-                "label": "Data Columns"
-            },
+        "topBarParams": [
             {
                 "name": "idColumn",
                 "type": "DATASET_COLUMN",
@@ -77,8 +72,9 @@
                 "label": "Color By",
                 "description": "Categorical column for color-coding tasks",
                 "mandatory": false
-            },
-
+            }
+        ],
+        "leftBarParams": [
             {
                 "type": "SEPARATOR",
                 "label": "View Settings"
@@ -118,6 +114,25 @@
                     {"value": "end", "label": "Last task"}
                 ]
             },
+            {
+                "name": "sortBy",
+                "type": "SELECT",
+                "label": "Sort By",
+                "description": "Order tasks in the chart",
+                "defaultValue": "none",
+                "selectChoices": [
+                    {"value": "none", "label": "Dataset Order"},
+                    {"value": "start_asc", "label": "Start Date (Earliest First)"},
+                    {"value": "start_desc", "label": "Start Date (Latest First)"},
+                    {"value": "end_asc", "label": "End Date (Earliest First)"},
+                    {"value": "end_desc", "label": "End Date (Latest First)"},
+                    {"value": "name_asc", "label": "Name (A-Z)"},
+                    {"value": "name_desc", "label": "Name (Z-A)"},
+                    {"value": "duration_asc", "label": "Duration (Shortest First)"},
+                    {"value": "duration_desc", "label": "Duration (Longest First)"},
+                    {"value": "dependencies", "label": "Dependencies (Topological)"}
+                ]
+            },
 
             {
                 "type": "SEPARATOR",
@@ -142,10 +157,10 @@
                 "maxI": 15
             },
             {
-                "name": "columnWidth",
+                "name": "minColumnWidth",
                 "type": "INT",
-                "label": "Column Width",
-                "description": "Width of time columns",
+                "label": "Min Column Width",
+                "description": "Minimum width of time columns (auto-scales if wider)",
                 "defaultValue": 45,
                 "minI": 20,
                 "maxI": 100
@@ -192,6 +207,14 @@
                 "type": "BOOLEAN",
                 "label": "Highlight weekends",
                 "defaultValue": true
+            },
+            {
+                "name": "tooltipColumns",
+                "type": "COLUMNS",
+                "datasetParamName": "dataset",
+                "label": "Custom Tooltip Fields",
+                "description": "Additional data to show in popup (max 5)",
+                "mandatory": false
             },
 
             {

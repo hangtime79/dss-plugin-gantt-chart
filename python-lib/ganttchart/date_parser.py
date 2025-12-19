@@ -98,7 +98,7 @@ def parse_date_to_iso(value: any) -> Tuple[Optional[str], Optional[str]]:
     # Strategy 7: Try pandas parsing for strings
     if isinstance(value, str):
         try:
-            parsed = pd.to_datetime(value, errors='coerce', infer_datetime_format=True)
+            parsed = pd.to_datetime(value, errors='coerce')
             if not pd.isna(parsed):
                 return (parsed.strftime('%Y-%m-%d'), None)
         except Exception:

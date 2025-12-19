@@ -3,6 +3,8 @@
 
     // ===== STATE =====
     let webAppConfig = {};
+    let currentTasks = [];
+    let currentGanttConfig = {};
     try {
         if (typeof dataiku !== 'undefined' && dataiku.getWebAppConfig) {
             webAppConfig = dataiku.getWebAppConfig()['webAppConfig'] || {};
@@ -125,6 +127,11 @@
 
     function renderGantt(tasks, config) {
         console.log(`Rendering Gantt with ${tasks.length} tasks`);
+        
+        // Update state for resize handling
+        currentTasks = tasks;
+        currentGanttConfig = config;
+        
         const container = document.getElementById('gantt-container');
 
         // Clear previous instance
@@ -140,6 +147,24 @@
         svg.style.height = '100%';
         container.appendChild(svg);
 
+        // Feature 4: Always Fit to Screen
+        // Calculate dynamic column width based on viewport
+        let columnWidth = config.column_width || 45; // This is now minColumnWidth
+        try {
+            const viewportWidth = container.clientWidth;
+            const dateRange = calculateDateRange(tasks, config.view_mode);
+            // Ensure we have at least 1 unit to divide by
+            const timeUnits = Math.max(1, dateRange);
+            
+            // Calculate width to fill screen, respecting minimum
+            const autoWidth = Math.floor(viewportWidth / timeUnits);
+            columnWidth = Math.max(columnWidth, autoWidth);
+            
+            console.log(`Auto-fit: Viewport=${viewportWidth}px, Units=${timeUnits}, CalcWidth=${autoWidth}px, Final=${columnWidth}px`);
+        } catch (e) {
+            console.warn('Auto-fit calculation failed, using default:', e);
+        }
+
         // Initialize Frappe Gantt
         try {
             ganttInstance = new Gantt('#gantt-svg', tasks, {
@@ -150,7 +175,7 @@
                 // Appearance
                 bar_height: config.bar_height || 30,
                 bar_corner_radius: config.bar_corner_radius || 3,
-                column_width: config.column_width || 45,
+                column_width: columnWidth,
                 padding: config.padding || 18,
 
                 // Behavior
@@ -210,6 +235,15 @@
         // Progress (if available)
         if (task.progress !== undefined && task.progress !== null) {
             html += `<div class="popup-progress">Progress: ${task.progress}%</div>`;
+        }
+
+        // Custom fields (Feature 2)
+        if (task.custom_fields) {
+            html += '<div class="popup-custom-fields">';
+            for (const [key, value] of Object.entries(task.custom_fields)) {
+                html += `<div class="custom-field"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</div>`;
+            }
+            html += '</div>';
         }
 
         // Dependencies (if any)
@@ -317,13 +351,64 @@
         return div.innerHTML;
     }
 
+    function calculateDateRange(tasks, viewMode) {
+        if (!tasks || tasks.length === 0) return 1;
+
+        let minDate = new Date(tasks[0].start);
+        let maxDate = new Date(tasks[0].end);
+
+        tasks.forEach(task => {
+            const start = new Date(task.start);
+            const end = new Date(task.end);
+            if (start < minDate) minDate = start;
+            if (end > maxDate) maxDate = end;
+        });
+
+        // Add some buffer (e.g., 1 unit before and after)
+        // Calculating duration in milliseconds
+        const diffTime = Math.abs(maxDate - minDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+        // Convert based on viewMode
+        // Frappe Gantt column units:
+        // Quarter Day, Half Day, Day -> 1 day per column approx (actually sub-day)
+        // Week -> 1 week
+        // Month -> 1 month
+        // Year -> 1 year
+        
+        // Refined estimation based on Frappe Gantt logic
+        switch (viewMode) {
+            case 'Hour':
+                return diffDays * 24;
+            case 'Quarter Day':
+                return diffDays * 4;
+            case 'Half Day':
+                return diffDays * 2;
+            case 'Day':
+                return diffDays;
+            case 'Week':
+                return diffDays / 7;
+            case 'Month':
+                return diffDays / 30;
+            case 'Year':
+                return diffDays / 365;
+            default:
+                return diffDays / 7; // Default to Week
+        }
+    }
+
     // ===== WINDOW RESIZE HANDLER =====
 
+    let resizeTimeout;
     window.addEventListener('resize', function() {
-        if (ganttInstance) {
-            // Frappe Gantt handles resize automatically via SVG
-            console.log('Window resized');
-        }
+        // Debounce resize
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (currentTasks.length > 0 && currentGanttConfig) {
+                console.log('Window resized, re-rendering...');
+                renderGantt(currentTasks, currentGanttConfig);
+            }
+        }, 200);
     });
 
     console.log('Gantt Chart webapp initialized');
