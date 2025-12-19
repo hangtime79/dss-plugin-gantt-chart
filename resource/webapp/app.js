@@ -125,8 +125,8 @@
 
     // ===== GANTT RENDERING =====
 
-    function renderGantt(tasks, config) {
-        console.log(`Rendering Gantt with ${tasks.length} tasks`);
+    function renderGantt(tasks, config, isRetry = false) {
+        console.log(`Rendering Gantt with ${tasks.length} tasks (Retry: ${isRetry})`);
         
         // Update state for resize handling
         currentTasks = tasks;
@@ -147,29 +147,10 @@
         svg.style.height = '100%';
         container.appendChild(svg);
 
-        // Feature 4: Always Fit to Screen
-        // Calculate dynamic column width based on viewport
-        let columnWidth = config.column_width || 45; // This is now minColumnWidth
-        try {
-            // Use container width, fallback to window width
-            const viewportWidth = container.clientWidth || window.innerWidth || 1000;
-            
-            // Calculate total units including Frappe's internal buffer
-            const dateRangeUnits = calculateDateRange(tasks, config.view_mode);
-            
-            // Ensure we have at least 1 unit
-            const timeUnits = Math.max(1, dateRangeUnits);
-            
-            // Calculate width to fill screen, respecting minimum
-            const autoWidth = Math.floor(viewportWidth / timeUnits);
-            
-            // Only apply auto-width if it's larger than minimum (zoom in behavior)
-            columnWidth = Math.max(columnWidth, autoWidth);
-            
-            console.log(`Auto-fit: Viewport=${viewportWidth}px, Units=${timeUnits}, CalcWidth=${autoWidth}px, Final=${columnWidth}px`);
-        } catch (e) {
-            console.warn('Auto-fit calculation failed, using default:', e);
-        }
+        // Determine column width
+        // If retrying, use the auto-calculated width stored in config
+        // Otherwise, use the configured minimum width
+        let columnWidth = config._autoWidth || config.column_width || 45;
 
         // Initialize Frappe Gantt
         try {
@@ -220,7 +201,40 @@
                 }
             });
 
-            console.log(`Gantt chart rendered successfully with ${tasks.length} tasks`);
+            // Feature 4: Always Fit to Screen (Robust 2-Pass Approach)
+            // Measure actual rendered width and scale if it's smaller than viewport
+            if (!isRetry) {
+                // We need to wait a tick for DOM update usually, but Frappe renders synchronously-ish
+                setTimeout(() => {
+                    try {
+                        const renderedSvg = document.querySelector('#gantt-svg');
+                        if (renderedSvg) {
+                            // Frappe Gantt usually sets a specific pixel width on the SVG
+                            // But getting BBox is safer to know content size
+                            const contentWidth = renderedSvg.getBBox().width;
+                            const containerWidth = container.clientWidth;
+                            
+                            // If content is significantly smaller than container (with some threshold)
+                            if (contentWidth > 0 && contentWidth < containerWidth - 20) {
+                                const ratio = containerWidth / contentWidth;
+                                const newWidth = Math.floor(columnWidth * ratio);
+                                
+                                console.log(`Auto-fit: Scaling up. Content=${contentWidth}, Container=${containerWidth}, Ratio=${ratio}, NewWidth=${newWidth}`);
+                                
+                                // Store new width and re-render
+                                config._autoWidth = newWidth;
+                                renderGantt(tasks, config, true);
+                            } else {
+                                console.log(`Auto-fit: No scaling needed. Content=${contentWidth}, Container=${containerWidth}`);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Auto-fit measurement failed:', e);
+                    }
+                }, 0);
+            } else {
+                 console.log(`Gantt chart rendered successfully (Scaled) with ${tasks.length} tasks`);
+            }
 
         } catch (error) {
             console.error('Error rendering Gantt:', error);
@@ -358,53 +372,6 @@
         return div.innerHTML;
     }
 
-    function calculateDateRange(tasks, viewMode) {
-        if (!tasks || tasks.length === 0) return 1;
-
-        let minDate = new Date(tasks[0].start);
-        let maxDate = new Date(tasks[0].end);
-
-        tasks.forEach(task => {
-            const start = new Date(task.start);
-            const end = new Date(task.end);
-            if (start < minDate) minDate = start;
-            if (end > maxDate) maxDate = end;
-        });
-
-        // Frappe Gantt adds significant padding (usually 1 month before/after)
-        // We need to account for this to calculate correct column width
-        // Adding ~30 days buffer on each side approx
-        const bufferDays = 60; 
-
-        // Duration in milliseconds
-        const diffTime = Math.abs(maxDate - minDate);
-        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        
-        // Add buffer
-        diffDays += bufferDays;
-
-        // Convert based on viewMode
-        // Frappe Gantt column units:
-        switch (viewMode) {
-            case 'Hour':
-                return diffDays * 24; // Hours
-            case 'Quarter Day':
-                return diffDays * 4;
-            case 'Half Day':
-                return diffDays * 2;
-            case 'Day':
-                return diffDays;
-            case 'Week':
-                return diffDays / 7;
-            case 'Month':
-                return diffDays / 30;
-            case 'Year':
-                return diffDays / 365;
-            default:
-                return diffDays / 7;
-        }
-    }
-
     // ===== WINDOW RESIZE HANDLER =====
 
     let resizeTimeout;
@@ -414,6 +381,8 @@
         resizeTimeout = setTimeout(() => {
             if (currentTasks.length > 0 && currentGanttConfig) {
                 console.log('Window resized, re-rendering...');
+                // Reset cached auto-width to allow new calculation
+                delete currentGanttConfig._autoWidth; 
                 renderGantt(currentTasks, currentGanttConfig);
             }
         }, 200);
