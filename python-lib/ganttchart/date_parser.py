@@ -152,6 +152,163 @@ def _try_parse_unix_timestamp(value: Union[int, float]) -> Optional[str]:
     return None
 
 
+def parse_date_to_datetime(value: any) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Parse a date value to ISO datetime format string (YYYY-MM-DD HH:mm).
+
+    This version preserves time information for finer granularity view modes.
+    Falls back to midnight (00:00) if no time component exists.
+
+    Tries multiple parsing strategies in order:
+    1. None/NaN/pd.NaT → return (None, "null_value")
+    2. pandas Timestamp → convert via strftime with time
+    3. Python datetime → convert via strftime with time
+    4. Python date (no time) → convert with 00:00 time
+    5. ISO datetime string "YYYY-MM-DDTHH:MM:SS..." → extract date and time
+    6. ISO string "YYYY-MM-DD" → add 00:00 time
+    7. String → try pd.to_datetime and preserve time
+    8. Unix timestamp → convert via datetime.fromtimestamp
+    9. Fallback → return (None, error message)
+
+    Args:
+        value: Date value in any supported format
+
+    Returns:
+        Tuple of (datetime_string, error_message)
+        - If successful: (datetime_string, None) in format "YYYY-MM-DD HH:mm"
+        - If failed: (None, error_description)
+
+    Examples:
+        >>> parse_date_to_datetime("2024-01-15")
+        ("2024-01-15 00:00", None)
+
+        >>> parse_date_to_datetime("2024-01-15T14:30:00")
+        ("2024-01-15 14:30", None)
+
+        >>> parse_date_to_datetime(pd.Timestamp("2024-01-15 09:00"))
+        ("2024-01-15 09:00", None)
+    """
+    # Strategy 1: Handle None, NaN, pd.NaT
+    if value is None:
+        return (None, "null_value")
+
+    if isinstance(value, float) and np.isnan(value):
+        return (None, "null_value")
+
+    try:
+        if pd.isna(value):  # Handles pd.NaT and other pandas null types
+            return (None, "null_value")
+    except (TypeError, ValueError):
+        pass  # Not a pandas-compatible type, continue
+
+    # Strategy 2: pandas Timestamp (preserve time)
+    if isinstance(value, pd.Timestamp):
+        try:
+            return (value.strftime('%Y-%m-%d %H:%M'), None)
+        except (ValueError, AttributeError) as e:
+            return (None, f"pandas_timestamp_error: {str(e)}")
+
+    # Strategy 3: Python datetime (preserve time)
+    if isinstance(value, datetime.datetime):
+        try:
+            return (value.strftime('%Y-%m-%d %H:%M'), None)
+        except (ValueError, AttributeError) as e:
+            return (None, f"datetime_error: {str(e)}")
+
+    # Strategy 4: Python date only (no time component)
+    if isinstance(value, datetime.date):
+        try:
+            return (f"{value.strftime('%Y-%m-%d')} 00:00", None)
+        except (ValueError, AttributeError) as e:
+            return (None, f"date_error: {str(e)}")
+
+    # Strategy 5 & 6: String parsing
+    if isinstance(value, str):
+        # Try ISO datetime "YYYY-MM-DDTHH:MM:SS..." or "YYYY-MM-DD HH:MM:SS..."
+        iso_datetime_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})')
+        match = iso_datetime_pattern.match(value)
+        if match:
+            date_part = match.group(1)
+            hour = match.group(2)
+            minute = match.group(3)
+            if _validate_date_string(date_part):
+                return (f"{date_part} {hour}:{minute}", None)
+
+        # Try ISO date "YYYY-MM-DD" - add midnight time
+        iso_date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+        if iso_date_pattern.match(value):
+            if _validate_date_string(value):
+                return (f"{value} 00:00", None)
+            else:
+                return (None, f"invalid_date: {value}")
+
+    # Strategy 7: Try pandas parsing for other string formats
+    if isinstance(value, str):
+        try:
+            parsed = pd.to_datetime(value, errors='coerce')
+            if not pd.isna(parsed):
+                return (parsed.strftime('%Y-%m-%d %H:%M'), None)
+        except Exception:
+            pass  # Fall through to next strategy
+
+    # Strategy 8: Unix timestamp (int/float in reasonable range)
+    if isinstance(value, (int, float)) and not np.isnan(value):
+        unix_result = _try_parse_unix_timestamp_with_time(value)
+        if unix_result is not None:
+            return (unix_result, None)
+
+    # Strategy 9: Fallback - unable to parse
+    return (None, f"invalid_format: {type(value).__name__}")
+
+
+def _try_parse_unix_timestamp_with_time(value: Union[int, float]) -> Optional[str]:
+    """
+    Try to parse a Unix timestamp (seconds since epoch) to ISO datetime.
+
+    Only accepts values in a reasonable range (1970-2100) to avoid
+    misinterpreting other numeric data as timestamps.
+
+    Args:
+        value: Numeric value that might be a Unix timestamp
+
+    Returns:
+        ISO datetime string (YYYY-MM-DD HH:mm) if successful, None otherwise
+    """
+    # Reasonable range: 1970-01-01 (0) to 2100-01-01 (~4102444800)
+    if 0 <= value <= 4102444800:  # ~2100-01-01
+        try:
+            # Try parsing as seconds
+            dt = datetime.datetime.fromtimestamp(value)
+            return dt.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, OSError, OverflowError):
+            # Invalid timestamp
+            return None
+
+    return None
+
+
+def validate_datetime_range(start_dt: str, end_dt: str) -> bool:
+    """
+    Validate that start_datetime <= end_datetime.
+
+    Args:
+        start_dt: Start datetime in 'YYYY-MM-DD HH:mm' format
+        end_dt: End datetime in 'YYYY-MM-DD HH:mm' format
+
+    Returns:
+        True if start <= end, False otherwise
+    """
+    if not start_dt or not end_dt:
+        return False
+
+    try:
+        start = datetime.datetime.strptime(start_dt, '%Y-%m-%d %H:%M')
+        end = datetime.datetime.strptime(end_dt, '%Y-%m-%d %H:%M')
+        return start <= end
+    except ValueError:
+        return False
+
+
 def validate_date_range(start_date: str, end_date: str) -> bool:
     """
     Validate that start_date <= end_date.

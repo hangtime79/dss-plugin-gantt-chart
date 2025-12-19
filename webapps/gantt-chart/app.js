@@ -144,14 +144,14 @@
         try {
             ganttInstance = new Gantt('#gantt-svg', tasks, {
                 // View settings
-                view_mode: config.view_mode || 'Week',
+                view_mode: config.view_mode ?? 'Week',
                 view_mode_select: config.view_mode_select !== false,
 
-                // Appearance
-                bar_height: config.bar_height || 30,
-                bar_corner_radius: config.bar_corner_radius || 3,
-                column_width: config.column_width || 45,
-                padding: config.padding || 18,
+                // Appearance - use nullish coalescing to allow 0 values
+                bar_height: config.bar_height ?? 30,
+                bar_corner_radius: config.bar_corner_radius ?? 3,
+                column_width: config.column_width ?? 45,
+                padding: config.padding ?? 18,
 
                 // Behavior
                 readonly: config.readonly !== false,
@@ -185,15 +185,62 @@
 
                 on_view_change: function(mode) {
                     console.log('View changed:', mode);
+                    // Re-enforce minimum bar widths after view mode change
+                    requestAnimationFrame(() => enforceMinimumBarWidths());
                 }
             });
 
             console.log(`Gantt chart rendered successfully with ${tasks.length} tasks`);
 
+            // Enforce minimum bar widths after render completes
+            requestAnimationFrame(() => enforceMinimumBarWidths());
+
         } catch (error) {
             console.error('Error rendering Gantt:', error);
             displayError('Rendering Error', error.message, error);
         }
+    }
+
+    // ===== BAR WIDTH ENFORCEMENT =====
+
+    /**
+     * Enforce minimum bar widths to ensure tasks are always visible.
+     * This fixes the issue where tasks with short durations (especially same-day tasks)
+     * become invisible at finer time granularities (Day, Half-Day, Hour views).
+     */
+    function enforceMinimumBarWidths() {
+        if (!ganttInstance) return;
+
+        // Minimum width is 1/4 of column width (ensures clickable/visible bars)
+        const columnWidth = ganttInstance.config?.column_width ?? 45;
+        const minWidth = Math.max(columnWidth / 4, 10); // At least 10px
+
+        const bars = document.querySelectorAll('.gantt .bar');
+        bars.forEach(bar => {
+            const currentWidth = parseFloat(bar.getAttribute('width')) || 0;
+            if (currentWidth < minWidth) {
+                bar.setAttribute('width', minWidth);
+                // Also mark short tasks for potential styling
+                const wrapper = bar.closest('.bar-wrapper');
+                if (wrapper) {
+                    wrapper.setAttribute('data-short-task', 'true');
+                }
+            }
+        });
+
+        // Also enforce on progress bars
+        const progressBars = document.querySelectorAll('.gantt .bar-progress');
+        progressBars.forEach(bar => {
+            const parentBar = bar.parentElement?.querySelector('.bar');
+            if (parentBar) {
+                const parentWidth = parseFloat(parentBar.getAttribute('width')) || 0;
+                const progressWidth = parseFloat(bar.getAttribute('width')) || 0;
+                // Progress bar should not exceed parent bar width
+                if (progressWidth > parentWidth) {
+                    bar.setAttribute('width', parentWidth);
+                }
+            }
+        });
     }
 
     // ===== POPUP BUILDER =====
