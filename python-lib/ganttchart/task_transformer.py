@@ -13,6 +13,7 @@ import logging
 from ganttchart.date_parser import parse_date_to_iso, validate_date_range
 from ganttchart.color_mapper import create_color_mapping, get_task_color_class
 from ganttchart.dependency_validator import validate_all_dependencies
+from ganttchart.sort_utils import sort_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ class TaskTransformerConfig:
     progress_column: Optional[str] = None
     dependencies_column: Optional[str] = None
     color_column: Optional[str] = None
+    tooltip_columns: Optional[List[str]] = None
+    sort_by: str = 'none'
     max_tasks: int = 1000
 
 
@@ -132,6 +135,9 @@ class TaskTransformer:
             tasks, dep_warnings = validate_all_dependencies(tasks)
             self.warnings.extend(dep_warnings)
 
+            # Sort tasks
+            tasks = sort_tasks(tasks, self.config.sort_by)
+
         # Apply maxTasks limit
         if self.config.max_tasks > 0 and len(tasks) > self.config.max_tasks:
             original_count = len(tasks)
@@ -199,6 +205,8 @@ class TaskTransformer:
             optional_cols.append(self.config.dependencies_column)
         if self.config.color_column:
             optional_cols.append(self.config.color_column)
+        if self.config.tooltip_columns:
+            optional_cols.extend(self.config.tooltip_columns)
 
         missing_optional = [col for col in optional_cols if col not in df.columns]
         if missing_optional:
@@ -282,6 +290,26 @@ class TaskTransformer:
             color_value = row[self.config.color_column]
             color_class = get_task_color_class(color_value, color_mapping)
             task['custom_class'] = color_class
+
+        # Add custom tooltip fields
+        if self.config.tooltip_columns:
+            custom_fields = {}
+            # Handle case where tooltip_columns might be a single string (should be list)
+            cols = self.config.tooltip_columns
+            if isinstance(cols, str):
+                cols = [cols]
+                
+            for col in cols:
+                if col in row:
+                    val = row[col]
+                    if not pd.isna(val):
+                        # Format dates if needed, or convert to string
+                        if hasattr(val, 'strftime'):
+                             custom_fields[col] = val.strftime('%Y-%m-%d')
+                        else:
+                             custom_fields[col] = str(val)
+            if custom_fields:
+                task['custom_fields'] = custom_fields
 
         return task
 
