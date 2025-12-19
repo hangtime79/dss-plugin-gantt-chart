@@ -27,14 +27,6 @@
                 "mandatory": true
             },
             {
-                "name": "nameColumn",
-                "type": "DATASET_COLUMN",
-                "datasetParamName": "dataset",
-                "label": "Task Name",
-                "description": "Display name for each task",
-                "mandatory": false
-            },
-            {
                 "name": "startColumn",
                 "type": "DATASET_COLUMN",
                 "datasetParamName": "dataset",
@@ -49,6 +41,20 @@
                 "label": "End Date",
                 "description": "Task end date",
                 "mandatory": true
+            }
+        ],
+        "leftBarParams": [
+            {
+                "type": "SEPARATOR",
+                "label": "Optional Data"
+            },
+            {
+                "name": "nameColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Task Name",
+                "description": "Display name for each task",
+                "mandatory": false
             },
             {
                 "name": "progressColumn",
@@ -73,9 +79,8 @@
                 "label": "Color By",
                 "description": "Categorical column for color-coding tasks",
                 "mandatory": false
-            }
-        ],
-        "leftBarParams": [
+            },
+
             {
                 "type": "SEPARATOR",
                 "label": "View Settings"
@@ -211,7 +216,7 @@
             },
             {
                 "name": "tooltipColumns",
-                "type": "COLUMNS",
+                "type": "DATASET_COLUMNS",
                 "datasetParamName": "dataset",
                 "label": "Custom Tooltip Fields",
                 "description": "Additional data to show in popup (max 5)",
