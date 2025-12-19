@@ -16,6 +16,7 @@
     "chart": {
         "datasetParamName": "dataset",
         "leftBarLabel": "Chart Configuration",
+        "topBar": "STD_FORM",
         "topBarParams": [
             {
                 "name": "idColumn",
