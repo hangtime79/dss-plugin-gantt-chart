@@ -260,23 +260,27 @@
         if (svg && ganttInstance && ganttInstance.dates && ganttInstance.options) {
             const totalWidth = ganttInstance.dates.length * ganttInstance.options.column_width;
             
-            // Frappe sets the height attribute based on rows. We must enforce it as style.
+            // Frappe sets the height attribute. We must mirror it to style.height to force scrolling.
+            // CAUTION: If it's a percentage (e.g. "100%"), do NOT convert to pixels using parseInt() as it becomes "100px".
             const frappeHeight = svg.getAttribute('height'); 
-            const totalHeight = frappeHeight ? parseInt(frappeHeight) : (svg.clientHeight || 600);
-
+            
             // Force explicit pixel dimensions to trigger scrollbar
             svg.style.width = totalWidth + 'px';
             svg.setAttribute('width', totalWidth);
             
             if (frappeHeight) {
-                svg.style.height = totalHeight + 'px';
+                if (frappeHeight.toString().endsWith('%')) {
+                    svg.style.height = frappeHeight; // Keep as %
+                } else {
+                    const h = parseInt(frappeHeight);
+                    if (!isNaN(h)) {
+                        svg.style.height = h + 'px';
+                    }
+                }
             }
             
             // Log for debugging
-            console.log(`[Dimensions] SVG: ${totalWidth}x${totalHeight}px, Container: ${container.clientWidth}x${container.clientHeight}px`);
-            
-            if (totalWidth > container.clientWidth) console.log('[Dimensions] Horizontal Scrollbar should be visible.');
-            if (totalHeight > container.clientHeight) console.log('[Dimensions] Vertical Scrollbar should be visible.');
+            console.log(`[Dimensions] SVG: Width=${totalWidth}px, HeightAttr=${frappeHeight}, Container=${container.clientWidth}x${container.clientHeight}px`);
         }
     }
 
