@@ -65,3 +65,21 @@ User reported "NONE OF THE SCROLLBARS ARE THERE".
 *   **Mechanism:** The container is now forced to show scrollbars if the inner SVG content is wider than the viewport.
 *   **Zoom In:** When zooming in (e.g., to 'Day' view), the `totalWidth` (dates * column_width) increases significantly, which will trigger the scrollbar.
 
+## 6. Enforced Vertical & Horizontal Scrollbar Fix
+
+### Issue
+User reported "no scrollbars within the frame" (vertically and horizontally), despite previous fixes.
+
+### Resolution
+*   **Vertical Dimension Logic (`app.js`):**
+    *   Updated `updateSvgDimensions()` to explicitly read the `height` attribute set by the Frappe library (which grows with row count).
+    *   Applied this `height` to `svg.style.height`, ensuring the DOM element physically expands beyond the container, triggering the browser's vertical scroll behavior.
+*   **Forced Visibility (`style.css`):**
+    *   Changed `#gantt-container` overflow from `auto` to `scroll`. This forces the browser to render scrollbar tracks at all times, providing immediate visual confirmation to the user that scrolling is enabled, even if content currently fits.
+
+### Verification
+*   **Vertical Scroll:** Confirmed that `svg.style.height` is now synchronized with the internal chart height.
+*   **Horizontal Scroll:** Confirmed that `svg.style.width` is calculated and applied.
+*   **Visuals:** Scrollbars are now forced to be visible.
+
+
