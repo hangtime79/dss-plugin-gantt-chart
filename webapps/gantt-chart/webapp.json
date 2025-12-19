@@ -16,12 +16,8 @@
     "chart": {
         "datasetParamName": "dataset",
         "leftBarLabel": "Chart Configuration",
-        "topBar": "NONE",
-        "leftBarParams": [
-            {
-                "type": "SEPARATOR",
-                "label": "Data Columns"
-            },
+        "topBar": "STD_FORM",
+        "topBarParams": [
             {
                 "name": "idColumn",
                 "type": "DATASET_COLUMN",
@@ -29,14 +25,6 @@
                 "label": "Task ID",
                 "description": "Unique identifier for each task (required for dependencies)",
                 "mandatory": true
-            },
-            {
-                "name": "nameColumn",
-                "type": "DATASET_COLUMN",
-                "datasetParamName": "dataset",
-                "label": "Task Name",
-                "description": "Display name for each task",
-                "mandatory": false
             },
             {
                 "name": "startColumn",
@@ -53,6 +41,20 @@
                 "label": "End Date",
                 "description": "Task end date",
                 "mandatory": true
+            }
+        ],
+        "leftBarParams": [
+            {
+                "type": "SEPARATOR",
+                "label": "Optional Columns"
+            },
+            {
+                "name": "nameColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Task Name",
+                "description": "Display name for each task",
+                "mandatory": false
             },
             {
                 "name": "progressColumn",
@@ -116,6 +118,25 @@
                     {"value": "today", "label": "Today"},
                     {"value": "start", "label": "First task"},
                     {"value": "end", "label": "Last task"}
+                ]
+            },
+            {
+                "name": "sortBy",
+                "type": "SELECT",
+                "label": "Sort Tasks By",
+                "description": "Order tasks are displayed in the chart",
+                "defaultValue": "none",
+                "selectChoices": [
+                    {"value": "none", "label": "Dataset Order"},
+                    {"value": "start_asc", "label": "Start Date (Earliest First)"},
+                    {"value": "start_desc", "label": "Start Date (Latest First)"},
+                    {"value": "end_asc", "label": "End Date (Earliest First)"},
+                    {"value": "end_desc", "label": "End Date (Latest First)"},
+                    {"value": "name_asc", "label": "Name (A-Z)"},
+                    {"value": "name_desc", "label": "Name (Z-A)"},
+                    {"value": "duration_asc", "label": "Duration (Shortest First)"},
+                    {"value": "duration_desc", "label": "Duration (Longest First)"},
+                    {"value": "dependencies", "label": "Dependencies (Topological)"}
                 ]
             },
 
