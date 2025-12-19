@@ -148,6 +148,19 @@ Cause: The previous fix in `app.js` used `parseInt()` on the `height` attribute.
 *   **Container:** `.gantt-container` is `height: 100%`.
 *   **Content:** SVG should now be either `100%` (filling container) OR explicit pixel height (e.g., `2000px` from Frappe), pushing the container to scroll.
 
+## 11. Forced Height Debugging
+
+### Issue
+User reported "No change" with v0.1.4. Suggested forcing the height to 2000px to isolate the scrolling mechanics from the dimension calculation logic.
+
+### Resolution
+*   **Force Height (`app.js`):** In `updateSvgDimensions()`, hardcoded `svg.style.height = '2000px'`, bypassing the attribute parsing logic entirely.
+*   **Version Bump:** Updated indicator to `v0.1.5-DEBUG (Force Height 2000px)`.
+
+### Purpose
+To definitively prove if the container *can* scroll vertically when content is confirmed to be large. If this works, the problem is in how Frappe/JS reports the height. If this fails, the problem is in CSS overflow rules.
+
+
 
 
 
