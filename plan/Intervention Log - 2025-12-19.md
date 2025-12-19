@@ -47,3 +47,21 @@ After deleting the `webapps/` files, the platform reported a "no JavaScript file
 *   **Restored:** Moved `resource/webapp/style.css` to `webapps/gantt-chart/style.css`.
 *   **Updated:** Modified `body.html` to remove the manual `<script>` and `<link>` tags for these files, relying on the platform's standard auto-loading behavior.
 *   **Result:** The webapp now has the required `app.js` in the root, containing all the latest features, and no longer dual-loads files.
+
+## 5. Scrollbar Visibility Fix
+
+### Issue
+User reported "NONE OF THE SCROLLBARS ARE THERE".
+
+### Resolution
+*   **CSS Hardening (`style.css`):**
+    *   Forced `#gantt-container` to `overflow: auto`.
+    *   Added `::-webkit-scrollbar` pseudo-elements to ensure the scrollbar is visually rendered and distinct (width 12px, gray track/thumb).
+*   **JS Logic (`app.js`):**
+    *   Updated `updateSvgDimensions()` to explicitly set `svg.style.width` to `totalWidth + 'px'`.
+    *   Added debug logs to confirm when content exceeds viewport width.
+
+### Verification
+*   **Mechanism:** The container is now forced to show scrollbars if the inner SVG content is wider than the viewport.
+*   **Zoom In:** When zooming in (e.g., to 'Day' view), the `totalWidth` (dates * column_width) increases significantly, which will trigger the scrollbar.
+
