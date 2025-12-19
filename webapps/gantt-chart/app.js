@@ -268,6 +268,10 @@
             svg.style.width = totalWidth + 'px';
             svg.setAttribute('width', totalWidth);
             
+            // DEBUG: User requested forcing height to 2000px to verify scrolling
+            console.log('[DEBUG] Forcing SVG height to 2000px');
+            svg.style.height = '2000px'; 
+            /*
             if (frappeHeight) {
                 if (frappeHeight.toString().endsWith('%')) {
                     svg.style.height = frappeHeight; // Keep as %
@@ -278,9 +282,10 @@
                     }
                 }
             }
+            */
             
             // Log for debugging
-            console.log(`[Dimensions] SVG: Width=${totalWidth}px, HeightAttr=${frappeHeight}, Container=${container.clientWidth}x${container.clientHeight}px`);
+            console.log(`[Dimensions] SVG: Width=${totalWidth}px, Height=2000px (FORCED), Container=${container.clientWidth}x${container.clientHeight}px`);
         }
     }
 
