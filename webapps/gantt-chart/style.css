@@ -67,7 +67,8 @@ html, body {
 #gantt-container {
     flex: 1;
     width: 100%;
-    overflow: auto; /* Use auto to show scrollbars only when needed, or scroll to force */
+    /* Force scrollbars to always be visible (visual confirmation) */
+    overflow: scroll; 
     position: relative;
     min-height: 0;
     /* Force hardware acceleration for smoother scrolling */
