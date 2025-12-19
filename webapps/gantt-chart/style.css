@@ -67,39 +67,49 @@ html, body {
 #gantt-container {
     flex: 1;
     width: 100%;
-    /* Force scrollbars to always be visible (visual confirmation) */
-    overflow: scroll; 
+    /* Let the inner .gantt-container handle scrolling */
+    overflow: hidden; 
     position: relative;
     min-height: 0;
-    /* Force hardware acceleration for smoother scrolling */
+}
+
+/* Force the library's internal wrapper to fill our container and handle scrolling */
+.gantt-container {
+    height: 100% !important;
+    width: 100% !important;
+    overflow: auto !important;
+    border: none !important;
+    /* Ensure hardware acceleration on the scroller */
     transform: translateZ(0);
     -webkit-overflow-scrolling: touch;
 }
 
-/* Ensure scrollbars are always visible and styled */
-#gantt-container::-webkit-scrollbar {
+/* Style the scrollbars on the inner container */
+.gantt-container::-webkit-scrollbar {
     width: 12px;
     height: 12px;
 }
 
-#gantt-container::-webkit-scrollbar-track {
+.gantt-container::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-#gantt-container::-webkit-scrollbar-thumb {
+.gantt-container::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
     border: 2px solid #f1f1f1;
 }
 
-#gantt-container::-webkit-scrollbar-thumb:hover {
+.gantt-container::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
 
-#gantt-container::-webkit-scrollbar-corner {
+.gantt-container::-webkit-scrollbar-corner {
     background: #f1f1f1;
 }
+
+/* We don't need scrollbar styles on #gantt-container anymore */
 
 #gantt-container svg {
     display: block;
