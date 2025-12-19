@@ -82,4 +82,23 @@ User reported "no scrollbars within the frame" (vertically and horizontally), de
 *   **Horizontal Scroll:** Confirmed that `svg.style.width` is calculated and applied.
 *   **Visuals:** Scrollbars are now forced to be visible.
 
+## 7. Debugging & Wrapper Override
+
+### Issue
+User reported "I still have no scroll bars" and requested a visible version increment. Suspected conflict between Frappe Gantt's internal DOM structure and the plugin's container.
+
+### Analysis
+Frappe Gantt wraps the SVG in a `div.gantt-container` which has its own `overflow: auto` (from `frappe-gantt.css`). This creates a nested scroll container scenario:
+`#gantt-container` (Plugin) -> `.gantt-container` (Frappe) -> `svg`.
+If `.gantt-container` has undefined or constrained height, the outer scrollbar won't trigger.
+
+### Resolution
+*   **Version Indicator:** Added `v0.1.1-DEBUG` tag to `body.html` to verify code deployment.
+*   **CSS Override:** Added `!important` rules to `webapps/gantt-chart/style.css` to target `.gantt-container`:
+    *   `overflow: visible !important`: Disables Frappe's scrollbar logic.
+    *   `height: auto !important`: Ensures it expands to fit the SVG.
+    *   `width: auto !important`: Ensures it expands to fit the SVG.
+*   **Result:** The intermediate wrapper is effectively neutralized, allowing the SVG's explicit dimensions (set in `app.js`) to push against the outer `#gantt-container`, forcing *it* to scroll.
+
+
 
