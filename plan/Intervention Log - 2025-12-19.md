@@ -132,6 +132,23 @@ User reported partial scrolling (Left/Right works via touchpad, Up/Down broken) 
 *   **Horizontal Scroll:** Similarly, the wider SVG content will trigger the wrapper's horizontal scrollbar.
 *   **Visuals:** Scrollbar styles are applied to `.gantt-container`.
 
+## 10. Height Parsing Fix
+
+### Issue
+User reported "sliver of the chart like 70 px high" and "no vertical bar".
+Cause: The previous fix in `app.js` used `parseInt()` on the `height` attribute. If Frappe (or browser default) set `height="100%"`, `parseInt("100%")` returns `100`, which was then applied as `height: 100px`. This collapsed the SVG to 100px tall.
+
+### Resolution
+*   **Parsing Logic (`app.js`):** Updated `updateSvgDimensions()` to check if the height attribute string ends with `%`.
+    *   If `%`: Keep it as-is (e.g., `100%`), allowing it to fill the container.
+    *   If Number: Parse and apply as `px` to ensure the content expands and triggers the container's scrollbar.
+*   **Version Bump:** Updated indicator to `v0.1.4-DEBUG`.
+
+### Verification
+*   **Container:** `.gantt-container` is `height: 100%`.
+*   **Content:** SVG should now be either `100%` (filling container) OR explicit pixel height (e.g., `2000px` from Frappe), pushing the container to scroll.
+
+
 
 
 
