@@ -84,14 +84,17 @@
             fetchGanttConfig()
         ])
         .then(([tasksResponse, ganttConfig]) => {
-            hideLoading();
+            // Loading is now hidden inside renderGantt to prevent layout flash
+            // hideLoading(); 
 
             if (tasksResponse.error) {
+                hideLoading(); // Ensure hidden on error
                 displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                 return;
             }
 
             if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
+                hideLoading(); // Ensure hidden on empty
                 displayError('No Tasks', 'No valid tasks to display.');
                 return;
             }
@@ -143,8 +146,10 @@
         // Create SVG element for Gantt
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.id = 'gantt-svg';
-        svg.style.width = '100%';
-        svg.style.height = '100%';
+        // Remove explicit 100% width/height to allow library to set correct dimensions
+        // and enable scrolling for wide charts (e.g. Day view)
+        // svg.style.width = '100%'; 
+        // svg.style.height = '100%';
         container.appendChild(svg);
 
         // Determine column width
@@ -215,6 +220,7 @@
                             const containerWidth = container.clientWidth;
                             
                             // If content is significantly smaller than container (with some threshold)
+                            // And checking if we actually have tasks (contentWidth > 0)
                             if (contentWidth > 0 && contentWidth < containerWidth - 20) {
                                 const ratio = containerWidth / contentWidth;
                                 const newWidth = Math.floor(columnWidth * ratio);
@@ -224,6 +230,7 @@
                                 // Store new width and re-render
                                 config._autoWidth = newWidth;
                                 renderGantt(tasks, config, true);
+                                return; // Don't hide loading yet, we are re-rendering
                             } else {
                                 console.log(`Auto-fit: No scaling needed. Content=${contentWidth}, Container=${containerWidth}`);
                             }
@@ -231,13 +238,16 @@
                     } catch (e) {
                         console.warn('Auto-fit measurement failed:', e);
                     }
+                    hideLoading(); // Done rendering (Pass 1)
                 }, 0);
             } else {
                  console.log(`Gantt chart rendered successfully (Scaled) with ${tasks.length} tasks`);
+                 hideLoading(); // Done rendering (Pass 2)
             }
 
         } catch (error) {
             console.error('Error rendering Gantt:', error);
+            hideLoading(); // Ensure hidden on error
             displayError('Rendering Error', error.message, error);
         }
     }
