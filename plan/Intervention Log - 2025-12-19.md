@@ -35,3 +35,15 @@ The application was behaving inconsistently (double loading, features disappeari
 *   **Unit Tests:** 90/90 passed (including new Sort Utils).
 *   **Version:** Bumped to `0.1.0` in `plugin.json`.
 *   **Git State:** Clean.
+
+## 4. Correction: File Structure Fix
+
+### Issue
+After deleting the `webapps/` files, the platform reported a "no JavaScript file" error.
+**Cause:** Dataiku "Standard" webapps *require* `app.js` to exist in the webapp root (`webapps/<plugin_id>/`). While `body.html` can load external scripts, the platform's initialization process expects the root file.
+
+### Resolution
+*   **Restored:** Moved `resource/webapp/app.js` (the correct, v0.1.0 version) to `webapps/gantt-chart/app.js`.
+*   **Restored:** Moved `resource/webapp/style.css` to `webapps/gantt-chart/style.css`.
+*   **Updated:** Modified `body.html` to remove the manual `<script>` and `<link>` tags for these files, relying on the platform's standard auto-loading behavior.
+*   **Result:** The webapp now has the required `app.js` in the root, containing all the latest features, and no longer dual-loads files.
