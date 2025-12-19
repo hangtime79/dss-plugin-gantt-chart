@@ -100,5 +100,21 @@ If `.gantt-container` has undefined or constrained height, the outer scrollbar w
     *   `width: auto !important`: Ensures it expands to fit the SVG.
 *   **Result:** The intermediate wrapper is effectively neutralized, allowing the SVG's explicit dimensions (set in `app.js`) to push against the outer `#gantt-container`, forcing *it* to scroll.
 
+## 8. Blank Chart & Race Condition Fix
+
+### Issue
+User reported "no values, anywhere" after the CSS override. Also identified a potential race condition where `app.js` (auto-loaded) might run before the Frappe Gantt library (in `body.html`).
+
+### Resolution
+*   **CSS Revert (`style.css`):** Removed the `.gantt-container` override. It likely collapsed the container height to 0 because the SVG inside has no intrinsic height until rendered, creating a catch-22.
+*   **Load Retry (`app.js`):** Implemented a polling mechanism that waits for `typeof Gantt !== 'undefined'` before initializing the chart. This handles the indeterminate loading order of platform-managed scripts vs. `body.html` scripts.
+*   **Version Bump:** Updated indicator to `v0.1.2-DEBUG`.
+
+### Verification
+*   **Visibility:** Chart should reappear (reverted CSS).
+*   **Reliability:** Chart should load consistently even if scripts load out of order.
+*   **Scrollbars:** `overflow: scroll` (forced) remains in effect.
+
+
 
 
