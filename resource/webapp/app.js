@@ -198,7 +198,8 @@
 
                 // Custom popup content
                 popup: function(task) {
-                    // console.log('Popup task:', task); // Debugging custom fields
+                    console.log('Popup task object:', task); // Debug: Inspect full task object
+                    if (task.custom_fields) console.log('Custom fields:', task.custom_fields);
                     return buildPopupHTML(task);
                 },
 
@@ -278,13 +279,12 @@
         `;
 
         // Date range handling
-        // Frappe Gantt tasks usually have _start (Date) and _end (Date)
-        // Or sometimes start/end are preserved as strings.
-        // We'll try to use the formatted date provided by Frappe if available,
-        // or format the Date objects ourselves.
         let startStr = task.start;
         let endStr = task.end;
         
+        // Debug date values
+        if (!startStr && !task._start) console.warn('Task missing start date:', task);
+
         // If they are Date objects (Frappe often converts them)
         if (task._start && task._end) {
             startStr = formatDate(task._start);
@@ -299,12 +299,19 @@
         }
 
         // Custom fields (Feature 2)
-        if (task.custom_fields) {
+        // Check both custom_fields (our property) and direct properties if flattened
+        const customFields = task.custom_fields || {};
+        
+        if (Object.keys(customFields).length > 0) {
             html += '<div class="popup-custom-fields">';
-            for (const [key, value] of Object.entries(task.custom_fields)) {
+            for (const [key, value] of Object.entries(customFields)) {
                 html += `<div class="custom-field"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</div>`;
             }
             html += '</div>';
+        } else {
+             // Fallback: check if they are top-level properties (in case Frappe flattened them)
+             // This is harder without knowing the keys.
+             console.log('No custom_fields found on task');
         }
 
         // Dependencies (if any)
@@ -334,18 +341,19 @@
     // ===== UI HELPERS =====
 
     function scrollToDate(targetDateStr) {
-        if (!ganttInstance) return;
-        
-        // Find the position of this date in the Gantt
-        // We can approximate or try to find a task near this date.
-        // Or, simpler: calculate offset based on date difference from start.
+        if (!ganttInstance) {
+            console.error('Scroll failed: Gantt instance not initialized');
+            return;
+        }
         
         try {
             const targetDate = new Date(targetDateStr);
-            const startDate = ganttInstance.gantt_start; // Frappe Gantt internal
+            // Frappe Gantt 0.6.1+ uses `gantt_start`
+            // Older versions might use `start`
+            const startDate = ganttInstance.gantt_start || ganttInstance.start; 
             
             if (!startDate) {
-                console.warn('Cannot scroll: Gantt start date not found');
+                console.warn('Cannot scroll: Gantt start date not found. Instance keys:', Object.keys(ganttInstance));
                 return;
             }
 
@@ -353,14 +361,14 @@
             const diffDays = diffTime / (1000 * 60 * 60 * 24);
             
             // Get column width from config or instance
-            // Frappe Gantt stores options in `options`
             const columnWidth = ganttInstance.options.column_width;
             const viewMode = ganttInstance.options.view_mode;
             
+            console.log(`Scrolling to ${targetDateStr}. Start: ${startDate}, DiffDays: ${diffDays}, ColWidth: ${columnWidth}, Mode: ${viewMode}`);
+
             let offset = 0;
             
             // Approximate offset calculation based on view mode
-            // This mirrors Frappe's internal logic
             if (viewMode === 'Day') {
                  offset = diffDays * columnWidth;
             } else if (viewMode === 'Week') {
@@ -380,7 +388,6 @@
             const container = document.getElementById('gantt-container');
             // Center the date
             container.scrollLeft = offset - (container.clientWidth / 2);
-            console.log(`Scrolled to ${targetDateStr}, offset: ${offset}`);
             
         } catch (e) {
             console.error('Scroll to date failed:', e);
