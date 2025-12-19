@@ -151,13 +151,19 @@
         // Calculate dynamic column width based on viewport
         let columnWidth = config.column_width || 45; // This is now minColumnWidth
         try {
-            const viewportWidth = container.clientWidth;
-            const dateRange = calculateDateRange(tasks, config.view_mode);
-            // Ensure we have at least 1 unit to divide by
-            const timeUnits = Math.max(1, dateRange);
+            // Use container width, fallback to window width
+            const viewportWidth = container.clientWidth || window.innerWidth || 1000;
+            
+            // Calculate total units including Frappe's internal buffer
+            const dateRangeUnits = calculateDateRange(tasks, config.view_mode);
+            
+            // Ensure we have at least 1 unit
+            const timeUnits = Math.max(1, dateRangeUnits);
             
             // Calculate width to fill screen, respecting minimum
             const autoWidth = Math.floor(viewportWidth / timeUnits);
+            
+            // Only apply auto-width if it's larger than minimum (zoom in behavior)
             columnWidth = Math.max(columnWidth, autoWidth);
             
             console.log(`Auto-fit: Viewport=${viewportWidth}px, Units=${timeUnits}, CalcWidth=${autoWidth}px, Final=${columnWidth}px`);
@@ -365,22 +371,23 @@
             if (end > maxDate) maxDate = end;
         });
 
-        // Add some buffer (e.g., 1 unit before and after)
-        // Calculating duration in milliseconds
+        // Frappe Gantt adds significant padding (usually 1 month before/after)
+        // We need to account for this to calculate correct column width
+        // Adding ~30 days buffer on each side approx
+        const bufferDays = 60; 
+
+        // Duration in milliseconds
         const diffTime = Math.abs(maxDate - minDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        // Add buffer
+        diffDays += bufferDays;
 
         // Convert based on viewMode
         // Frappe Gantt column units:
-        // Quarter Day, Half Day, Day -> 1 day per column approx (actually sub-day)
-        // Week -> 1 week
-        // Month -> 1 month
-        // Year -> 1 year
-        
-        // Refined estimation based on Frappe Gantt logic
         switch (viewMode) {
             case 'Hour':
-                return diffDays * 24;
+                return diffDays * 24; // Hours
             case 'Quarter Day':
                 return diffDays * 4;
             case 'Half Day':
@@ -394,7 +401,7 @@
             case 'Year':
                 return diffDays / 365;
             default:
-                return diffDays / 7; // Default to Week
+                return diffDays / 7;
         }
     }
 
