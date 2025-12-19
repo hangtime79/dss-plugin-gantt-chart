@@ -6,13 +6,56 @@ html, body {
     height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+#control-bar {
+    height: 40px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #333;
+}
+
+.date-input {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.btn {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+}
+
+.btn:hover {
+    background: #f0f0f0;
 }
 
 #gantt-container {
     width: 100%;
-    height: 100%;
-    overflow: auto;
+    flex: 1; /* Take remaining height */
+    overflow: auto; /* Enable scrollbars */
     position: relative;
+    /* Ensure scrollbar doesn't get hidden */
+    padding-bottom: 2px; 
 }
 
 /* ===== LOADING OVERLAY ===== */

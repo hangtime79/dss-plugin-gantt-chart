@@ -88,6 +88,10 @@ def get_tasks():
             }), 400
 
         # Build transformer config
+        tooltip_cols = config.get('tooltipColumns')
+        if tooltip_cols and isinstance(tooltip_cols, list):
+            tooltip_cols.sort()
+            
         try:
             transformer_config = TaskTransformerConfig(
                 id_column=config.get('idColumn'),
@@ -97,7 +101,7 @@ def get_tasks():
                 progress_column=config.get('progressColumn'),
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
-                tooltip_columns=config.get('tooltipColumns'),
+                tooltip_columns=tooltip_cols,
                 sort_by=config.get('sortBy', 'none'),
                 max_tasks=int(config.get('maxTasks', 1000))
             )

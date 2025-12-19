@@ -1,6 +1,14 @@
 <link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
 <link rel="stylesheet" href="/plugins/gantt-chart/resource/webapp/style.css">
 
+<div id="control-bar">
+    <div class="control-group">
+        <label for="goto-date">Go to:</label>
+        <input type="date" id="goto-date" class="date-input">
+        <button id="goto-btn" class="btn">Go</button>
+    </div>
+</div>
+
 <div id="gantt-container"></div>
 
 <div id="loading" class="loading-overlay">

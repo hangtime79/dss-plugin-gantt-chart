@@ -17,6 +17,20 @@
     // ===== INITIALIZATION =====
 
     console.log('Gantt Chart webapp initializing...');
+    
+    // Initialize UI controls
+    const gotoBtn = document.getElementById('goto-btn');
+    if (gotoBtn) {
+        gotoBtn.addEventListener('click', function() {
+            const dateInput = document.getElementById('goto-date');
+            if (dateInput && dateInput.value && ganttInstance) {
+                 // Frappe Gantt usually has a scroll logic. 
+                 // We can use the 'scroll_to' option but that's init-only.
+                 // We might need to manually scroll the container.
+                 scrollToDate(dateInput.value);
+            }
+        });
+    }
 
     try {
         // 1. Try to initialize immediately with synchronous config
@@ -255,13 +269,29 @@
     // ===== POPUP BUILDER =====
 
     function buildPopupHTML(task) {
+        // Robust name handling
+        const name = task.name || task.id || 'Untitled Task';
+        
         let html = `
             <div class="gantt-popup">
-                <div class="popup-title">${escapeHtml(task.name)}</div>
+                <div class="popup-title">${escapeHtml(name)}</div>
         `;
 
-        // Date range
-        html += `<div class="popup-dates">${task.start} to ${task.end}</div>`;
+        // Date range handling
+        // Frappe Gantt tasks usually have _start (Date) and _end (Date)
+        // Or sometimes start/end are preserved as strings.
+        // We'll try to use the formatted date provided by Frappe if available,
+        // or format the Date objects ourselves.
+        let startStr = task.start;
+        let endStr = task.end;
+        
+        // If they are Date objects (Frappe often converts them)
+        if (task._start && task._end) {
+            startStr = formatDate(task._start);
+            endStr = formatDate(task._end);
+        }
+
+        html += `<div class="popup-dates">${escapeHtml(startStr)} to ${escapeHtml(endStr)}</div>`;
 
         // Progress (if available)
         if (task.progress !== undefined && task.progress !== null) {
@@ -291,7 +321,71 @@
         return html;
     }
 
+    function formatDate(date) {
+        if (!date) return '';
+        if (typeof date === 'string') return date;
+        // Simple YYYY-MM-DD format
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     // ===== UI HELPERS =====
+
+    function scrollToDate(targetDateStr) {
+        if (!ganttInstance) return;
+        
+        // Find the position of this date in the Gantt
+        // We can approximate or try to find a task near this date.
+        // Or, simpler: calculate offset based on date difference from start.
+        
+        try {
+            const targetDate = new Date(targetDateStr);
+            const startDate = ganttInstance.gantt_start; // Frappe Gantt internal
+            
+            if (!startDate) {
+                console.warn('Cannot scroll: Gantt start date not found');
+                return;
+            }
+
+            const diffTime = targetDate - startDate;
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            
+            // Get column width from config or instance
+            // Frappe Gantt stores options in `options`
+            const columnWidth = ganttInstance.options.column_width;
+            const viewMode = ganttInstance.options.view_mode;
+            
+            let offset = 0;
+            
+            // Approximate offset calculation based on view mode
+            // This mirrors Frappe's internal logic
+            if (viewMode === 'Day') {
+                 offset = diffDays * columnWidth;
+            } else if (viewMode === 'Week') {
+                 offset = (diffDays / 7) * columnWidth;
+            } else if (viewMode === 'Month') {
+                 offset = (diffDays / 30) * columnWidth;
+            } else if (viewMode === 'Year') {
+                 offset = (diffDays / 365) * columnWidth;
+            } else if (viewMode === 'Quarter Day') {
+                 offset = (diffDays * 4) * columnWidth;
+            } else if (viewMode === 'Half Day') {
+                 offset = (diffDays * 2) * columnWidth;
+            } else if (viewMode === 'Hour') {
+                 offset = (diffDays * 24) * columnWidth;
+            }
+            
+            const container = document.getElementById('gantt-container');
+            // Center the date
+            container.scrollLeft = offset - (container.clientWidth / 2);
+            console.log(`Scrolled to ${targetDateStr}, offset: ${offset}`);
+            
+        } catch (e) {
+            console.error('Scroll to date failed:', e);
+        }
+    }
 
     function showLoading() {
         const loading = document.getElementById('loading');
