@@ -192,6 +192,7 @@
 
                 // Custom popup content
                 popup: function(task) {
+                    // console.log('Popup task:', task); // Debugging custom fields
                     return buildPopupHTML(task);
                 },
 
