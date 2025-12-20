@@ -124,6 +124,18 @@
         .then(tasksResponse => {
             hideLoading();
 
+            // DEBUG: Check what backend returned
+            console.log('=== BACKEND RESPONSE DEBUG ===');
+            console.log('Total tasks received:', tasksResponse.tasks?.length);
+            if (tasksResponse.tasks) {
+                tasksResponse.tasks.forEach(task => {
+                    if (task.dependencies) {
+                        console.log(`Backend task ${task.id} dependencies:`, task.dependencies, `(type: ${typeof task.dependencies}, isArray: ${Array.isArray(task.dependencies)})`);
+                    }
+                });
+            }
+            console.log('=== END BACKEND DEBUG ===');
+
             if (tasksResponse.error) {
                 displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                 return;
