@@ -420,3 +420,215 @@ class TestTaskTransformer:
         assert len(fields) == 1
         assert fields[0]['label'] == 'col1'
         assert fields[0]['value'] == 'Value'
+
+
+class TestIDNormalization:
+    """Tests for ID normalization and type handling."""
+
+    def test_normalize_id_integer(self):
+        """Test normalization of integer IDs."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        
+        # Integer should convert to string
+        assert transformer._normalize_id(277) == '277'
+        assert transformer._normalize_id(0) == '0'
+        assert transformer._normalize_id(-5) == '-5'
+
+    def test_normalize_id_float_whole_number(self):
+        """Test normalization of whole-number floats (Pandas NaN column issue)."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        
+        # Whole number floats should convert to int representation
+        assert transformer._normalize_id(277.0) == '277'
+        assert transformer._normalize_id(0.0) == '0'
+        assert transformer._normalize_id(-5.0) == '-5'
+
+    def test_normalize_id_float_decimal(self):
+        """Test normalization of actual decimal floats."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        
+        # Actual decimals should be preserved
+        assert transformer._normalize_id(3.14) == '3.14'
+        assert transformer._normalize_id(0.5) == '0.5'
+        assert transformer._normalize_id(-1.75) == '-1.75'
+
+    def test_normalize_id_string(self):
+        """Test normalization of string IDs."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        
+        assert transformer._normalize_id('abc') == 'abc'
+        assert transformer._normalize_id('  whitespace  ') == 'whitespace'
+        assert transformer._normalize_id('123') == '123'
+
+    def test_normalize_id_nan(self):
+        """Test normalization of NaN values."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        
+        assert transformer._normalize_id(np.nan) == ''
+        assert transformer._normalize_id(pd.NA) == ''
+        assert transformer._normalize_id(None) == ''
+
+    def test_pandas_type_mismatch_scenario(self):
+        """Test the real-world Pandas type mismatch scenario."""
+        # Simulate Pandas behavior: ID column (no NaNs) = int, Dependency column (has NaNs) = float
+        df = pd.DataFrame({
+            'id': [276, 277, 278],  # Will be int64
+            'name': ['Task 276', 'Task 277', 'Task 278'],
+            'start': ['2024-01-01', '2024-01-02', '2024-01-03'],
+            'end': ['2024-01-02', '2024-01-03', '2024-01-04'],
+            'deps': [np.nan, 276.0, 277.0]  # Will be float64 due to NaN
+        })
+        
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            dependencies_column='deps'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+        
+        # Task 276: int ID, no dependencies
+        assert result['tasks'][0]['id'] == '276'
+        assert result['tasks'][0]['dependencies'] == []
+        
+        # Task 277: int ID, float dependency
+        assert result['tasks'][1]['id'] == '277'
+        assert result['tasks'][1]['dependencies'] == ['276']  # Should match!
+        
+        # Task 278: int ID, float dependency
+        assert result['tasks'][2]['id'] == '278'
+        assert result['tasks'][2]['dependencies'] == ['277']  # Should match!
+
+    def test_multiple_dependencies_numeric(self):
+        """Test multiple numeric dependencies in comma-separated string."""
+        df = pd.DataFrame({
+            'id': [1, 2, 3, 4],
+            'name': ['A', 'B', 'C', 'D'],
+            'start': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04'],
+            'end': ['2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05'],
+            'deps': ['', '1', '1, 2', '2, 3']  # Multiple deps as comma-separated string
+        })
+        
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            dependencies_column='deps'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+        
+        assert result['tasks'][0]['dependencies'] == []
+        assert result['tasks'][1]['dependencies'] == ['1']
+        assert result['tasks'][2]['dependencies'] == ['1', '2']
+        assert result['tasks'][3]['dependencies'] == ['2', '3']
+
+    def test_multiple_dependencies_with_floats(self):
+        """Test multiple float dependencies (Pandas NaN scenario)."""
+        df = pd.DataFrame({
+            'id': [1, 2, 3, 4],
+            'name': ['A', 'B', 'C', 'D'],
+            'start': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04'],
+            'end': ['2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05'],
+            'deps': [np.nan, '1.0', '1.0, 2.0', '2.0, 3.0']  # Floats in strings
+        })
+        
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            dependencies_column='deps'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+        
+        # Float deps in strings should be normalized to ints
+        assert result['tasks'][0]['dependencies'] == []
+        assert result['tasks'][1]['dependencies'] == ['1']
+        assert result['tasks'][2]['dependencies'] == ['1', '2']
+        assert result['tasks'][3]['dependencies'] == ['2', '3']
+
+    def test_dependency_whitespace_handling(self):
+        """Test that whitespace in dependency strings is handled correctly."""
+        df = pd.DataFrame({
+            'id': ['A', 'B', 'C'],
+            'name': ['Task A', 'Task B', 'Task C'],
+            'start': ['2024-01-01', '2024-01-02', '2024-01-03'],
+            'end': ['2024-01-02', '2024-01-03', '2024-01-04'],
+            'deps': ['', '  A  ', ' A , B ']  # Extra whitespace
+        })
+        
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            dependencies_column='deps'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+        
+        assert result['tasks'][0]['dependencies'] == []
+        assert result['tasks'][1]['dependencies'] == ['A']
+        assert result['tasks'][2]['dependencies'] == ['A', 'B']
+
+    def test_string_ids_with_dependencies(self):
+        """Test string IDs with string dependencies."""
+        df = pd.DataFrame({
+            'id': ['task_a', 'task_b', 'task_c'],
+            'name': ['Task A', 'Task B', 'Task C'],
+            'start': ['2024-01-01', '2024-01-02', '2024-01-03'],
+            'end': ['2024-01-02', '2024-01-03', '2024-01-04'],
+            'deps': ['', 'task_a', 'task_a, task_b']
+        })
+        
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            dependencies_column='deps'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+        
+        assert result['tasks'][0]['id'] == 'task_a'
+        assert result['tasks'][0]['dependencies'] == []
+        assert result['tasks'][1]['id'] == 'task_b'
+        assert result['tasks'][1]['dependencies'] == ['task_a']
+        assert result['tasks'][2]['id'] == 'task_c'
+        assert result['tasks'][2]['dependencies'] == ['task_a', 'task_b']
