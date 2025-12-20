@@ -80,6 +80,18 @@
                 "description": "Categorical column for color-coding tasks",
                 "mandatory": false
             },
+            {
+                "type": "SEPARATOR",
+                "label": "Tooltip Fields"
+            },
+            {
+                "name": "tooltipColumns",
+                "type": "DATASET_COLUMNS",
+                "datasetParamName": "dataset",
+                "label": "Additional Fields",
+                "description": "Select columns to display in task popup. Drag to reorder.",
+                "mandatory": false
+            },
 
             {
                 "type": "SEPARATOR",

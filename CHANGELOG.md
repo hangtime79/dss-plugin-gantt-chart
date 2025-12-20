@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-20
+
+### Added
+- **Custom Tooltips**: Users can now select specific columns to display in the task details popup via the `Tooltip Fields` configuration.
+
+### Fixed
+- **Popup Date Display**: Fixed issue where dates appeared as "N/A to N/A" by correctly handling Frappe Gantt's task object wrapper.
+- **Cyclic Object Error**: Resolved crash when logging task objects in the browser console.
+
+---
+
 ---
 
 ## [0.1.3] - 2025-12-20
