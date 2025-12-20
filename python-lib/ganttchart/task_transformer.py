@@ -359,6 +359,8 @@ class TaskTransformer:
         Used for both task IDs and dependency IDs to ensure they match.
 
         Handles all data types: int, float, str, Decimal, etc.
+        Converts whole-number floats (61.0) to int representation ("61")
+        to match how Pandas reads columns differently based on NaN presence.
 
         Args:
             value: ID value from DataFrame
@@ -369,13 +371,20 @@ class TaskTransformer:
         if pd.isna(value):
             return ''
 
-        # Convert to string and strip whitespace
-        # This preserves the exact representation:
-        # - int 61 -> "61"
-        # - float 61.0 -> "61.0"
-        # - float 3.14 -> "3.14"
-        # - str "abc" -> "abc"
-        # - Decimal("123.45") -> "123.45"
+        # Handle numeric types - convert whole number floats to int representation
+        # This solves the Pandas type mismatch where:
+        # - ID column (no NaNs): read as int64 → 277 → "277"
+        # - Dependency column (has NaNs): read as float64 → 276.0 → "276.0"
+        # We normalize both to "276" so they match
+        if isinstance(value, float):
+            # Check if it's a whole number (e.g., 276.0)
+            if value.is_integer():
+                return str(int(value))
+            else:
+                # Preserve actual decimal values (e.g., 3.14)
+                return str(value).strip()
+
+        # For all other types (int, str, Decimal, etc.), convert directly
         return str(value).strip()
 
     def _extract_dependencies(self, value: Any) -> str:
