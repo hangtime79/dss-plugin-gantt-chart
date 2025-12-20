@@ -283,7 +283,7 @@ class TaskTransformer:
         # Add dependencies if column specified
         if self.config.dependencies_column:
             deps = self._extract_dependencies(row[self.config.dependencies_column])
-            task['dependencies'] = deps  # Always add, even if empty
+            task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
 
         # Add color class if column specified
         if self.config.color_column and color_mapping:
