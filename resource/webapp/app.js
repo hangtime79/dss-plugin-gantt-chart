@@ -76,12 +76,13 @@
             return;
         }
 
-        // Fetch data and config
-        Promise.all([
-            fetchTasks(config, filters),
-            fetchGanttConfig()
-        ])
-        .then(([tasksResponse, ganttConfig]) => {
+        // Build gantt config directly from webAppConfig (not from backend)
+        // This ensures we use the current config, not stale backend state
+        const ganttConfig = buildGanttConfig(config);
+
+        // Fetch task data from backend
+        fetchTasks(config, filters)
+        .then(tasksResponse => {
             hideLoading();
 
             if (tasksResponse.error) {
@@ -117,83 +118,177 @@
         return dataiku.webappBackend.get('get-tasks', params);
     }
 
-    function fetchGanttConfig() {
-        return dataiku.webappBackend.get('get-config', {});
+    // ===== CONFIG BUILDING =====
+
+    /**
+     * Build Gantt configuration from webapp config.
+     *
+     * This derives Frappe Gantt options directly from the webAppConfig
+     * received via the message event, eliminating the need for a separate
+     * backend call which could return stale data.
+     */
+    function buildGanttConfig(webAppConfig) {
+        const ganttConfig = {
+            // View settings
+            view_mode: webAppConfig.viewMode || 'Week',
+            view_mode_select: webAppConfig.viewModeSelect !== false,
+
+            // Appearance - parseInt with fallback for safety
+            bar_height: parseInt(webAppConfig.barHeight) || 30,
+            bar_corner_radius: parseInt(webAppConfig.barCornerRadius) || 3,
+            column_width: parseInt(webAppConfig.columnWidth) || 45,
+            padding: parseInt(webAppConfig.padding) || 18,
+
+            // Behavior
+            readonly: webAppConfig.readonly !== false,
+            popup_on: webAppConfig.popupOn || 'click',
+            today_button: webAppConfig.todayButton !== false,
+            scroll_to: webAppConfig.scrollTo || 'today',
+
+            // Language
+            language: 'en'
+        };
+
+        // Handle weekend highlighting
+        if (webAppConfig.highlightWeekends !== false) {
+            ganttConfig.holidays = {
+                'var(--g-weekend-highlight-color)': 'weekend'
+            };
+        }
+
+        console.log('Built ganttConfig from webAppConfig:', JSON.stringify(ganttConfig, null, 2));
+        return ganttConfig;
     }
 
     // ===== GANTT RENDERING =====
 
     function renderGantt(tasks, config) {
         console.log(`Rendering Gantt with ${tasks.length} tasks`);
+        console.log('Gantt config:', JSON.stringify(config, null, 2));
+
         const container = document.getElementById('gantt-container');
 
-        // Clear previous instance
-        if (ganttInstance) {
-            container.innerHTML = '';
-            ganttInstance = null;
-        }
+        // Always clear and recreate - simpler and more reliable
+        container.innerHTML = '';
+        ganttInstance = null;
 
         // Create SVG element for Gantt
+        // Note: Do NOT set style.width - let Frappe Gantt control the SVG width
+        // Setting width:100% would override the calculated timeline width
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.id = 'gantt-svg';
-        svg.style.width = '100%';
-        svg.style.height = '100%';
         container.appendChild(svg);
+
+        // Build options object
+        const ganttOptions = {
+            // View settings
+            view_mode: config.view_mode ?? 'Week',
+            view_mode_select: config.view_mode_select !== false,
+
+            // Appearance - use nullish coalescing to allow 0 values
+            bar_height: config.bar_height ?? 30,
+            bar_corner_radius: config.bar_corner_radius ?? 3,
+            column_width: config.column_width ?? 45,
+            padding: config.padding ?? 18,
+
+            // Behavior
+            readonly: config.readonly !== false,
+            popup_on: config.popup_on || 'click',
+            today_button: config.today_button !== false,
+            scroll_to: config.scroll_to || 'today',
+
+            // Holidays (weekends)
+            holidays: config.holidays || {},
+
+            // Language
+            language: config.language || 'en',
+
+            // Custom popup content
+            popup: function(task) {
+                return buildPopupHTML(task);
+            },
+
+            // Event handlers
+            on_click: function(task) {
+                console.log('Task clicked:', task);
+            },
+
+            on_date_change: function(task, start, end) {
+                console.log('Date changed:', task.id, start, end);
+            },
+
+            on_progress_change: function(task, progress) {
+                console.log('Progress changed:', task.id, progress);
+            },
+
+            on_view_change: function(mode) {
+                console.log('View changed:', mode);
+                // Re-enforce minimum bar widths after view mode change
+                requestAnimationFrame(() => enforceMinimumBarWidths());
+            }
+        };
+
+        console.log('Gantt options:', JSON.stringify({
+            view_mode: ganttOptions.view_mode,
+            bar_height: ganttOptions.bar_height,
+            bar_corner_radius: ganttOptions.bar_corner_radius,
+            column_width: ganttOptions.column_width,
+            padding: ganttOptions.padding
+        }, null, 2));
 
         // Initialize Frappe Gantt
         try {
-            ganttInstance = new Gantt('#gantt-svg', tasks, {
-                // View settings
-                view_mode: config.view_mode || 'Week',
-                view_mode_select: config.view_mode_select !== false,
+            ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
+            console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
-                // Appearance
-                bar_height: config.bar_height || 30,
-                bar_corner_radius: config.bar_corner_radius || 3,
-                column_width: config.column_width || 45,
-                padding: config.padding || 18,
-
-                // Behavior
-                readonly: config.readonly !== false,
-                popup_on: config.popup_on || 'click',
-                today_button: config.today_button !== false,
-                scroll_to: config.scroll_to || 'today',
-
-                // Holidays (weekends)
-                holidays: config.holidays || {},
-
-                // Language
-                language: config.language || 'en',
-
-                // Custom popup content
-                popup: function(task) {
-                    return buildPopupHTML(task);
-                },
-
-                // Event handlers
-                on_click: function(task) {
-                    console.log('Task clicked:', task);
-                },
-
-                on_date_change: function(task, start, end) {
-                    console.log('Date changed:', task.id, start, end);
-                },
-
-                on_progress_change: function(task, progress) {
-                    console.log('Progress changed:', task.id, progress);
-                },
-
-                on_view_change: function(mode) {
-                    console.log('View changed:', mode);
-                }
-            });
-
-            console.log(`Gantt chart rendered successfully with ${tasks.length} tasks`);
-
+            // Enforce minimum bar widths after render completes
+            requestAnimationFrame(() => enforceMinimumBarWidths());
         } catch (error) {
             console.error('Error rendering Gantt:', error);
             displayError('Rendering Error', error.message, error);
         }
+    }
+
+    // ===== BAR WIDTH ENFORCEMENT =====
+
+    /**
+     * Enforce minimum bar widths to ensure tasks are always visible.
+     * This fixes the issue where tasks with short durations (especially same-day tasks)
+     * become invisible at finer time granularities (Day, Half-Day, Hour views).
+     */
+    function enforceMinimumBarWidths() {
+        if (!ganttInstance) return;
+
+        // Minimum width is 1/4 of column width (ensures clickable/visible bars)
+        const columnWidth = ganttInstance.config?.column_width ?? 45;
+        const minWidth = Math.max(columnWidth / 4, 10); // At least 10px
+
+        const bars = document.querySelectorAll('.gantt .bar');
+        bars.forEach(bar => {
+            const currentWidth = parseFloat(bar.getAttribute('width')) || 0;
+            if (currentWidth < minWidth) {
+                bar.setAttribute('width', minWidth);
+                // Also mark short tasks for potential styling
+                const wrapper = bar.closest('.bar-wrapper');
+                if (wrapper) {
+                    wrapper.setAttribute('data-short-task', 'true');
+                }
+            }
+        });
+
+        // Also enforce on progress bars
+        const progressBars = document.querySelectorAll('.gantt .bar-progress');
+        progressBars.forEach(bar => {
+            const parentBar = bar.parentElement?.querySelector('.bar');
+            if (parentBar) {
+                const parentWidth = parseFloat(parentBar.getAttribute('width')) || 0;
+                const progressWidth = parseFloat(bar.getAttribute('width')) || 0;
+                // Progress bar should not exceed parent bar width
+                if (progressWidth > parentWidth) {
+                    bar.setAttribute('width', parentWidth);
+                }
+            }
+        });
     }
 
     // ===== POPUP BUILDER =====
@@ -243,7 +338,6 @@
     }
 
     function displayError(title, message, details) {
-        hideLoading();
         console.error('Error:', title, message, details);
 
         // Use Dataiku's error display
