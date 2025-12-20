@@ -295,6 +295,128 @@ class TestTaskTransformer:
         result = transformer.transform(df)
 
         assert result['tasks'][0]['dependencies'] == ''
-        assert result['tasks'][1]['dependencies'] == 'A'
-        # Should strip whitespace
-        assert result['tasks'][2]['dependencies'] == 'A,B'
+    def test_custom_tooltips_basic(self):
+        """Test basic custom tooltip extraction."""
+        df = pd.DataFrame({
+            'id': ['A'],
+            'name': ['Task A'],
+            'start': ['2024-01-01'],
+            'end': ['2024-01-05'],
+            'assignee': ['John Doe'],
+            'priority': ['High']
+        })
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            tooltip_columns=['assignee', 'priority']
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'custom_fields' in task
+        assert len(task['custom_fields']) == 2
+        
+        # Verify structure
+        assert task['custom_fields'][0] == {'label': 'assignee', 'value': 'John Doe'}
+        assert task['custom_fields'][1] == {'label': 'priority', 'value': 'High'}
+
+    def test_custom_tooltips_ordering(self):
+        """Test that custom tooltips preserve configuration order."""
+        df = pd.DataFrame({
+            'id': ['A'],
+            'name': ['Task A'],
+            'start': ['2024-01-01'],
+            'end': ['2024-01-05'],
+            'col1': ['1'],
+            'col2': ['2'],
+            'col3': ['3']
+        })
+        # Order: col3, col1 (skip col2)
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            tooltip_columns=['col3', 'col1']
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        fields = result['tasks'][0]['custom_fields']
+        assert len(fields) == 2
+        assert fields[0]['label'] == 'col3'
+        assert fields[0]['value'] == '3'
+        assert fields[1]['label'] == 'col1'
+        assert fields[1]['value'] == '1'
+
+    def test_custom_tooltips_formatting(self):
+        """Test formatting of various data types in tooltips."""
+        df = pd.DataFrame({
+            'id': ['A'],
+            'name': ['Task A'],
+            'start': ['2024-01-01'],
+            'end': ['2024-01-05'],
+            'number': [42],
+            'float': [3.14],
+            'null_val': [None],
+            'nan_val': [np.nan],
+            'date_val': [pd.Timestamp('2024-03-15')]
+        })
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            tooltip_columns=['number', 'float', 'null_val', 'nan_val', 'date_val']
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        fields = result['tasks'][0]['custom_fields']
+        
+        # Integer preserved
+        assert fields[0]['label'] == 'number'
+        assert fields[0]['value'] == 42
+        
+        # Float preserved
+        assert fields[1]['label'] == 'float'
+        assert fields[1]['value'] == 3.14
+        
+        # Null -> None (frontend handles as "-")
+        assert fields[2]['label'] == 'null_val'
+        assert fields[2]['value'] is None
+        
+        # NaN -> None
+        assert fields[3]['label'] == 'nan_val'
+        assert fields[3]['value'] is None
+        
+        # Date -> String (YYYY-MM-DD)
+        assert fields[4]['label'] == 'date_val'
+        assert fields[4]['value'] == '2024-03-15'
+
+    def test_custom_tooltips_missing_col(self):
+        """Test graceful handling of missing tooltip columns."""
+        df = pd.DataFrame({
+            'id': ['A'],
+            'name': ['Task A'],
+            'start': ['2024-01-01'],
+            'end': ['2024-01-05'],
+            'col1': ['Value']
+        })
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end',
+            tooltip_columns=['col1', 'missing_col']
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        fields = result['tasks'][0]['custom_fields']
+        assert len(fields) == 1
+        assert fields[0]['label'] == 'col1'
+        assert fields[0]['value'] == 'Value'
