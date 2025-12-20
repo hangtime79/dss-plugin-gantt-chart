@@ -183,13 +183,37 @@ Every spec MUST include these sections:
 
 ## User QA Gate                        ◀─── MANDATORY SECTION
 
-**STOP: Do not commit or merge until user has completed QA.**
+**CRITICAL: Code must be committed BEFORE User QA.**
 
-After implementing the fix:
-1. Notify the user that the fix is ready for QA
+Dataiku plugins load from committed code, not working directory files. If changes aren't committed, the user will test against old code.
+
+**Pre-QA Commit Process:**
+1. After implementing the fix, **commit the changes** with appropriate message format:
+   ```
+   <type>(v<version>): <short description>
+
+   <detailed explanation of what changed and why>
+
+   Changes:
+   - file1.py: what changed
+   - file2.py: what changed
+
+   <What this fixes or adds>
+
+   🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+   ```
+
+2. Verify commit was successful: `git log --oneline -1`
+
+3. Notify the user that code is committed and ready for QA
+
+**User QA Steps:**
+1. Reload plugin in Dataiku (Actions menu → Reload)
 2. Provide clear steps for the user to test
 3. Wait for explicit user approval before proceeding
-4. If user reports issues, address them before continuing
+4. If user reports issues, address them and commit again before re-testing
 
 **QA Script for User:**
 \`\`\`
@@ -198,7 +222,7 @@ After implementing the fix:
 3. <Expected outcomes>
 \`\`\`
 
-**Do not proceed to commit until user confirms the fix works.**
+**Do not proceed to PR/merge until user confirms the fix works.**
 
 ---
 
