@@ -250,11 +250,13 @@ class TaskTransformer:
             return None
 
         # Extract task ID (generate if null)
-        task_id = row[self.config.id_column]
-        if pd.isna(task_id) or str(task_id).strip() == '':
+        raw_id = row[self.config.id_column]
+        if pd.isna(raw_id) or str(raw_id).strip() == '':
             task_id = f"task_{row_idx}"
         else:
-            task_id = self._normalize_id(task_id)
+            logger.info(f"DEBUG: Task raw ID: {repr(raw_id)} (type: {type(raw_id)})")
+            task_id = self._normalize_id(raw_id)
+            logger.info(f"DEBUG: Task normalized ID: {repr(task_id)}")
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
