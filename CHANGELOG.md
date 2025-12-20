@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2025-12-20
+
+### Fixed
+- **Appearance Settings Not Updating**: Switched to using live `webAppConfig` messages for real-time UI updates, bypassing stale backend configuration calls.
+- **Invisible Tasks at High Zoom**: Enforced minimum bar widths during render and view changes to ensure task visibility in Day/Hour views.
+- **Dual Execution Race Condition**: Consolidated code into the primary resource file to prevent browser from running multiple versions of the application script.
+
+---
+
 ## [0.1.1] - 2025-12-19
 
 ### Added
