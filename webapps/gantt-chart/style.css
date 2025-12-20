@@ -258,3 +258,24 @@ html, body {
         stroke-width: 2;
     }
 }
+
+/* ===== CUSTOM TOOLTIP FIELDS ===== */
+.popup-custom-fields {
+    margin-top: 8px;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+}
+
+.popup-field {
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.field-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.field-value {
+    color: #333;
+}

@@ -294,13 +294,27 @@
     // ===== POPUP BUILDER =====
 
     function buildPopupHTML(task) {
+        console.log('Popup task object:', JSON.stringify(task, null, 2));
+        
         let html = `
             <div class="gantt-popup">
                 <div class="popup-title">${escapeHtml(task.name)}</div>
         `;
 
-        // Date range
-        html += `<div class="popup-dates">${task.start} to ${task.end}</div>`;
+        // Date range - Frappe Gantt uses _start and _end internally
+        // These are Date objects, need to format them
+        const formatDate = (date) => {
+            if (!date) return 'N/A';
+            if (date instanceof Date) {
+                return date.toISOString().split('T')[0];
+            }
+            return String(date);
+        };
+
+        // Try _start/_end first (Frappe Gantt internal), fallback to start/end
+        const startDate = task._start || task.start;
+        const endDate = task._end || task.end;
+        html += `<div class="popup-dates">${formatDate(startDate)} to ${formatDate(endDate)}</div>`;
 
         // Progress (if available)
         if (task.progress !== undefined && task.progress !== null) {
@@ -315,6 +329,19 @@
             if (depsList) {
                 html += `<div class="popup-deps">Depends on: ${escapeHtml(depsList)}</div>`;
             }
+        }
+
+        // Custom fields (user-selected tooltip columns)
+        if (task.custom_fields && Array.isArray(task.custom_fields) && task.custom_fields.length > 0) {
+            html += '<div class="popup-custom-fields">';
+            for (const field of task.custom_fields) {
+                // Handle null/undefined values gracefully
+                const displayValue = (field.value === null || field.value === undefined)
+                    ? '-'
+                    : escapeHtml(String(field.value));
+                html += `<div class="popup-field"><span class="field-label">${escapeHtml(field.label)}:</span> <span class="field-value">${displayValue}</span></div>`;
+            }
+            html += '</div>';
         }
 
         html += '</div>';

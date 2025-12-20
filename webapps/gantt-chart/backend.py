@@ -95,6 +95,7 @@ def get_tasks():
                 progress_column=config.get('progressColumn'),
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
+                tooltip_columns=config.get('tooltipColumns'),
                 max_tasks=int(config.get('maxTasks', 1000))
             )
         except Exception as e:
