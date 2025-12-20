@@ -10,13 +10,7 @@ from dataclasses import dataclass
 import pandas as pd
 import logging
 
-from ganttchart.date_parser import (
-    parse_date_to_iso,
-    parse_date_to_datetime,
-    validate_date_range,
-    validate_datetime_range
-)
-import datetime
+from ganttchart.date_parser import parse_date_to_iso, validate_date_range
 from ganttchart.color_mapper import create_color_mapping, get_task_color_class
 from ganttchart.dependency_validator import validate_all_dependencies
 from ganttchart.sort_utils import sort_tasks
@@ -235,42 +229,25 @@ class TaskTransformer:
         Returns:
             Task dictionary or None if row should be skipped
         """
-        # Parse dates with time preservation for finer granularity views
+        # Parse dates
         start_val = row[self.config.start_column]
         end_val = row[self.config.end_column]
 
-        start_dt, start_error = parse_date_to_datetime(start_val)
-        end_dt, end_error = parse_date_to_datetime(end_val)
+        start_date, start_error = parse_date_to_iso(start_val)
+        end_date, end_error = parse_date_to_iso(end_val)
 
         # Skip if dates invalid
-        if not start_dt or not end_dt:
+        if not start_date or not end_date:
             self._increment_skip_reason('invalid_dates')
             return None
 
         # Skip if start > end
-        if not validate_datetime_range(start_dt, end_dt):
+        if not validate_date_range(start_date, end_date):
             self._increment_skip_reason('start_after_end')
             logger.warning(
-                f"Row {row_idx}: Start datetime {start_dt} is after end datetime {end_dt}. Skipping."
+                f"Row {row_idx}: Start date {start_date} is after end date {end_date}. Skipping."
             )
             return None
-
-        # Enforce minimum duration: if start == end (same datetime), add 1 day
-        # This ensures tasks are always visible, even at finer granularities
-        try:
-            start_parsed = datetime.datetime.strptime(start_dt, '%Y-%m-%d %H:%M')
-            end_parsed = datetime.datetime.strptime(end_dt, '%Y-%m-%d %H:%M')
-
-            if end_parsed <= start_parsed:
-                # Same datetime or invalid - add 1 day as minimum duration
-                end_parsed = start_parsed + datetime.timedelta(days=1)
-                end_dt = end_parsed.strftime('%Y-%m-%d %H:%M')
-                logger.debug(
-                    f"Row {row_idx}: Extended end date to {end_dt} to ensure minimum duration"
-                )
-        except ValueError as e:
-            logger.warning(f"Row {row_idx}: Error parsing dates for duration check: {e}")
-            # Continue with original values
 
         # Extract task ID (generate if null)
         task_id = row[self.config.id_column]
@@ -289,12 +266,12 @@ class TaskTransformer:
         if not task_name:
             task_name = task_id
 
-        # Build task object with datetime strings for finer granularity support
+        # Build task object
         task = {
             'id': task_id,
             'name': task_name,
-            'start': start_dt,
-            'end': end_dt
+            'start': start_date,
+            'end': end_date
         }
 
         # Add progress if column specified
