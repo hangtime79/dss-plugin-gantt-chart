@@ -243,3 +243,39 @@ Use this format: `<type>/<version>-<short-description>`
 
 Example: `feature/v0.1.0-ux-improvements`
 ```
+
+## 5. The "Two app.js" Problem (Dual Execution/Stale Code)
+
+### Context
+Dataiku plugins often have a `webapps/WEBAPP_ID/` directory and a `resource/webapp/` directory. If your `body.html` references a script in `resource/` but you are editing a file with the same name in `webapps/`, you may encounter "stale code" symptoms or, worse, "dual execution" where the browser loads both (one from cache, one from working directory).
+
+### The Problem
+- Changes to the script don't seem to apply.
+- Console logs show the same message appearing twice but from different line numbers or files.
+- Unpredictable race conditions where UI elements are rendered then immediately overwritten.
+
+### The Solution
+1. **Source of Truth**: Decide where your primary logic lives and ensure `body.html` points there.
+2. **Remove Duplicates**: If a file exists in both `webapps/` and `resource/` but you only use one, remove or sync the other to avoid confusion.
+3. **Check Network Tab**: Use browser dev tools to confirm which file is actually being loaded.
+
+## 6. `requestAnimationFrame` for External Renderers
+
+### Context
+Libraries like Frappe Gantt perform their own DOM manipulation and rendering lifecycle. If you need to apply custom styling or DOM adjustments (like enforcing minimum widths or custom colors) after the library renders, standard synchronous code may run too early.
+
+### The Problem
+- Styles applied in code don't appear in the browser.
+- Adjustments are overwritten by the library's internal render cycle.
+
+### The Solution
+Use `requestAnimationFrame()` to defer your custom adjustments until after the browser has completed the current layout pass and before the next repaint.
+
+```javascript
+ganttInstance = new Gantt("#gantt", tasks, options);
+
+// Defer custom DOM enforcement
+requestAnimationFrame(() => {
+    enforceCustomStyles();
+});
+```
