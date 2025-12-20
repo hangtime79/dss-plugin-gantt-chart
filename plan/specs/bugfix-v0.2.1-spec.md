@@ -1,290 +1,154 @@
-# Bugfix v0.2.1 - Horizontal Scrolling Fix
+# Bugfix v0.2.1 - Horizontal Scrolling Fix (Revised v3)
 
 ## Branch
 `bugfix/v0.2.1-fix-horizontal-scrolling`
 
 ## Problem
-The Gantt chart does not scroll horizontally or vertically when the chart content exceeds the viewport dimensions. This prevents users from viewing tasks outside the initial visible area, especially in granular views like "Hour" or "Day".
+The Gantt chart does not scroll horizontally or vertically. Touchpad scrolling also doesn't work.
 
 ---
 
-## Root Cause (Updated After Investigation)
+## Root Cause Analysis (v3 - FINAL)
 
-### Primary Issue: Wrong File Edited
-The SDE applied CSS fixes to the wrong file. There are **duplicate style.css files** in the codebase:
+### Previous Attempts and Why They Failed
 
-| File | Size | Status |
-|------|------|--------|
-| `webapps/gantt-chart/style.css` | 4744 bytes | **Modified by SDE** - NOT loaded by browser |
-| `resource/webapp/style.css` | 4337 bytes | **Old version** - ACTUALLY loaded by browser |
+| Attempt | Approach | Result |
+|---------|----------|--------|
+| v1 | `#gantt-container { overflow: hidden }` + `.gantt-container { height: 100%; overflow: auto }` | No scrollbars - inner container forced to viewport height |
+| v2 | Same as v1, but wrong file edited | CSS not loaded at all |
 
-**Evidence from `body.html` (line 2):**
-```html
-<link rel="stylesheet" href="/plugins/gantt-chart/resource/webapp/style.css">
-```
+### The Real Problem
 
-The browser loads `resource/webapp/style.css`, but the scroll fix was applied to `webapps/gantt-chart/style.css`.
-
-### Secondary Issue: Duplicate File Structure
-The plugin has a confusing architecture with overlapping directories:
-
-```
-webapps/gantt-chart/          # Webapp definition (app.js, backend.py, webapp.json)
-├── style.css                 # DUPLICATE - not served to browser
-├── body.html                 # References resource/webapp/style.css
-└── ...
-
-resource/webapp/              # Static resources served to browser
-├── style.css                 # ACTUAL file loaded by browser
-└── dku-helpers.js            # Helper utilities
-```
-
-### Original Root Cause (Still Valid)
-The Frappe Gantt library creates an internal container (`.gantt-container`) that handles scrolling. Previous fixes from v0.1.0 were lost during refactoring, and the CSS/JS do not correctly enforce the container dimensions or overflow properties.
-
----
-
-## Fix Required
-
-### Step 1: Apply CSS Fix to Correct File
-
-**File to modify:** `resource/webapp/style.css` (NOT `webapps/gantt-chart/style.css`)
-
-**Changes:**
-
-1. Change `#gantt-container` from `overflow: auto` to `overflow: hidden`
-2. Add `.gantt-container` rules for scroll handling
+Frappe Gantt's CSS uses a **CSS variable** for the container height:
 
 ```css
-#gantt-container {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;  /* Changed from 'auto' */
-    position: relative;
-}
-
-/* Frappe Gantt internal container - ADD THIS BLOCK */
+/* From frappe-gantt.css */
 .gantt-container {
-    height: 100%;
+    overflow: auto;
+    height: var(--gv-grid-height);  /* Dynamically calculated by Frappe JS */
     width: 100%;
+}
+```
+
+Frappe Gantt calculates `--gv-grid-height` based on the number of task rows. When we override this with `height: 100%`, we force the container to exactly match the viewport height, eliminating any overflow.
+
+**Our broken CSS:**
+```css
+.gantt-container {
+    height: 100%;    /* BREAKS SCROLLING - overrides Frappe's calculated height */
     overflow: auto;
 }
 ```
 
-### Step 2: JS Changes (Already Applied Correctly)
+### The Correct Architecture
 
-The `app.js` changes in commit `4d4e65c` are correct:
-- Added `updateSvgDimensions()` function
-- Called after render and on view change
-
-No additional JS changes needed.
-
-### Step 3: Consolidate Duplicate Files (REQUIRED)
-
-Eliminate the `resource/webapp/` folder entirely to prevent future confusion. All webapp-specific files should live in `webapps/gantt-chart/`.
-
-**Files to consolidate:**
-
-| Current Location | Action | Target |
-|------------------|--------|--------|
-| `resource/webapp/style.css` | Delete after merging | N/A |
-| `resource/webapp/dku-helpers.js` | Inline into app.js | `webapps/gantt-chart/app.js` |
-| `webapps/gantt-chart/style.css` | Keep (apply scroll fix) | N/A |
-
-**Keep in `resource/` (third-party libraries):**
-- `resource/frappe-gantt.css` - Frappe Gantt library styles
-- `resource/frappe-gantt.umd.js` - Frappe Gantt library code
-
-#### Step 3a: Inline dku-helpers.js into app.js
-
-The `dku-helpers.js` file (60 lines) provides the `dataiku.webappBackend` wrapper. Inline it at the top of `app.js` inside the IIFE:
-
-**Add at the beginning of app.js (after `'use strict';`):**
-```javascript
-// ===== BACKEND HELPERS =====
-// Provides robust backend communication wrappers (formerly dku-helpers.js)
-if (typeof dataiku !== 'undefined' && !dataiku.webappBackend) {
-    dataiku.webappBackend = {
-        getUrl: function(path) {
-            return dataiku.getWebAppBackendUrl(path);
-        },
-        get: function(path, params) {
-            let url = this.getUrl(path);
-            if (params && Object.keys(params).length > 0) {
-                const queryString = Object.keys(params).map(key => {
-                    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-                }).join('&');
-                url += (url.indexOf('?') === -1 ? '?' : '&') + queryString;
-            }
-            return fetch(url, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-            })
-            .then(response => {
-                if (response.status == 502) {
-                    throw new Error("Webapp backend is not running or not reachable (502).");
-                }
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        let errorMsg = response.statusText;
-                        try {
-                            const json = JSON.parse(text);
-                            if (json.error) errorMsg = json.error;
-                        } catch(e) {}
-                        throw new Error(`Backend Error (${response.status}): ${errorMsg}`);
-                    });
-                }
-                return response.json();
-            });
-        }
-    };
-}
+```
+#gantt-container (our div)
+├── overflow: auto          ← WE control scrolling here
+├── height: 100%            ← Fills the viewport
+└── .gantt-container (Frappe's div)
+    ├── height: var(--gv-grid-height)  ← Frappe calculates this (may exceed viewport)
+    └── overflow: visible   ← Let content flow to parent
+        └── svg.gantt       ← The actual chart
 ```
 
-#### Step 3b: Update body.html
+---
 
-**Current `body.html`:**
-```html
-<link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
-<link rel="stylesheet" href="/plugins/gantt-chart/resource/webapp/style.css">
+## Correct Fix
 
-<div id="gantt-container"></div>
+### Step 1: Update `resource/webapp/style.css`
 
-<div id="loading" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>Loading Gantt chart...</p>
-</div>
+**Remove the `.gantt-container` height override.** Let Frappe control its own container.
 
-<script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
-<script src="/plugins/gantt-chart/resource/webapp/dku-helpers.js"></script>
-```
-
-**Updated `body.html`:**
-```html
-<link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
-
-<div id="gantt-container"></div>
-
-<div id="loading" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>Loading Gantt chart...</p>
-</div>
-
-<script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
-```
-
-**Changes:**
-1. Remove `resource/webapp/style.css` link - Dataiku auto-loads `style.css` from webapp folder
-2. Remove `resource/webapp/dku-helpers.js` script - now inlined in app.js
-
-#### Step 3c: Delete resource/webapp/ folder
-
-After completing steps 3a and 3b:
-```bash
-rm -rf resource/webapp/
-```
-
-#### Step 3d: Apply scroll fix to correct style.css
-
-Now that we're using `webapps/gantt-chart/style.css`, the scroll fix is already in place from the SDE's earlier changes. Verify it contains:
-
+**Current (BROKEN):**
 ```css
 #gantt-container {
-    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;      /* Clips everything */
+    position: relative;
 }
 
 .gantt-container {
-    height: 100%;
+    height: 100%;          /* WRONG - overrides Frappe's calculated height */
     width: 100%;
     overflow: auto;
+}
+```
+
+**Fixed:**
+```css
+#gantt-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;        /* Changed: OUR container scrolls */
+    position: relative;
+}
+
+/* REMOVED: Do not override .gantt-container height!
+   Frappe Gantt sets height via --gv-grid-height CSS variable.
+
+   .gantt-container {
+       height: 100%;
+       width: 100%;
+       overflow: auto;
+   }
+*/
+```
+
+### Step 2: Keep the second `.gantt-container` rule (line ~151)
+
+This rule only sets `font-family: inherit` and is safe to keep:
+```css
+.gantt-container {
+    font-family: inherit;
 }
 ```
 
 ---
 
-## File Comparison
+## Why This Works
 
-### Current `resource/webapp/style.css` (LOADED - needs fix):
-```css
-#gantt-container {
-    width: 100%;
-    height: 100%;
-    overflow: auto;           /* <-- Problem: should be 'hidden' */
-    position: relative;
-}
+1. **`#gantt-container`** (our outer div):
+   - `height: 100%` - fills the iframe viewport
+   - `overflow: auto` - shows scrollbars when content exceeds viewport
 
-/* Missing .gantt-container scroll rules */
-```
+2. **`.gantt-container`** (Frappe's inner div):
+   - `height: var(--gv-grid-height)` - Frappe calculates total height of all rows
+   - If this exceeds the viewport, `#gantt-container` shows scrollbars
 
-### Current `webapps/gantt-chart/style.css` (NOT LOADED - has fix):
-```css
-#gantt-container {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;         /* <-- Correct */
-    position: relative;
-}
-
-.gantt-container {            /* <-- Correct, but never applied */
-    height: 100%;
-    width: 100%;
-    overflow: auto;
-}
-```
+3. **No height override** means Frappe's container can grow larger than the viewport, triggering scrollbars on our outer container.
 
 ---
 
 ## Verification Checklist
 
-### After consolidation:
-
-- [ ] `resource/webapp/` folder is deleted
-- [ ] `body.html` no longer references `resource/webapp/`
-- [ ] `dku-helpers.js` code is inlined in `app.js`
-- [ ] Reload plugin in Dataiku
-
-### After scroll fix:
+After applying fix:
 
 - [ ] Hard refresh browser (Ctrl+Shift+R)
-- [ ] Verify CSS loads (check DevTools Network tab for style.css)
-- [ ] Load a chart with many tasks (vertical scroll check)
-- [ ] Switch to "Day" or "Hour" view (horizontal scroll check)
-- [ ] Verify scrollbars appear and function correctly
-- [ ] Verify both horizontal AND vertical scrolling work
+- [ ] Colors still display correctly (not gray)
+- [ ] Vertical scrollbar appears with many tasks
+- [ ] Horizontal scrollbar appears in Day/Hour view
+- [ ] Touchpad/mousewheel scrolling works
+- [ ] Scroll position is preserved when clicking on tasks
 
 ---
 
-## Lessons Learned
+## Files Changed
 
-1. **Verify which files are actually loaded** - Use browser DevTools Network tab to confirm which CSS/JS files are loaded
-2. **Eliminate duplicate files immediately** - Having the same filename in multiple locations causes confusion and bugs
-3. **Understand Dataiku's resource serving** - Files in `webapps/{name}/` are automatically loaded by Dataiku; `resource/` is for third-party libraries only
-4. **Keep webapp code consolidated** - All webapp-specific code (JS, CSS) should live in `webapps/{name}/`, not scattered across `resource/webapp/`
-
----
-
-## Final Directory Structure
-
-After this fix, the webapp file structure should be:
-
-```
-webapps/gantt-chart/
-├── app.js              # Main JS (includes backend helpers)
-├── backend.py          # Flask backend
-├── body.html           # HTML template (references only resource/frappe-gantt.*)
-├── style.css           # All custom styles (with scroll fix)
-└── webapp.json         # Configuration
-
-resource/
-├── frappe-gantt.css    # Third-party library (keep)
-├── frappe-gantt.umd.js # Third-party library (keep)
-├── frappe-gantt.es.js  # Third-party library (keep)
-└── license.txt         # License file (keep)
-
-# DELETED: resource/webapp/ folder
-```
+| File | Change |
+|------|--------|
+| `resource/webapp/style.css` | Remove `.gantt-container { height: 100% }` block, change `#gantt-container` to `overflow: auto` |
 
 ---
 
-## Updated: 2025-12-20
-## Status: In Progress - Requires file consolidation and scroll fix
+## Previous Attempts (Historical)
+
+### Attempt 1: Wrong file edited
+The SDE modified `webapps/gantt-chart/style.css` but `body.html` loads from `resource/webapp/style.css`.
+
+### Attempt 2: Correct file, wrong CSS
+Fixed the file location issue, but the CSS approach was flawed - overriding Frappe's height calculation broke scrolling.
+
+### Attempt 3: This fix
+Don't fight Frappe's CSS. Let it control `.gantt-container` height, and put `overflow: auto` on our outer `#gantt-container`.

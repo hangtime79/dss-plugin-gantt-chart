@@ -11,16 +11,15 @@ html, body {
 #gantt-container {
     width: 100%;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
     position: relative;
 }
 
-/* Frappe Gantt internal container */
-.gantt-container {
-    height: 100%;
-    width: 100%;
-    overflow: auto;
-}
+/* NOTE: Do NOT override .gantt-container height here!
+   Frappe Gantt dynamically sets height via --gv-grid-height CSS variable.
+   Overriding with height:100% breaks scrolling by forcing container to viewport size.
+   Our #gantt-container (overflow:auto) handles scrolling when Frappe's container exceeds viewport.
+*/
 
 /* ===== LOADING OVERLAY ===== */
 .loading-overlay {

@@ -350,11 +350,80 @@ console.log('Task:', task); // Works
 Embedding Frappe Gantt in a constrained container (like a webapp iframe).
 
 ### The Problem
-Frappe Gantt's internal `.gantt-container` does not automatically handle overflow correctly when nested, often leading to missing scrollbars or hidden content.
+Frappe Gantt's internal `.gantt-container` uses a CSS variable `--gv-grid-height` to dynamically set its height based on the number of task rows. If you override this with `height: 100%`, you force the container to viewport size and eliminate any overflow - no scrollbars appear.
 
 ### The Solution
-Use a two-container approach:
-1. Outer Container: `overflow: hidden` (Acts as the bounding box)
-2. Inner Container (`.gantt-container`): `width: 100%; height: 100%; overflow: auto;`
+**Do NOT override `.gantt-container` height.** Let Frappe control its own container sizing.
 
-Additionally, explicitly sync the SVG's `width` and `height` attributes to its CSS `style` properties to ensure the browser calculates overflow based on the full content size.
+Put `overflow: auto` on YOUR outer wrapper container:
+
+```css
+/* Your outer container - this one scrolls */
+#gantt-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;      /* Scrollbars appear here */
+    position: relative;
+}
+
+/* Do NOT set height on Frappe's container!
+   Frappe uses: height: var(--gv-grid-height);
+   which it calculates dynamically based on row count.
+
+   .gantt-container {
+       height: 100%;    <-- WRONG - breaks scrolling
+   }
+*/
+```
+
+### Why This Works
+1. Your `#gantt-container` fills the viewport with `overflow: auto`
+2. Frappe's `.gantt-container` inside it can grow larger than the viewport (via `--gv-grid-height`)
+3. When Frappe's container exceeds your container, scrollbars appear on your container
+
+### Common Mistake
+```css
+/* WRONG - This breaks scrolling */
+#gantt-container { overflow: hidden; }
+.gantt-container { height: 100%; overflow: auto; }
+```
+
+This forces both containers to viewport height, so there's nothing to scroll.
+
+## 4. Dataiku Webapp CSS Loading
+
+### Context
+Understanding where to place CSS files in a Dataiku plugin webapp.
+
+### The Problem
+You have a `style.css` file in `webapps/gantt-chart/` but your styles aren't being applied. Or you have CSS in both `webapps/{name}/` and `resource/webapp/` and you're not sure which one is loaded.
+
+### The Reality
+Dataiku's auto-loading behavior for Standard webapps (`"baseType": "STANDARD"`) is:
+- `app.js` from `webapps/{name}/` - **AUTO-LOADED**
+- `style.css` from `webapps/{name}/` - **NOT reliably auto-loaded** (depends on DSS version)
+
+### The Solution
+For guaranteed CSS loading, use the `resource/` folder and explicitly link in `body.html`:
+
+```html
+<!-- body.html -->
+<link rel="stylesheet" href="/plugins/PLUGIN_ID/resource/webapp/style.css">
+```
+
+### File Structure
+```
+your-plugin/
+├── webapps/
+│   └── your-webapp/
+│       ├── app.js          # Auto-loaded by Dataiku
+│       ├── body.html       # Contains explicit CSS link
+│       ├── backend.py
+│       └── webapp.json
+└── resource/
+    └── webapp/
+        └── style.css       # Loaded via explicit <link> in body.html
+```
+
+### Verification
+Use browser DevTools → Network tab to confirm which CSS files are actually loaded. If your styles aren't applying, check that the CSS file appears in the network requests.
