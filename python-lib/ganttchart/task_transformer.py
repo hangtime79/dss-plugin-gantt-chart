@@ -351,10 +351,35 @@ class TaskTransformer:
             logger.warning(f"Invalid progress value: {value}. Using None.")
             return None
 
+    def _normalize_id(self, value: Any) -> str:
+        """
+        Normalize an ID value to a consistent string format.
+        Used for both task IDs and dependency IDs to ensure they match.
+
+        Handles all data types: int, float, str, Decimal, etc.
+
+        Args:
+            value: ID value from DataFrame
+
+        Returns:
+            Normalized string representation
+        """
+        if pd.isna(value):
+            return ''
+
+        # Convert to string and strip whitespace
+        # This preserves the exact representation:
+        # - int 61 -> "61"
+        # - float 61.0 -> "61.0"
+        # - float 3.14 -> "3.14"
+        # - str "abc" -> "abc"
+        # - Decimal("123.45") -> "123.45"
+        return str(value).strip()
+
     def _extract_dependencies(self, value: Any) -> str:
         """
         Extract dependencies as comma-separated string.
-        Handles both string and numeric dependency IDs.
+        Uses _normalize_id() to ensure dependency IDs match task IDs exactly.
 
         Args:
             value: Dependencies value from DataFrame (can be str, int, float, etc.)
@@ -366,20 +391,22 @@ class TaskTransformer:
         if pd.isna(value):
             return ''
 
-        # Convert to string first (handles int, float, etc.)
-        try:
-            value_str = str(value).strip()
-        except Exception:
+        # Normalize the value using the same logic as task IDs
+        value_str = self._normalize_id(value)
+
+        # Check if empty after normalization
+        if not value_str:
             return ''
 
-        # Check if empty after conversion
-        if not value_str or value_str == '':
-            return ''
-
-        # Split by comma, strip whitespace, filter empty
+        # Split by comma, strip whitespace
         # This handles both "50" and "50,51,52" formats
-        deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
-        return ','.join(deps_list) if deps_list else ''
+        if ',' in value_str:
+            # Multiple dependencies - each is already normalized by _normalize_id
+            deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
+            return ','.join(deps_list) if deps_list else ''
+        else:
+            # Single dependency
+            return value_str
 
     def _increment_skip_reason(self, reason: str) -> None:
         """Increment skip reason counter."""
