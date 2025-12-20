@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-12-21
+
+### Fixed
+- **Dependency Arrows Not Rendering**: Fixed type mismatch where Frappe Gantt expected arrays but received comma-separated strings
+  - Root cause 1: Backend sent dependencies as strings (`"task1,task2"`) instead of arrays (`["task1", "task2"]`)
+  - Root cause 2: Pandas type coercion caused ID mismatch - ID columns (no NaN) read as int64, dependency columns (with NaN) read as float64
+  - Solution: Added `_normalize_id()` helper that converts whole-number floats to int representation while preserving decimals
+  - Updated `task_transformer.py`, `dependency_validator.py`, and `sort_utils.py` to handle arrays
+  - Added 10 comprehensive unit tests for ID normalization edge cases
+
+---
+
 ## [0.2.2] - 2025-12-20
 
 ### Fixed
