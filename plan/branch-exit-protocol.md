@@ -1,6 +1,6 @@
 # Branch Exit Protocol
 
-This document defines the complete workflow for closing a development branch.
+This document defines the complete workflow for closing a development branch. 
 
 ---
 
@@ -22,6 +22,7 @@ cat plugin.json | grep '"version"'
 ```
 
 **Extract from branch name:**
+
 - Branch type (feature/bugfix/hotfix)
 - Target version number
 - Short description
@@ -30,30 +31,154 @@ cat plugin.json | grep '"version"'
 
 ### 1.2 Gather Git History
 
+#### 1.2.1 Get Commit Overview
+
 ```bash
 # List all commits in this branch (not in main)
 git log main..HEAD --oneline
 
-# Get detailed commit messages
-git log main..HEAD --pretty=format:"%h %s"
-
-# Count commits by type (look for prefixes: feat, fix, docs, test, refactor)
+# Total commit count
 git log main..HEAD --oneline | wc -l
 
-# Get files modified with change stats
+# Get files modified with change stats (cumulative)
 git diff main --stat
 
 # Get list of files changed (names only)
 git diff main --name-only
 ```
 
-**Calculate metrics:**
-- Total commits
-- Fix/debug commits (commits with "fix", "debug", "revert" in message)
-- Churn ratio = fix commits / total commits
-- Flag if churn ratio > 30% (indicates troubled development)
+#### 1.2.2 Analyze Each Commit
 
-### 1.3 Locate Existing Documentation
+**Iterate through every commit and examine its changes:**
+
+```bash
+# Get all commit hashes in the branch
+COMMITS=$(git log main..HEAD --pretty=format:"%h" --reverse)
+
+# For each commit, display full context
+for commit in $COMMITS; do
+    echo "=============================================="
+    echo "COMMIT: $commit"
+    echo "=============================================="
+    
+    # Commit message (full)
+    git show $commit --pretty=format:"Author: %an%nDate: %ad%nMessage: %B" -s
+    
+    # Files changed with line counts
+    git show $commit --stat
+    
+    # Actual diff (truncate if huge)
+    git show $commit --pretty=format:"" -- | head -200
+    
+    echo ""
+done
+```
+
+**Or single command for full analysis:**
+
+```bash
+# Complete commit-by-commit breakdown with diffs
+git log main..HEAD --pretty=format:"%n=== COMMIT %h ===%nAuthor: %an%nDate: %ad%n%nMessage:%n%B%n--- Changes ---" --stat -p
+```
+
+#### 1.2.3 Identify Patterns and Problems
+
+```bash
+# Find files with high churn (modified in multiple commits)
+git log main..HEAD --name-only --pretty=format:"" | sort | uniq -c | sort -rn | head -20
+
+# Find fix/debug commits
+git log main..HEAD --oneline | grep -iE "fix|debug|revert|wip|broken|attempt"
+
+# Find reverts specifically
+git log main..HEAD --oneline | grep -i "revert"
+
+# Find commits that undo previous work (same file, opposite changes)
+# Look for files appearing in both "fix:" and earlier commits
+git log main..HEAD --pretty=format:"%h %s" --name-only | grep -B1 "app.js" | head -30
+
+# Identify debugging cycles (consecutive commits to same file)
+git log main..HEAD --pretty=format:"%h" --follow -- [high-churn-file.js]
+```
+
+#### 1.2.4 Deep Dive on Problem Files
+
+For files identified with high churn, trace their evolution:
+
+```bash
+# Full history of changes to a specific file in this branch
+git log main..HEAD -p -- path/to/problem-file.js
+
+# Show what changed in each commit for that file
+git log main..HEAD --pretty=format:"%h %s" -p -- path/to/problem-file.js
+```
+
+#### 1.2.5 Categorize Commits
+
+Review each commit and categorize:
+
+| Hash   | Message                    | Type    | Files | Assessment           |
+| ------ | -------------------------- | ------- | ----- | -------------------- |
+| abc123 | feat: Add sorting          | feature | 3     | ✅ Clean              |
+| def456 | fix: Sort order wrong      | fix     | 1     | 🔧 Expected iteration |
+| ghi789 | fix: Still broken          | fix     | 1     | ⚠️ Churn              |
+| jkl012 | Revert "fix: Still broken" | revert  | 1     | 🔴 Problem            |
+
+**Calculate metrics:**
+
+- Total commits
+- Feature/enhancement commits (feat, add, implement, new)
+- Fix/debug commits (fix, debug, broken, attempt, wip)
+- Revert commits
+- Churn ratio = (fix + revert commits) / total commits
+- High-churn files = files modified in 3+ commits
+
+**Flag for post-mortem discussion if:**
+
+- Churn ratio > 30%
+- Any file modified in 5+ commits
+- More than 1 revert
+- Consecutive fix commits on same file
+
+### 1.3 Analyze Intervention Logs
+
+If intervention logs exist, extract key information:
+
+```bash
+# Find intervention logs for this version
+find plan/interventions -name "*$(git branch --show-current | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')*"
+```
+
+**Read each intervention log and extract:**
+
+1. **Issues Encountered** - What problems were hit?
+   - Look for headers like "Issue", "Problem", "Symptom"
+   - Note the error messages or unexpected behaviors
+
+2. **Root Causes** - What was actually wrong?
+   - Look for "Cause", "Root Cause", "Reason"
+   - These often contain CLI docs candidates
+
+3. **Fixes Applied** - What solved it?
+   - Look for "Resolution", "Fix", "Solution"
+   - Check if these fixes are in the final code
+
+4. **Failed Attempts** - What didn't work?
+   - Important for post-mortem "What Didn't Go Well"
+   - Prevents repeating mistakes
+
+5. **Version/Debug Markers** - Track debugging progression
+   - Look for version bumps (v0.1.1-DEBUG, v0.1.2-DEBUG)
+   - Count iterations to resolution
+
+**Create intervention summary:**
+
+| Issue               | Root Cause                 | Resolution               | Attempts | CLI Docs? |
+| ------------------- | -------------------------- | ------------------------ | -------- | --------- |
+| Scrollbars missing  | Nested overflow containers | Set inner wrapper height | 5        | ✅ Yes     |
+| Config not updating | Stale backend call         | Use live webAppConfig    | 2        | ✅ Yes     |
+
+### 1.4 Locate Existing Documentation
 
 Check for these files related to current version:
 
@@ -78,11 +203,12 @@ cat plan/cli-docs/cli-docs-template-update.md 2>/dev/null || cat cli-docs/cli-do
 ```
 
 **Read each relevant file found:**
+
 - Spec files → What was planned
 - Intervention logs → What problems occurred, how resolved
 - Existing changelog → What format is used, what's already documented
 
-### 1.4 Run Tests
+### 1.5 Run Tests
 
 ```bash
 # Run test suite (try common patterns)
@@ -98,11 +224,12 @@ git diff main --name-only | grep -E "test_.*\.py$"
 ```
 
 **Record:**
+
 - Total tests
 - Tests passing/failing
 - New tests added in this branch
 
-### 1.5 Check for Deferred Items
+### 1.6 Check for Deferred Items
 
 ```bash
 # TODOs and FIXMEs in modified files
@@ -112,7 +239,7 @@ git diff main --name-only | xargs grep -l "TODO\|FIXME" 2>/dev/null
 grep -ri "defer\|later\|future\|v0\." plan/specs/ 2>/dev/null
 ```
 
-### 1.6 Identify Breaking Changes
+### 1.7 Identify Breaking Changes
 
 ```bash
 # Check for API changes in key files
@@ -126,6 +253,7 @@ git diff main -- "python-lib/**/*.py" | grep -E "^[\+\-]def "
 ```
 
 **Flag as breaking if:**
+
 - Parameters renamed or removed
 - Required parameters added
 - Return types changed
@@ -135,22 +263,66 @@ git diff main -- "python-lib/**/*.py" | grep -E "^[\+\-]def "
 
 ## Phase 2: Analyze
 
-### 2.1 Categorize Changes
+### 2.1 Compare Spec to Reality
+
+**Read the spec file and check each planned item against actual commits:**
+
+```bash
+# Find the spec for this version
+SPEC_FILE=$(find plan/specs -name "*$(git branch --show-current | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')*" | head -1)
+
+# Display spec contents
+cat "$SPEC_FILE"
+```
+
+**For each item in the spec:**
+
+1. Identify the feature/fix described
+
+2. Search commits for implementation:
+
+   ```bash
+   # Search commit messages for feature keywords
+   git log main..HEAD --oneline | grep -i "[keyword]"
+   
+   # Search actual code changes for implementation
+   git log main..HEAD -p | grep -A5 -B5 "[function or pattern]"
+   ```
+
+3. Verify the change exists in final code:
+
+   ```bash
+   # Check current state of relevant file
+   grep -n "[expected code pattern]" path/to/file.py
+   ```
+
+4. Mark as: ✅ Implemented | ⚠️ Partial | ❌ Missing | 🔄 Deferred
+
+**Create tracking table:**
+
+| Spec Item | Status        | Implementing Commit(s) | Notes                      |
+| --------- | ------------- | ---------------------- | -------------------------- |
+| Feature A | ✅ Implemented | abc123, def456         | Works as specified         |
+| Feature B | ⚠️ Partial     | ghi789                 | Missing edge case handling |
+| Feature C | ❌ Missing     | -                      | Never started              |
+| Bug fix D | 🔄 Deferred    | -                      | Moved to v0.2.0            |
+
+### 2.2 Categorize Changes
 
 Review git diff and categorize each change:
 
-| Category | Description | CHANGELOG Section |
-|----------|-------------|-------------------|
-| New feature | New user-facing capability | Added |
-| Bug fix | Corrects incorrect behavior | Fixed |
-| Enhancement | Improves existing feature | Changed |
-| Deprecation | Feature marked for removal | Deprecated |
-| Removal | Feature removed | Removed |
-| Internal | Refactoring, no user impact | (omit or note in post-mortem) |
-| Docs | Documentation only | (omit from CHANGELOG) |
-| Tests | Test additions/changes | (omit or brief note) |
+| Category    | Description                 | CHANGELOG Section             |
+| ----------- | --------------------------- | ----------------------------- |
+| New feature | New user-facing capability  | Added                         |
+| Bug fix     | Corrects incorrect behavior | Fixed                         |
+| Enhancement | Improves existing feature   | Changed                       |
+| Deprecation | Feature marked for removal  | Deprecated                    |
+| Removal     | Feature removed             | Removed                       |
+| Internal    | Refactoring, no user impact | (omit or note in post-mortem) |
+| Docs        | Documentation only          | (omit from CHANGELOG)         |
+| Tests       | Test additions/changes      | (omit or brief note)          |
 
-### 2.2 Extract Technical Learnings
+### 2.3 Extract Technical Learnings
 
 From intervention logs and git history, identify:
 
@@ -160,20 +332,21 @@ From intervention logs and git history, identify:
 4. **Patterns that failed** → Document to avoid repetition
 
 **CLI Docs criteria - include if:**
+
 - Would affect other plugin developers
 - Took significant debugging time to discover
 - Not documented elsewhere
 - Dataiku platform-specific behavior
 
-### 2.3 Assess Outcome
+### 2.4 Assess Outcome
 
 Determine overall branch outcome:
 
-| Outcome | Criteria |
-|---------|----------|
-| ✅ Success | All planned features delivered, tests pass, no major issues |
-| ⚠️ Partial | Some features delivered, some deferred, or minor issues remain |
-| ❌ Abandoned | Branch will not be merged, work scrapped or restarted |
+| Outcome     | Criteria                                                     |
+| ----------- | ------------------------------------------------------------ |
+| ✅ Success   | All planned features delivered, tests pass, no major issues  |
+| ⚠️ Partial   | Some features delivered, some deferred, or minor issues remain |
+| ❌ Abandoned | Branch will not be merged, work scrapped or restarted        |
 
 ---
 
@@ -431,6 +604,7 @@ Items that should be added to cli-docs-template-update.md:
 ```
 
 **CHANGELOG guidelines:**
+
 - Write from user perspective, not developer perspective
 - Describe WHAT changed, not HOW
 - Be concise - one line per item
@@ -462,12 +636,14 @@ Only add entries that meet the criteria from Phase 2.2.
 ```
 
 ### Verification
+
 [How to confirm the solution works]
 
 ### Related
-- [Links to relevant docs, issues, or other CLI docs sections]
-```
 
+- [Links to relevant docs, issues, or other CLI docs sections]
+
+```
 ---
 
 ## Phase 4: Review and Commit
@@ -518,6 +694,7 @@ git commit -m "docs(vX.Y.Z): Add release notes and post-mortem
 ### 4.5 Final Status
 
 Report:
+
 - Files created/modified
 - Commit hash
 - Branch ready for merge to main
@@ -526,14 +703,14 @@ Report:
 
 ## File Naming Conventions
 
-| Artifact | Location | Naming Pattern |
-|----------|----------|----------------|
-| Release notes | `plan/releases/` | `vX.Y.Z-release-notes.md` |
-| Spec (feature) | `plan/specs/` | `vX.Y.Z-feature-spec.md` |
-| Spec (bugfix) | `plan/specs/` | `vX.Y.Z-bugfix-spec.md` |
-| Post-mortem | `plan/post-mortems/` | `vX.Y.Z-post-mortem.md` |
-| Intervention | `plan/interventions/` | `vX.Y.Z-intervention.md` |
-| CLI docs | `plan/cli-docs/` | `cli-docs-template-update.md` (single file, append) |
+| Artifact       | Location              | Naming Pattern                                      |
+| -------------- | --------------------- | --------------------------------------------------- |
+| Release notes  | `plan/releases/`      | `vX.Y.Z-release-notes.md`                           |
+| Spec (feature) | `plan/specs/`         | `vX.Y.Z-feature-spec.md`                            |
+| Spec (bugfix)  | `plan/specs/`         | `vX.Y.Z-bugfix-spec.md`                             |
+| Post-mortem    | `plan/post-mortems/`  | `vX.Y.Z-post-mortem.md`                             |
+| Intervention   | `plan/interventions/` | `vX.Y.Z-intervention.md`                            |
+| CLI docs       | `plan/cli-docs/`      | `cli-docs-template-update.md` (single file, append) |
 
 ---
 
@@ -571,6 +748,7 @@ If time is short, minimum required artifacts:
 ## Troubleshooting
 
 ### No main branch to diff against
+
 ```bash
 # Use the parent branch or first commit
 git log --oneline | tail -5
@@ -578,12 +756,15 @@ git diff [first-commit-hash]..HEAD --stat
 ```
 
 ### Can't find spec files
+
 Check alternative locations:
+
 - Root directory
 - `docs/` folder
 - Named differently (search by version number)
 
 ### Tests won't run
+
 ```bash
 # Check for test requirements
 cat requirements-test.txt 2>/dev/null
