@@ -63,18 +63,11 @@
     console.log('Gantt Chart webapp initializing...');
 
     try {
-        // 1. Try to initialize immediately with synchronous config
-        if (webAppConfig && Object.keys(webAppConfig).length > 0) {
-            console.log('Found synchronous config, initializing...', webAppConfig);
-            try {
-                validateConfig(webAppConfig);
-                initializeChart(webAppConfig, []); 
-            } catch (e) {
-                console.warn('Initial config validation failed:', e);
-            }
-        }
-
-        // 2. Request config from parent frame
+        // Request config from parent frame - this includes filter state
+        // We deliberately do NOT render with synchronous config because it
+        // lacks the current filter state. The parent frame response includes
+        // both webAppConfig AND filters, ensuring filters are applied on first render.
+        showLoading();
         window.parent.postMessage("sendConfig", "*");
     } catch (e) {
         console.error('Initialization error:', e);

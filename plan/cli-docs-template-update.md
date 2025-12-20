@@ -427,3 +427,43 @@ your-plugin/
 
 ### Verification
 Use browser DevTools → Network tab to confirm which CSS files are actually loaded. If your styles aren't applying, check that the CSS file appears in the network requests.
+
+## 5. Webapp Filters Initialization
+
+### Context
+Initializing a Dataiku webapp that uses dashboard filters.
+
+### The Problem
+`dataiku.getWebAppConfig()` is a synchronous call that returns the webapp's configuration object. However, this object **does not** contain the current state of Dataiku filters. Using it to initialize your chart will result in a "flash of unfiltered content" where the chart renders all data before filters are applied.
+
+### The Solution
+Do **not** use `dataiku.getWebAppConfig()` for the initial render if your webapp depends on filters. Instead, use the `postMessage` flow to request the full configuration from the parent frame, which includes both the config object and the filter state.
+
+### Implementation
+
+```javascript
+// BAD - Renders immediately with empty filters
+const config = dataiku.getWebAppConfig()['webAppConfig'];
+initializeChart(config, []); // Filters are missing!
+
+// GOOD - Waits for parent to provide config AND filters
+showLoading();
+window.parent.postMessage("sendConfig", "*");
+
+window.addEventListener('message', function(event) {
+    if (event.data) {
+        const data = JSON.parse(event.data);
+        const config = data['webAppConfig'];
+        const filters = data['filters']; // Correct filter state available here
+        initializeChart(config, filters);
+    }
+});
+```
+
+### Verification
+1. Load the webapp with active filters.
+2. Verify the chart renders filtered data immediately (no flash of all data).
+3. Verify the loading spinner is shown while waiting for the `message` event.
+
+### Related
+- [Dataiku JS API Documentation](https://doc.dataiku.com/dss/latest/python-api/webapps.html)
