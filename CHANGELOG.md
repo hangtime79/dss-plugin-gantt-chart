@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-12-20
+
+### Fixed
+- **Scrolling**: Restored horizontal and vertical scrolling functionality
+  - Root cause: CSS was overriding Frappe Gantt's dynamic container height
+  - Fix: Let Frappe control `.gantt-container` height, put `overflow: auto` on outer wrapper
+
+---
+
 ## [0.2.0] - 2025-12-20
 
 ### Added
