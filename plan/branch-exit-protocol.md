@@ -1,6 +1,86 @@
 # Branch Exit Protocol
 
-This document defines the complete workflow for closing a development branch. 
+This document defines the complete workflow for closing a development branch.
+
+---
+
+## AI Assistant: Read This First
+
+### Your Role
+
+You are preparing a branch for merge. You must generate all documentation artifacts before the PR can be created.
+
+### Before Starting
+
+1. **Verify all code changes are complete** - User should have approved via QA Gate
+2. **Verify tests pass** - Run test suite before documentation
+3. **Verify version is bumped** - Check plugin.json matches branch version
+
+### The Four Phases (Do Not Skip Any)
+
+| Phase | Purpose | Output |
+|-------|---------|--------|
+| 1. Gather Context | Understand what was done | Commit analysis, file list |
+| 2. Analyze | Compare spec to reality | Tracking table, learnings |
+| 3. Generate Artifacts | Create documentation | Release notes, post-mortem, CHANGELOG |
+| 4. Review and Commit | Get approval, commit docs | Tagged release-ready branch |
+
+### What You Must Generate
+
+| Artifact | Location | Required |
+|----------|----------|----------|
+| Release notes | `plan/releases/vX.Y.Z-release-notes.md` | **Yes** |
+| CHANGELOG entry | `CHANGELOG.md` | **Yes** |
+| Post-mortem | `plan/post-mortems/vX.Y.Z-post-mortem.md` | Yes (skip only for trivial fixes) |
+| CLI docs updates | `plan/cli-docs-template-update.md` | Only if new learnings |
+
+### Common AI Mistakes
+
+1. **Skipping phases** - All 4 phases are required. Don't jump to commit.
+2. **Not reading commit history** - You must analyze ALL commits, not just recent ones
+3. **Generating sparse release notes** - Be thorough, list all changes
+4. **Forgetting to tag** - Create annotated tag before merge
+5. **Not presenting drafts** - Show user all artifacts before committing
+
+### When to Ask the User
+
+| Situation | Action |
+|-----------|--------|
+| Commit history is messy/unclear | Ask what was actually intended |
+| Spec items weren't implemented | Confirm if deferred or dropped |
+| Unsure if something is a breaking change | Ask before documenting |
+| Post-mortem reveals process issues | Discuss before finalizing |
+
+### Verification Commands
+
+Run these before generating artifacts:
+
+```bash
+# Verify you have the full picture
+git log main..HEAD --oneline | wc -l  # Total commits
+git diff main --stat | tail -1         # Files changed summary
+
+# Verify version
+cat plugin.json | grep version
+
+# Verify tests pass
+pytest tests/ -q 2>/dev/null || echo "Check test status with user"
+```
+
+### Output to Show User
+
+Present all artifacts for review before committing:
+
+```
+Branch Exit Documentation Ready:
+
+1. Release Notes: plan/releases/v0.2.3-release-notes.md
+2. CHANGELOG: Updated with v0.2.3 section
+3. Post-mortem: plan/post-mortems/v0.2.3-post-mortem.md
+4. CLI Docs: [No new learnings / Updated with X]
+
+Please review. Reply 'approve' to commit, or provide corrections.
+```
 
 ---
 
