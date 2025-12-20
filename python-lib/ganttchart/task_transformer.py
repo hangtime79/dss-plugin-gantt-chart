@@ -254,9 +254,7 @@ class TaskTransformer:
         if pd.isna(raw_id) or str(raw_id).strip() == '':
             task_id = f"task_{row_idx}"
         else:
-            logger.info(f"DEBUG: Task raw ID: {repr(raw_id)} (type: {type(raw_id)})")
             task_id = self._normalize_id(raw_id)
-            logger.info(f"DEBUG: Task normalized ID: {repr(task_id)}")
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
@@ -285,11 +283,8 @@ class TaskTransformer:
         # Add dependencies if column specified
         if self.config.dependencies_column:
             raw_value = row[self.config.dependencies_column]
-            logger.info(f"DEBUG: Task {task_id} - raw dependency value: {repr(raw_value)} (type: {type(raw_value)})")
             deps = self._extract_dependencies(raw_value)
-            logger.info(f"DEBUG: Task {task_id} - extracted deps string: {repr(deps)}")
             task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
-            logger.info(f"DEBUG: Task {task_id} - final deps array: {task['dependencies']}")
 
         # Add color class if column specified
         if self.config.color_column and color_mapping:
