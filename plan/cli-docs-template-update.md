@@ -343,3 +343,18 @@ console.log('Task:', JSON.stringify(task)); // Crashes
 // GOOD
 console.log('Task:', task); // Works
 ```
+
+## 3. Frappe Gantt Scrolling Container
+
+### Context
+Embedding Frappe Gantt in a constrained container (like a webapp iframe).
+
+### The Problem
+Frappe Gantt's internal `.gantt-container` does not automatically handle overflow correctly when nested, often leading to missing scrollbars or hidden content.
+
+### The Solution
+Use a two-container approach:
+1. Outer Container: `overflow: hidden` (Acts as the bounding box)
+2. Inner Container (`.gantt-container`): `width: 100%; height: 100%; overflow: auto;`
+
+Additionally, explicitly sync the SVG's `width` and `height` attributes to its CSS `style` properties to ensure the browser calculates overflow based on the full content size.
