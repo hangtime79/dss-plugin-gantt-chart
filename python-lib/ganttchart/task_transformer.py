@@ -254,7 +254,7 @@ class TaskTransformer:
         if pd.isna(task_id) or str(task_id).strip() == '':
             task_id = f"task_{row_idx}"
         else:
-            task_id = str(task_id).strip()
+            task_id = self._normalize_id(task_id)
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
