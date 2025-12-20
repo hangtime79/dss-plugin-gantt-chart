@@ -30,8 +30,8 @@ class TestDetectAndBreakCycles:
         # After breaking A→B→C→A, one edge should be removed
         empty_or_reduced = False
         for r_task, orig_task in zip(result, original_tasks):
-            r_deps = [d.strip() for d in r_task['dependencies'].split(',') if d.strip()] if r_task['dependencies'] else []
-            o_deps = [d.strip() for d in orig_task['dependencies'].split(',') if d.strip()] if orig_task['dependencies'] else []
+            r_deps = r_task['dependencies'] if r_task['dependencies'] else []
+            o_deps = orig_task['dependencies'] if isinstance(orig_task['dependencies'], list) else ([d.strip() for d in orig_task['dependencies'].split(',') if d.strip()] if orig_task['dependencies'] else [])
             if len(r_deps) < len(o_deps):
                 empty_or_reduced = True
                 break
@@ -48,15 +48,15 @@ class TestDetectAndBreakCycles:
     def test_no_cycles(self):
         """Test tasks with no cycles."""
         tasks = [
-            {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': ''},
-            {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': 'A'},
-            {'id': 'C', 'name': 'Task C', 'start': '2024-01-11', 'end': '2024-01-15', 'dependencies': 'B'}
+            {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': []},
+            {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': ['A']},
+            {'id': 'C', 'name': 'Task C', 'start': '2024-01-11', 'end': '2024-01-15', 'dependencies': ['B']}
         ]
         result, warnings = detect_and_break_cycles(tasks)
         assert len(warnings) == 0
         # Dependencies should remain unchanged
-        assert result[1]['dependencies'] == 'A'
-        assert result[2]['dependencies'] == 'B'
+        assert result[1]['dependencies'] == ['A']
+        assert result[2]['dependencies'] == ['B']
 
     def test_empty_tasks(self):
         """Test empty task list."""
@@ -76,15 +76,15 @@ class TestDetectAndBreakCycles:
     def test_complex_cycle(self):
         """Test complex cycle with multiple nodes."""
         tasks = [
-            {'id': 'A', 'dependencies': 'B'},
-            {'id': 'B', 'dependencies': 'C'},
-            {'id': 'C', 'dependencies': 'D'},
-            {'id': 'D', 'dependencies': 'A'}  # Creates cycle: A→B→C→D→A
+            {'id': 'A', 'dependencies': ['B']},
+            {'id': 'B', 'dependencies': ['C']},
+            {'id': 'C', 'dependencies': ['D']},
+            {'id': 'D', 'dependencies': ['A']}  # Creates cycle: A→B→C→D→A
         ]
         result, warnings = detect_and_break_cycles(tasks)
         assert len(warnings) > 0
         # Cycle should be broken
-        total_deps = sum(len(t['dependencies'].split(',')) if t['dependencies'] else 0 for t in result)
+        total_deps = sum(len(t['dependencies']) if t['dependencies'] else 0 for t in result)
         assert total_deps < 4
 
 
@@ -94,13 +94,13 @@ class TestValidateDependencyReferences:
     def test_valid_references(self):
         """Test tasks with valid dependency references."""
         tasks = [
-            {'id': 'A', 'dependencies': ''},
-            {'id': 'B', 'dependencies': 'A'},
-            {'id': 'C', 'dependencies': 'A,B'}
+            {'id': 'A', 'dependencies': []},
+            {'id': 'B', 'dependencies': ['A']},
+            {'id': 'C', 'dependencies': ['A', 'B']}
         ]
         result, warnings = validate_dependency_references(tasks)
         assert len(warnings) == 0
-        assert result[2]['dependencies'] == 'A,B'
+        assert result[2]['dependencies'] == ['A', 'B']
 
     def test_missing_references(self, missing_reference_tasks):
         """Test removal of non-existent dependencies."""
@@ -112,21 +112,21 @@ class TestValidateDependencyReferences:
         assert 'B' in task_a['dependencies']
         # Task B depends on D which doesn't exist
         task_b = next(t for t in result if t['id'] == 'B')
-        assert task_b['dependencies'] == ''
+        assert task_b['dependencies'] == []
 
     def test_self_dependency_removal(self):
         """Test removal of self-dependencies."""
         tasks = [
-            {'id': 'A', 'dependencies': 'A'},
-            {'id': 'B', 'dependencies': 'A,B,C'}
+            {'id': 'A', 'dependencies': ['A']},
+            {'id': 'B', 'dependencies': ['A', 'B', 'C']}
         ]
         result, warnings = validate_dependency_references(tasks)
         assert len(warnings) >= 2
         task_a = next(t for t in result if t['id'] == 'A')
-        assert task_a['dependencies'] == ''
+        assert task_a['dependencies'] == []
         task_b = next(t for t in result if t['id'] == 'B')
         # B and C should be removed (B=self, C=non-existent)
-        assert task_b['dependencies'] == 'A'
+        assert task_b['dependencies'] == ['A']
 
     def test_empty_dependencies(self):
         """Test tasks with empty dependencies."""
@@ -144,9 +144,9 @@ class TestValidateAllDependencies:
     def test_combined_validation(self):
         """Test combined reference and cycle validation."""
         tasks = [
-            {'id': 'A', 'dependencies': 'B,D'},  # D doesn't exist
-            {'id': 'B', 'dependencies': 'C'},
-            {'id': 'C', 'dependencies': 'A'}  # Creates cycle: A→B→C→A
+            {'id': 'A', 'dependencies': ['B', 'D']},  # D doesn't exist
+            {'id': 'B', 'dependencies': ['C']},
+            {'id': 'C', 'dependencies': ['A']}  # Creates cycle: A→B→C→A
         ]
         result, warnings = validate_all_dependencies(tasks)
         # Should have warnings for both missing reference and cycle
@@ -162,9 +162,9 @@ class TestBuildAdjacencyList:
     def test_basic_adjacency_list(self):
         """Test basic adjacency list construction."""
         tasks = [
-            {'id': 'A', 'dependencies': 'B,C'},
-            {'id': 'B', 'dependencies': ''},
-            {'id': 'C', 'dependencies': 'B'}
+            {'id': 'A', 'dependencies': ['B', 'C']},
+            {'id': 'B', 'dependencies': []},
+            {'id': 'C', 'dependencies': ['B']}
         ]
         adj_list = _build_adjacency_list(tasks)
         assert adj_list['A'] == ['B', 'C']
@@ -174,7 +174,7 @@ class TestBuildAdjacencyList:
     def test_empty_dependencies(self):
         """Test adjacency list with empty dependencies."""
         tasks = [
-            {'id': 'A', 'dependencies': ''},
+            {'id': 'A', 'dependencies': []},
             {'id': 'B'}  # No dependencies field
         ]
         adj_list = _build_adjacency_list(tasks)
@@ -197,9 +197,9 @@ class TestCountDependencies:
     def test_basic_count(self):
         """Test basic dependency counting."""
         tasks = [
-            {'id': 'A', 'dependencies': ''},
-            {'id': 'B', 'dependencies': 'A'},
-            {'id': 'C', 'dependencies': 'A,B'}
+            {'id': 'A', 'dependencies': []},
+            {'id': 'B', 'dependencies': ['A']},
+            {'id': 'C', 'dependencies': ['A', 'B']}
         ]
         counts = count_dependencies(tasks)
         assert counts['total_tasks'] == 3
@@ -210,8 +210,8 @@ class TestCountDependencies:
     def test_no_dependencies(self):
         """Test counting with no dependencies."""
         tasks = [
-            {'id': 'A', 'dependencies': ''},
-            {'id': 'B', 'dependencies': ''}
+            {'id': 'A', 'dependencies': []},
+            {'id': 'B', 'dependencies': []}
         ]
         counts = count_dependencies(tasks)
         assert counts['total_tasks'] == 2

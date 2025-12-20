@@ -250,11 +250,11 @@ class TaskTransformer:
             return None
 
         # Extract task ID (generate if null)
-        task_id = row[self.config.id_column]
-        if pd.isna(task_id) or str(task_id).strip() == '':
+        raw_id = row[self.config.id_column]
+        if pd.isna(raw_id) or str(raw_id).strip() == '':
             task_id = f"task_{row_idx}"
         else:
-            task_id = str(task_id).strip()
+            task_id = self._normalize_id(raw_id)
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
@@ -282,8 +282,9 @@ class TaskTransformer:
 
         # Add dependencies if column specified
         if self.config.dependencies_column:
-            deps = self._extract_dependencies(row[self.config.dependencies_column])
-            task['dependencies'] = deps  # Always add, even if empty
+            raw_value = row[self.config.dependencies_column]
+            deps = self._extract_dependencies(raw_value)
+            task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
 
         # Add color class if column specified
         if self.config.color_column and color_mapping:
@@ -347,29 +348,71 @@ class TaskTransformer:
             logger.warning(f"Invalid progress value: {value}. Using None.")
             return None
 
+    def _normalize_id(self, value: Any) -> str:
+        """
+        Normalize an ID value to a consistent string format.
+        Used for both task IDs and dependency IDs to ensure they match.
+
+        Handles all data types: int, float, str, Decimal, etc.
+        Converts whole-number floats (61.0) to int representation ("61")
+        to match how Pandas reads columns differently based on NaN presence.
+
+        Args:
+            value: ID value from DataFrame
+
+        Returns:
+            Normalized string representation
+        """
+        if pd.isna(value):
+            return ''
+
+        # Handle numeric types - convert whole number floats to int representation
+        # This solves the Pandas type mismatch where:
+        # - ID column (no NaNs): read as int64 → 277 → "277"
+        # - Dependency column (has NaNs): read as float64 → 276.0 → "276.0"
+        # We normalize both to "276" so they match
+        if isinstance(value, float):
+            # Check if it's a whole number (e.g., 276.0)
+            if value.is_integer():
+                return str(int(value))
+            else:
+                # Preserve actual decimal values (e.g., 3.14)
+                return str(value).strip()
+
+        # For all other types (int, str, Decimal, etc.), convert directly
+        return str(value).strip()
+
     def _extract_dependencies(self, value: Any) -> str:
         """
         Extract dependencies as comma-separated string.
+        Uses _normalize_id() to ensure dependency IDs match task IDs exactly.
 
         Args:
-            value: Dependencies value from DataFrame
+            value: Dependencies value from DataFrame (can be str, int, float, etc.)
 
         Returns:
             Comma-separated string of task IDs, or empty string
         """
-        if pd.isna(value) or value == '':
+        # Handle NaN, None, or empty string
+        if pd.isna(value):
             return ''
 
-        if isinstance(value, str):
-            # Split by comma, strip whitespace, filter empty
-            deps_list = [d.strip() for d in value.split(',') if d.strip()]
-            return ','.join(deps_list)
+        # Normalize the value using the same logic as task IDs
+        value_str = self._normalize_id(value)
 
-        # Try converting to string
-        try:
-            return str(value).strip()
-        except Exception:
+        # Check if empty after normalization
+        if not value_str:
             return ''
+
+        # Split by comma, strip whitespace
+        # This handles both "50" and "50,51,52" formats
+        if ',' in value_str:
+            # Multiple dependencies - each is already normalized by _normalize_id
+            deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
+            return ','.join(deps_list) if deps_list else ''
+        else:
+            # Single dependency
+            return value_str
 
     def _increment_skip_reason(self, reason: str) -> None:
         """Increment skip reason counter."""
