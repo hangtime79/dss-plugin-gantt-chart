@@ -2,8 +2,8 @@
 ## Technical Specification
 
 **Plugin ID:** `gantt-chart`
-**Current Version:** 0.0.2
-**Last Updated:** 2025-12-18
+**Current Version:** 0.1.2
+**Last Updated:** 2025-12-20
 
 > This is a living document describing the current state of the plugin.
 > For version history, see [CHANGELOG.md](CHANGELOG.md).
