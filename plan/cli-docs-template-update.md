@@ -279,3 +279,21 @@ requestAnimationFrame(() => {
     enforceCustomStyles();
 });
 ```
+
+## 7. Standard Webapp Auto-loading
+
+### Context
+Dataiku "Standard" webapps (defined in `webapp.json` with `"baseType": "STANDARD"`) have built-in behavior for loading assets.
+
+### The Problem
+Developers often manually add `<script src="app.js">` to their `body.html`, thinking it is required.
+
+### The Reality
+Dataiku **automatically** injects:
+1. `webapps/<id>/app.js` (if it exists)
+2. `webapps/<id>/style.css` (if it exists)
+3. jQuery (if requested in `standardWebAppLibraries`)
+4. Dataiku JS API (if requested)
+
+### The Solution
+**Do not** manually reference your main `app.js` or `style.css` in `body.html` for Standard webapps. Doing so will cause the script to execute twice: once by the auto-loader, and once by your tag.

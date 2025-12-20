@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.3] - 2025-12-20
+
+### Fixed
+- **Dual Execution Race Condition**: Resolved an issue where the application logic would run twice, causing unpredictable behavior and rendering glitches.
+- **Cleanup**: Removed deprecated code files to ensure a single source of truth for the application logic.
+
+---
+
 ## [0.1.2] - 2025-12-20
 
 ### Fixed
