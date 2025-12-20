@@ -82,6 +82,9 @@
                 const filters = eventData['filters'] || [];
 
                 console.log('Received updated config:', webAppConfig);
+                console.log('=== CONFIG DEBUG ===');
+                console.log('dependenciesColumn setting:', webAppConfig.dependenciesColumn);
+                console.log('=== END CONFIG DEBUG ===');
 
                 validateConfig(webAppConfig);
                 initializeChart(webAppConfig, filters);
