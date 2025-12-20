@@ -101,7 +101,7 @@ def detect_and_break_cycles(tasks: List[Dict]) -> Tuple[List[Dict], List[str]]:
                     if (task['id'], dep) not in edge_set
                 ]
 
-                task['dependencies'] = ','.join(filtered_deps) if filtered_deps else ''
+                task['dependencies'] = filtered_deps
 
     logger.info(f"Cycle detection completed. Broke {len(cycle_edges)} cyclic dependencies.")
 
@@ -156,7 +156,7 @@ def validate_dependency_references(tasks: List[Dict]) -> Tuple[List[Dict], List[
 
         # Keep only valid dependencies
         valid_deps = [d for d in deps_list if d in valid_ids]
-        task['dependencies'] = ','.join(valid_deps) if valid_deps else ''
+        task['dependencies'] = valid_deps
 
     if warnings:
         logger.info(f"Dependency validation found {len(warnings)} issues.")

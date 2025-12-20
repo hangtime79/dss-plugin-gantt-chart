@@ -635,3 +635,122 @@ webapps/
 ```
 
 **Note:** Webapp folder names do not need to start with plugin ID (unlike recipes).
+
+---
+
+## JavaScript Frontend
+
+For webapps with custom JavaScript, these patterns ensure reliable initialization and communication with the backend.
+
+### Backend Communication Helper
+
+Standard Dataiku JS libraries (`standardWebAppLibraries: ["dataiku"]`) provide the core `dataiku` object, but do **not** provide `dataiku.webappBackend` for convenient backend communication.
+
+**Solution:** Create a helper file (`dku-helpers.js`) loaded before your main script:
+
+```javascript
+(function() {
+    'use strict';
+
+    if (typeof dataiku === 'undefined') {
+        console.error("Dataiku standard library not loaded.");
+        return;
+    }
+
+    if (!dataiku.webappBackend) {
+        dataiku.webappBackend = {
+            getUrl: function(path) {
+                return dataiku.getWebAppBackendUrl(path);
+            },
+            get: function(path, params) {
+                let url = this.getUrl(path);
+                if (params && Object.keys(params).length > 0) {
+                    const qs = Object.keys(params).map(k =>
+                        encodeURIComponent(k) + '=' + encodeURIComponent(params[k])
+                    ).join('&');
+                    url += (url.indexOf('?') === -1 ? '?' : '&') + qs;
+                }
+                return fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                }).then(r => r.json());
+            }
+        };
+    }
+})();
+```
+
+**Load order in body.html:**
+```html
+<script src="/plugins/PLUGIN_ID/resource/webapp/dku-helpers.js"></script>
+<!-- app.js is auto-loaded by Dataiku after this -->
+```
+
+### Auto-Loading Behavior
+
+Dataiku "Standard" webapps (`"baseType": "STANDARD"`) automatically load:
+
+| File | Auto-loaded? |
+|------|--------------|
+| `webapps/{id}/app.js` | **Yes** |
+| `webapps/{id}/style.css` | **Not reliably** (DSS version dependent) |
+| jQuery, Dataiku JS API | If in `standardWebAppLibraries` |
+
+**Do NOT manually add `<script src="app.js">` in body.html** - it will execute twice.
+
+### CSS Loading
+
+For reliable CSS loading, use the `resource/` folder with explicit link:
+
+```html
+<!-- body.html -->
+<link rel="stylesheet" href="/plugins/PLUGIN_ID/resource/webapp/style.css">
+```
+
+### Common Pitfall: Duplicate Scripts
+
+If you have files in both `webapps/{id}/` and `resource/webapp/`:
+
+**Symptoms:**
+- Console logs appear twice from different line numbers
+- Changes don't seem to apply (editing wrong file)
+- Race conditions where UI flickers
+
+**Solution:**
+1. Decide on a single source of truth
+2. Remove or sync duplicates
+3. Check browser Network tab to confirm which file loads
+
+### Filter State Initialization
+
+`dataiku.getWebAppConfig()` does **not** include filter state. Using it causes a "flash of unfiltered content."
+
+```javascript
+// BAD - Renders with empty filters
+const config = dataiku.getWebAppConfig()['webAppConfig'];
+initializeChart(config, []); // Filters missing!
+
+// GOOD - Wait for parent frame with filters
+showLoading();
+window.parent.postMessage("sendConfig", "*");
+
+window.addEventListener('message', function(event) {
+    const data = JSON.parse(event.data);
+    initializeChart(data['webAppConfig'], data['filters']);
+});
+```
+
+### External Library Rendering
+
+Libraries like D3, Frappe Gantt perform their own DOM manipulation. To apply custom styling after library renders, use `requestAnimationFrame`:
+
+```javascript
+ganttInstance = new Gantt("#gantt", tasks, options);
+
+// Defer custom adjustments until after library render
+requestAnimationFrame(() => {
+    enforceCustomStyles();
+});
+```
+
+Without this, your adjustments may be overwritten by the library's render cycle.

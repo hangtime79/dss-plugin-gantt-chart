@@ -92,13 +92,16 @@ def _topological_sort(tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     
     for task in tasks:
         task_id = task['id']
-        deps_str = task.get('dependencies', '')
-        
-        if not deps_str:
+        # Get dependencies (now an array from task_transformer)
+        deps = task.get('dependencies', [])
+
+        # Handle both array (new) and string (legacy) formats
+        if isinstance(deps, str):
+            if not deps:
+                continue
+            deps = [d.strip() for d in deps.split(',') if d.strip()]
+        elif not deps:
             continue
-            
-        # Parse dependencies
-        deps = [d.strip() for d in deps_str.split(',') if d.strip()]
         
         for dep_id in deps:
             if dep_id in id_to_task:

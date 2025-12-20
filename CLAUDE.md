@@ -103,6 +103,7 @@ your-plugin-id/
 - [Type Conversions](cli-docs/reference/type-conversions.md) - Python types for parameters
 - [Dataset API Quick Ref](cli-docs/reference/dataset-api-quick.md) - Read/write methods
 - [Edge Cases](cli-docs/reference/edge-cases.md) - Validation and error handling
+- [Frappe Gantt](cli-docs/reference/frappe-gantt.md) - Frappe Gantt library patterns
 - [Testing Guide](cli-docs/guides/testing.md) - Unit and integration testing
 - [Best Practices](cli-docs/guides/best-practices.md) - Coding standards and patterns
 
