@@ -280,6 +280,15 @@
 
         // Initialize Frappe Gantt
         try {
+            // DEBUG: Log tasks with dependencies
+            console.log('=== DEPENDENCY DEBUG ===');
+            tasks.forEach(task => {
+                if (task.dependencies && task.dependencies.length > 0) {
+                    console.log(`Task ${task.id} has dependencies:`, task.dependencies, `(type: ${typeof task.dependencies})`);
+                }
+            });
+            console.log('=== END DEBUG ===');
+
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
