@@ -82,9 +82,6 @@
                 const filters = eventData['filters'] || [];
 
                 console.log('Received updated config:', webAppConfig);
-                console.log('=== CONFIG DEBUG ===');
-                console.log('dependenciesColumn setting:', webAppConfig.dependenciesColumn);
-                console.log('=== END CONFIG DEBUG ===');
 
                 validateConfig(webAppConfig);
                 initializeChart(webAppConfig, filters);
@@ -126,18 +123,6 @@
         fetchTasks(config, filters)
         .then(tasksResponse => {
             hideLoading();
-
-            // DEBUG: Check what backend returned
-            console.log('=== BACKEND RESPONSE DEBUG ===');
-            console.log('Total tasks received:', tasksResponse.tasks?.length);
-            if (tasksResponse.tasks) {
-                tasksResponse.tasks.forEach(task => {
-                    if (task.dependencies) {
-                        console.log(`Backend task ${task.id} dependencies:`, task.dependencies, `(type: ${typeof task.dependencies}, isArray: ${Array.isArray(task.dependencies)})`);
-                    }
-                });
-            }
-            console.log('=== END BACKEND DEBUG ===');
 
             if (tasksResponse.error) {
                 displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
@@ -295,15 +280,6 @@
 
         // Initialize Frappe Gantt
         try {
-            // DEBUG: Log tasks with dependencies
-            console.log('=== DEPENDENCY DEBUG ===');
-            tasks.forEach(task => {
-                if (task.dependencies && task.dependencies.length > 0) {
-                    console.log(`Task ${task.id} has dependencies:`, task.dependencies, `(type: ${typeof task.dependencies})`);
-                }
-            });
-            console.log('=== END DEBUG ===');
-
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
