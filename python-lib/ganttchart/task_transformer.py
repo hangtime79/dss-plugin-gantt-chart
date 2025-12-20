@@ -293,21 +293,33 @@ class TaskTransformer:
 
         # Add custom tooltip fields
         if self.config.tooltip_columns:
-            custom_fields = {}
-            # Handle case where tooltip_columns might be a single string (should be list)
+            custom_fields = []  # Use list to preserve order explicitly
             cols = self.config.tooltip_columns
             if isinstance(cols, str):
                 cols = [cols]
-                
+
             for col in cols:
-                if col in row:
+                if col in row.index:
                     val = row[col]
-                    if not pd.isna(val):
-                        # Format dates if needed, or convert to string
-                        if hasattr(val, 'strftime'):
-                             custom_fields[col] = val.strftime('%Y-%m-%d')
+                    # Format value (handle null, dates, numbers)
+                    if pd.isna(val):
+                        formatted_val = None  # Will be handled by frontend as "-"
+                    elif hasattr(val, 'strftime'):
+                        formatted_val = val.strftime('%Y-%m-%d')
+                    elif isinstance(val, (int, float)):
+                        # Preserve numeric types for display
+                        if pd.isna(val):
+                            formatted_val = None
                         else:
-                             custom_fields[col] = str(val)
+                            formatted_val = val
+                    else:
+                        formatted_val = str(val).strip()
+
+                    custom_fields.append({
+                        'label': col,
+                        'value': formatted_val
+                    })
+
             if custom_fields:
                 task['custom_fields'] = custom_fields
 

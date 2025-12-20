@@ -691,12 +691,20 @@ git commit -m "docs(vX.Y.Z): Add release notes and post-mortem
 - [CLI docs updates if applicable]"
 ```
 
-### 4.5 Final Status
+### 4.5 Tag the Release
+
+```bash
+# Create an annotated tag for the release
+git tag -a vX.Y.Z -m "Release vX.Y.Z - [Short Description]"
+```
+
+### 4.6 Final Status
 
 Report:
 
 - Files created/modified
 - Commit hash
+- Tag created
 - Branch ready for merge to main
 
 ---
