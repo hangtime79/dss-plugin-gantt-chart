@@ -294,7 +294,7 @@
     // ===== POPUP BUILDER =====
 
     function buildPopupHTML(task) {
-        console.log('Popup task object:', JSON.stringify(task, null, 2));
+        console.log('Popup task object:', task);
         
         let html = `
             <div class="gantt-popup">
