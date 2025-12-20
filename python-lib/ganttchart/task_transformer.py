@@ -354,26 +354,32 @@ class TaskTransformer:
     def _extract_dependencies(self, value: Any) -> str:
         """
         Extract dependencies as comma-separated string.
+        Handles both string and numeric dependency IDs.
 
         Args:
-            value: Dependencies value from DataFrame
+            value: Dependencies value from DataFrame (can be str, int, float, etc.)
 
         Returns:
             Comma-separated string of task IDs, or empty string
         """
-        if pd.isna(value) or value == '':
+        # Handle NaN, None, or empty string
+        if pd.isna(value):
             return ''
 
-        if isinstance(value, str):
-            # Split by comma, strip whitespace, filter empty
-            deps_list = [d.strip() for d in value.split(',') if d.strip()]
-            return ','.join(deps_list)
-
-        # Try converting to string
+        # Convert to string first (handles int, float, etc.)
         try:
-            return str(value).strip()
+            value_str = str(value).strip()
         except Exception:
             return ''
+
+        # Check if empty after conversion
+        if not value_str or value_str == '':
+            return ''
+
+        # Split by comma, strip whitespace, filter empty
+        # This handles both "50" and "50,51,52" formats
+        deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
+        return ','.join(deps_list) if deps_list else ''
 
     def _increment_skip_reason(self, reason: str) -> None:
         """Increment skip reason counter."""
