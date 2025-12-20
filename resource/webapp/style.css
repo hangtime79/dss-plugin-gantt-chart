@@ -15,6 +15,12 @@ html, body {
     position: relative;
 }
 
+/* NOTE: Do NOT override .gantt-container height here!
+   Frappe Gantt dynamically sets height via --gv-grid-height CSS variable.
+   Overriding with height:100% breaks scrolling by forcing container to viewport size.
+   Our #gantt-container (overflow:auto) handles scrolling when Frappe's container exceeds viewport.
+*/
+
 /* ===== LOADING OVERLAY ===== */
 .loading-overlay {
     position: absolute;
@@ -257,4 +263,25 @@ html, body {
         stroke: #000;
         stroke-width: 2;
     }
+}
+
+/* ===== CUSTOM TOOLTIP FIELDS ===== */
+.popup-custom-fields {
+    margin-top: 8px;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+}
+
+.popup-field {
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.field-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.field-value {
+    color: #333;
 }

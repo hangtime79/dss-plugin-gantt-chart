@@ -1,6 +1,52 @@
 (function() {
     'use strict';
 
+    // ===== BACKEND HELPERS =====
+    // Provides robust backend communication wrappers (formerly dku-helpers.js)
+    if (typeof dataiku !== 'undefined' && !dataiku.webappBackend) {
+        console.log("Initializing dataiku.webappBackend helper...");
+        dataiku.webappBackend = {
+            getUrl: function(path) {
+                return dataiku.getWebAppBackendUrl(path);
+            },
+            get: function(path, params) {
+                let url = this.getUrl(path);
+                
+                // Append query parameters
+                if (params && Object.keys(params).length > 0) {
+                    const queryString = Object.keys(params).map(key => {
+                        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+                    }).join('&');
+                    url += (url.indexOf('?') === -1 ? '?' : '&') + queryString;
+                }
+
+                return fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.status == 502) {
+                        throw new Error("Webapp backend is not running or not reachable (502).");
+                    }
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            let errorMsg = response.statusText;
+                            try {
+                                const json = JSON.parse(text);
+                                if (json.error) errorMsg = json.error;
+                            } catch(e) {}
+                            throw new Error(`Backend Error (${response.status}): ${errorMsg}`);
+                        });
+                    }
+                    return response.json();
+                });
+            }
+        };
+    }
+
     // ===== STATE =====
     let webAppConfig = {};
     try {
@@ -224,7 +270,10 @@
             on_view_change: function(mode) {
                 console.log('View changed:', mode);
                 // Re-enforce minimum bar widths after view mode change
-                requestAnimationFrame(() => enforceMinimumBarWidths());
+                requestAnimationFrame(() => {
+                    enforceMinimumBarWidths();
+                    updateSvgDimensions();
+                });
             }
         };
 
@@ -242,11 +291,40 @@
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
             // Enforce minimum bar widths after render completes
-            requestAnimationFrame(() => enforceMinimumBarWidths());
+            requestAnimationFrame(() => {
+                enforceMinimumBarWidths();
+                updateSvgDimensions();
+            });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
             displayError('Rendering Error', error.message, error);
         }
+    }
+
+    // ===== SVG DIMENSION HELPER =====
+
+    /**
+     * Explicitly set SVG styles from attributes to force container scrolling.
+     * Frappe Gantt calculates dimensions but sometimes only sets attributes,
+     * which might not trigger the CSS overflow behavior in all browsers/contexts.
+     */
+    function updateSvgDimensions() {
+        const svg = document.getElementById('gantt-svg');
+        if (!svg) return;
+
+        // Frappe Gantt sets these attributes based on content
+        const heightAttr = svg.getAttribute('height');
+        const widthAttr = svg.getAttribute('width');
+
+        if (heightAttr) {
+            // If it's a number (pixels), append 'px'. If %, keep as is.
+            svg.style.height = heightAttr + (String(heightAttr).endsWith('%') ? '' : 'px');
+        }
+        if (widthAttr) {
+            svg.style.width = widthAttr + (String(widthAttr).endsWith('%') ? '' : 'px');
+        }
+        
+        console.log(`Updated SVG dimensions: width=${svg.style.width}, height=${svg.style.height}`);
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
