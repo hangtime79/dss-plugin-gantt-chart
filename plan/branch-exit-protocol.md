@@ -199,7 +199,7 @@ ls -la plan/post-mortems/
 cat CHANGELOG.md
 
 # CLI docs current state
-cat plan/cli-docs/cli-docs-template-update.md 2>/dev/null || cat cli-docs/cli-docs-template-update.md 2>/dev/null
+cat plan/cli-docs-template-update.md 2>/dev/null
 ```
 
 **Read each relevant file found:**
@@ -613,7 +613,7 @@ Items that should be added to cli-docs-template-update.md:
 
 ### 3.4 CLI Docs Updates
 
-**File:** `plan/cli-docs/cli-docs-template-update.md` (append new sections)
+**File:** `plan/cli-docs-template-update.md` (append new sections)
 
 Only add entries that meet the criteria from Phase 2.2.
 
@@ -680,7 +680,7 @@ cat plugin.json | grep '"version"'
 git add plan/releases/vX.Y.Z-release-notes.md
 git add plan/post-mortems/vX.Y.Z-post-mortem.md
 git add CHANGELOG.md
-git add plan/cli-docs/cli-docs-template-update.md  # if modified
+git add plan/cli-docs-template-update.md  # if modified
 
 # Commit with conventional commit message
 git commit -m "docs(vX.Y.Z): Add release notes and post-mortem
@@ -718,7 +718,7 @@ Report:
 | Spec (bugfix)  | `plan/specs/`         | `vX.Y.Z-bugfix-spec.md`                             |
 | Post-mortem    | `plan/post-mortems/`  | `vX.Y.Z-post-mortem.md`                             |
 | Intervention   | `plan/interventions/` | `vX.Y.Z-intervention.md`                            |
-| CLI docs       | `plan/cli-docs/`      | `cli-docs-template-update.md` (single file, append) |
+| CLI docs       | `plan/`               | `cli-docs-template-update.md` (single file, append) |
 
 ---
 
@@ -726,8 +726,7 @@ Report:
 
 ```
 plan/
-├── cli-docs/
-│   └── cli-docs-template-update.md    # Accumulated learnings (append-only)
+├── cli-docs-template-update.md        # Accumulated learnings (append-only)
 ├── interventions/
 │   └── vX.Y.Z-intervention.md         # Debugging session logs
 ├── post-mortems/
