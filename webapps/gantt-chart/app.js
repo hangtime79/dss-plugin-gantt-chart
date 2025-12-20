@@ -296,6 +296,11 @@
     function buildPopupHTML(task) {
         console.log('Popup task object:', task);
         
+        // Handle wrapper object (some versions of Frappe Gantt pass {task: ..., chart: ...})
+        if (task && task.task) {
+            task = task.task;
+        }
+
         let html = `
             <div class="gantt-popup">
                 <div class="popup-title">${escapeHtml(task.name)}</div>
