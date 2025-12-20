@@ -54,9 +54,9 @@ def large_df():
 def circular_dependency_tasks():
     """Tasks with circular dependencies."""
     return [
-        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': 'B'},
-        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': 'C'},
-        {'id': 'C', 'name': 'Task C', 'start': '2024-01-11', 'end': '2024-01-15', 'dependencies': 'A'}
+        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': ['B']},
+        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': ['C']},
+        {'id': 'C', 'name': 'Task C', 'start': '2024-01-11', 'end': '2024-01-15', 'dependencies': ['A']}
     ]
 
 
@@ -64,8 +64,8 @@ def circular_dependency_tasks():
 def self_dependency_tasks():
     """Tasks with self-dependencies."""
     return [
-        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': 'A'},
-        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': 'B,A'}
+        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': ['A']},
+        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': ['B', 'A']}
     ]
 
 
@@ -73,8 +73,8 @@ def self_dependency_tasks():
 def missing_reference_tasks():
     """Tasks with dependencies referencing non-existent tasks."""
     return [
-        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': 'B,C'},
-        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': 'D'}
+        {'id': 'A', 'name': 'Task A', 'start': '2024-01-01', 'end': '2024-01-05', 'dependencies': ['B', 'C']},
+        {'id': 'B', 'name': 'Task B', 'start': '2024-01-06', 'end': '2024-01-10', 'dependencies': ['D']}
     ]
 
 

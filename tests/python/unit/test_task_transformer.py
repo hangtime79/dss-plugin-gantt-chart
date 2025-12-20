@@ -294,7 +294,7 @@ class TestTaskTransformer:
         transformer = TaskTransformer(config)
         result = transformer.transform(df)
 
-        assert result['tasks'][0]['dependencies'] == ''
+        assert result['tasks'][0]['dependencies'] == []
     def test_custom_tooltips_basic(self):
         """Test basic custom tooltip extraction."""
         df = pd.DataFrame({
