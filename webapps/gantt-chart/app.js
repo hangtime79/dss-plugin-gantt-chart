@@ -168,8 +168,8 @@
     function adjustHeaderLabels() {
         if (!ganttInstance) return;
 
-        const columnWidth = ganttInstance.config?.column_width ?? 45;
-        const viewMode = ganttInstance.config?.view_mode ?? 'Week';
+        const columnWidth = ganttInstance.options?.column_width ?? 45;
+        const viewMode = ganttInstance.options?.view_mode ?? 'Week';
         const container = document.querySelector('.gantt-container');
 
         if (!container) return;
