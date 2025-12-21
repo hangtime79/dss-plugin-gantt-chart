@@ -149,3 +149,83 @@ def _topological_sort(tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # Reconstruct task list
     return [id_to_task[tid] for tid in result_ids]
+
+
+def group_and_sort_tasks(
+    tasks: List[Dict[str, Any]],
+    group_by_columns: List[str],
+    sort_by: str
+) -> List[Dict[str, Any]]:
+    """
+    Group tasks hierarchically, then sort within each group.
+
+    Args:
+        tasks: List of task dictionaries (must include _group_values)
+        group_by_columns: Ordered list of column names for hierarchical grouping
+        sort_by: Sort criteria to apply within each leaf group
+
+    Returns:
+        Flattened list of tasks in grouped, sorted order
+
+    Example:
+        group_by_columns = ['Country', 'Region']
+        - Groups by Country first (alphabetically)
+        - Within each Country, groups by Region (alphabetically)
+        - Within each Region, applies sort_by
+    """
+    if not group_by_columns or not tasks:
+        return sort_tasks(tasks, sort_by)
+
+    logger.info(
+        f"Grouping {len(tasks)} tasks by {len(group_by_columns)} columns: {group_by_columns}"
+    )
+
+    def group_recursive(task_list: List[Dict[str, Any]], columns: List[str], depth: int = 0) -> List[Dict[str, Any]]:
+        """
+        Recursively group tasks by columns and sort within each group.
+
+        Args:
+            task_list: Tasks to group
+            columns: Grouping columns
+            depth: Current depth in the hierarchy (0-indexed)
+
+        Returns:
+            Sorted and grouped task list
+        """
+        if depth >= len(columns) or not task_list:
+            # Leaf level - apply sorting
+            return sort_tasks(task_list, sort_by)
+
+        col = columns[depth]
+        groups = {}
+        no_value_tasks = []
+
+        # Group tasks by current column value
+        for task in task_list:
+            # Get group value from task's _group_values dict
+            group_vals = task.get('_group_values', {})
+            val = group_vals.get(col)
+
+            if val is None or val == '':
+                no_value_tasks.append(task)
+            else:
+                key = str(val)
+                if key not in groups:
+                    groups[key] = []
+                groups[key].append(task)
+
+        # Sort group keys alphabetically
+        sorted_keys = sorted(groups.keys())
+
+        # Recursively process each group
+        result = []
+        for key in sorted_keys:
+            result.extend(group_recursive(groups[key], columns, depth + 1))
+
+        # Add no-value tasks at the end
+        if no_value_tasks:
+            result.extend(group_recursive(no_value_tasks, columns, depth + 1))
+
+        return result
+
+    return group_recursive(tasks, group_by_columns)

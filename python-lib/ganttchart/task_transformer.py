@@ -29,6 +29,7 @@ class TaskTransformerConfig:
     dependencies_column: Optional[str] = None
     color_column: Optional[str] = None
     tooltip_columns: Optional[List[str]] = None
+    group_by_columns: Optional[List[str]] = None
     sort_by: str = 'none'
     max_tasks: int = 1000
 
@@ -323,6 +324,19 @@ class TaskTransformer:
 
             if custom_fields:
                 task['custom_fields'] = custom_fields
+
+        # Add group column values for hierarchical sorting
+        if self.config.group_by_columns:
+            group_values = {}
+            for col in self.config.group_by_columns:
+                if col in row.index:
+                    val = row[col]
+                    if pd.isna(val):
+                        group_values[col] = None
+                    else:
+                        group_values[col] = str(val).strip()
+            if group_values:
+                task['_group_values'] = group_values
 
         return task
 
