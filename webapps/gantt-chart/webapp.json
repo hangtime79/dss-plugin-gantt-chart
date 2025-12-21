@@ -167,6 +167,25 @@
 
             {
                 "type": "SEPARATOR",
+                "label": "Date Boundaries"
+            },
+            {
+                "name": "chartStartDate",
+                "type": "STRING",
+                "label": "Fixed Start Date",
+                "description": "YYYY-MM-DD format. Leave empty for automatic.",
+                "mandatory": false
+            },
+            {
+                "name": "chartEndDate",
+                "type": "STRING",
+                "label": "Fixed End Date",
+                "description": "YYYY-MM-DD format. Leave empty for automatic.",
+                "mandatory": false
+            },
+
+            {
+                "type": "SEPARATOR",
                 "label": "Appearance"
             },
             {

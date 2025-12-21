@@ -58,6 +58,94 @@
     }
     let ganttInstance = null;
 
+    // ===== DATE BOUNDARY CONSTRAINTS =====
+    // Monkey-patch Gantt.prototype.setup_gantt_dates to apply user-defined date boundaries
+    // This must happen before any Gantt instance is created
+    let originalSetupGanttDates = null;
+
+    function applyDateBoundaryPatch() {
+        if (typeof Gantt === 'undefined') return;
+        if (originalSetupGanttDates) return; // Already patched
+
+        originalSetupGanttDates = Gantt.prototype.setup_gantt_dates;
+
+        Gantt.prototype.setup_gantt_dates = function(forceRecalc) {
+            // Run original calculation first
+            originalSetupGanttDates.apply(this, arguments);
+
+            // Apply user constraints from webAppConfig
+            if (webAppConfig.chartStartDate) {
+                const userStart = new Date(webAppConfig.chartStartDate);
+                if (!isNaN(userStart.getTime())) {
+                    this.gantt_start = userStart;
+                    console.log('Applied fixed start date:', webAppConfig.chartStartDate);
+                } else {
+                    console.warn('Invalid chartStartDate format:', webAppConfig.chartStartDate);
+                }
+            }
+
+            if (webAppConfig.chartEndDate) {
+                const userEnd = new Date(webAppConfig.chartEndDate);
+                if (!isNaN(userEnd.getTime())) {
+                    this.gantt_end = userEnd;
+                    console.log('Applied fixed end date:', webAppConfig.chartEndDate);
+                } else {
+                    console.warn('Invalid chartEndDate format:', webAppConfig.chartEndDate);
+                }
+            }
+
+            // Safety check: ensure start < end
+            if (this.gantt_start >= this.gantt_end) {
+                console.warn('Chart boundary error: Start >= End. Auto-adjusting end date.');
+                this.gantt_end = new Date(this.gantt_start);
+                this.gantt_end.setMonth(this.gantt_end.getMonth() + 1);
+            }
+        };
+
+        console.log('Date boundary patch applied');
+    }
+
+    // ===== HEADER LABEL ADJUSTMENT =====
+    /**
+     * Adjust header labels for narrow column views.
+     * When column width is very small (Hour, Quarter Day views), some labels
+     * may need to be hidden or the font size reduced to prevent collision.
+     */
+    function adjustHeaderLabels() {
+        if (!ganttInstance) return;
+
+        const columnWidth = ganttInstance.config?.column_width ?? 45;
+        const container = document.querySelector('.gantt-container');
+
+        if (!container) return;
+
+        // Mark container for narrow view CSS rules
+        if (columnWidth < 30) {
+            container.setAttribute('data-narrow-view', 'true');
+
+            // For very narrow views, hide every other lower-text label
+            const lowerTexts = document.querySelectorAll('.lower-text');
+            lowerTexts.forEach((text, i) => {
+                // Show every other label in narrow view
+                if (i % 2 !== 0) {
+                    text.style.visibility = 'hidden';
+                } else {
+                    text.style.visibility = 'visible';
+                }
+            });
+
+            console.log('Narrow view mode enabled, adjusted labels');
+        } else {
+            container.removeAttribute('data-narrow-view');
+
+            // Restore all labels in normal view
+            const lowerTexts = document.querySelectorAll('.lower-text');
+            lowerTexts.forEach(text => {
+                text.style.visibility = 'visible';
+            });
+        }
+    }
+
     // ===== INITIALIZATION =====
 
     console.log('Gantt Chart webapp initializing...');
@@ -262,10 +350,11 @@
 
             on_view_change: function(mode) {
                 console.log('View changed:', mode);
-                // Re-enforce minimum bar widths after view mode change
+                // Re-enforce minimum bar widths and adjust labels after view mode change
                 requestAnimationFrame(() => {
                     enforceMinimumBarWidths();
                     updateSvgDimensions();
+                    adjustHeaderLabels();
                 });
             }
         };
@@ -278,15 +367,19 @@
             padding: ganttOptions.padding
         }, null, 2));
 
+        // Apply date boundary patch before creating Gantt instance
+        applyDateBoundaryPatch();
+
         // Initialize Frappe Gantt
         try {
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
-            // Enforce minimum bar widths after render completes
+            // Post-render adjustments
             requestAnimationFrame(() => {
                 enforceMinimumBarWidths();
                 updateSvgDimensions();
+                adjustHeaderLabels();
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
