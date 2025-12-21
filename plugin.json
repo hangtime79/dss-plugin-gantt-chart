@@ -3,7 +3,7 @@
     "id": "gantt-chart",
 
     // It is highly recommended to use Semantic Versioning
-    "version": "0.2.3",
+    "version": "0.3.0",
 
     // Meta data for display purposes:
     "meta": {

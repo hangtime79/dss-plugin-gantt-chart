@@ -82,6 +82,19 @@
             },
             {
                 "type": "SEPARATOR",
+                "label": "Task Grouping"
+            },
+            {
+                "name": "groupByColumns",
+                "type": "DATASET_COLUMNS",
+                "datasetParamName": "dataset",
+                "label": "Group By",
+                "description": "Group tasks hierarchically by these columns. Drag to set grouping order (first = outermost group).",
+                "mandatory": false
+            },
+
+            {
+                "type": "SEPARATOR",
                 "label": "Tooltip Fields"
             },
             {
