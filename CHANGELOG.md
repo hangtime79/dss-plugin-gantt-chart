@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-21
+
+### Added
+- **Hierarchical Task Grouping**: New "Group By" parameter allows organizing tasks by categorical columns before sorting
+  - Multi-select dropdown for choosing grouping columns (Region, Workstream, Country, etc.)
+  - Drag-to-reorder interface for controlling grouping hierarchy
+  - Supports N-level grouping (e.g., Country → Region → State → Team)
+  - Groups sorted alphabetically with null/empty values at end
+  - Standard "Sort Tasks By" applies within each leaf group
+
+---
+
 ## [0.2.3] - 2025-12-21
 
 ### Fixed
