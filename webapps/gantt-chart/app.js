@@ -73,12 +73,23 @@
             // Run original calculation first
             originalSetupGanttDates.apply(this, arguments);
 
+            // Store calculated boundaries (before user constraints)
+            const calculatedStart = new Date(this.gantt_start);
+            const calculatedEnd = new Date(this.gantt_end);
+
             // Apply user constraints from webAppConfig
+            // User dates can only NARROW the range, not EXPAND it
             if (webAppConfig.chartStartDate) {
                 const userStart = new Date(webAppConfig.chartStartDate);
                 if (!isNaN(userStart.getTime())) {
-                    this.gantt_start = userStart;
-                    console.log('Applied fixed start date:', webAppConfig.chartStartDate);
+                    // Only apply if user start is AFTER calculated start (narrowing)
+                    if (userStart > calculatedStart) {
+                        this.gantt_start = userStart;
+                        console.log('Applied fixed start date:', webAppConfig.chartStartDate);
+                    } else {
+                        console.warn('Start date', webAppConfig.chartStartDate,
+                            'is before calculated start. Using calculated start to prevent expanding range.');
+                    }
                 } else {
                     console.warn('Invalid chartStartDate format:', webAppConfig.chartStartDate);
                 }
@@ -87,8 +98,14 @@
             if (webAppConfig.chartEndDate) {
                 const userEnd = new Date(webAppConfig.chartEndDate);
                 if (!isNaN(userEnd.getTime())) {
-                    this.gantt_end = userEnd;
-                    console.log('Applied fixed end date:', webAppConfig.chartEndDate);
+                    // Only apply if user end is BEFORE calculated end (narrowing)
+                    if (userEnd < calculatedEnd) {
+                        this.gantt_end = userEnd;
+                        console.log('Applied fixed end date:', webAppConfig.chartEndDate);
+                    } else {
+                        console.warn('End date', webAppConfig.chartEndDate,
+                            'is after calculated end. Using calculated end to prevent expanding range.');
+                    }
                 } else {
                     console.warn('Invalid chartEndDate format:', webAppConfig.chartEndDate);
                 }
@@ -105,45 +122,213 @@
         console.log('Date boundary patch applied');
     }
 
-    // ===== HEADER LABEL ADJUSTMENT =====
     /**
-     * Adjust header labels for narrow column views.
-     * When column width is very small (Hour, Quarter Day views), some labels
-     * may need to be hidden or the font size reduced to prevent collision.
+     * Validate date boundaries before rendering.
+     * Returns error message if invalid, null if valid.
+     */
+    function validateDateBoundaries() {
+        const startDate = webAppConfig.chartStartDate;
+        const endDate = webAppConfig.chartEndDate;
+
+        // If both dates are set, validate start < end
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (isNaN(start.getTime())) {
+                return 'Invalid Fixed Start Date format. Use YYYY-MM-DD.';
+            }
+            if (isNaN(end.getTime())) {
+                return 'Invalid Fixed End Date format. Use YYYY-MM-DD.';
+            }
+            if (start >= end) {
+                return 'Fixed Start Date cannot be on or after Fixed End Date.';
+            }
+        }
+
+        return null; // Valid
+    }
+
+    // ===== HEADER LABEL ADJUSTMENT =====
+
+    // Month name mappings for responsive formatting
+    const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+    const MONTH_NAMES_3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const MONTH_NAMES_1 = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+
+    /**
+     * Adjust header labels based on view mode and column width.
+     * Implements responsive abbreviations:
+     * - Week: >= 50 → "03 - 10", < 50 → "03"
+     * - Month: >= 72 → "January", >= 39 → "Jan", < 39 → "J"
+     * - Year: >= 34 → "2024", < 34 → "24"
      */
     function adjustHeaderLabels() {
         if (!ganttInstance) return;
 
         const columnWidth = ganttInstance.config?.column_width ?? 45;
+        const viewMode = ganttInstance.config?.view_mode ?? 'Week';
         const container = document.querySelector('.gantt-container');
 
         if (!container) return;
 
-        // Mark container for narrow view CSS rules
+        console.log(`Adjusting labels: viewMode=${viewMode}, columnWidth=${columnWidth}`);
+
+        // Handle narrow view marker for CSS
         if (columnWidth < 30) {
             container.setAttribute('data-narrow-view', 'true');
-
-            // For very narrow views, hide every other lower-text label
-            const lowerTexts = document.querySelectorAll('.lower-text');
-            lowerTexts.forEach((text, i) => {
-                // Show every other label in narrow view
-                if (i % 2 !== 0) {
-                    text.style.visibility = 'hidden';
-                } else {
-                    text.style.visibility = 'visible';
-                }
-            });
-
-            console.log('Narrow view mode enabled, adjusted labels');
         } else {
             container.removeAttribute('data-narrow-view');
+        }
 
-            // Restore all labels in normal view
+        // Apply view-mode specific formatting
+        switch (viewMode) {
+            case 'Week':
+                formatWeekLabels(columnWidth);
+                break;
+            case 'Month':
+                formatMonthLabels(columnWidth);
+                break;
+            case 'Year':
+                formatYearLabels(columnWidth);
+                break;
+            default:
+                // Hour, Quarter Day, Half Day, Day - no special formatting needed
+                break;
+        }
+
+        // For very narrow views, hide every other lower-text label
+        if (columnWidth < 30) {
+            const lowerTexts = document.querySelectorAll('.lower-text');
+            lowerTexts.forEach((text, i) => {
+                text.style.visibility = (i % 2 === 0) ? 'visible' : 'hidden';
+            });
+        } else {
             const lowerTexts = document.querySelectorAll('.lower-text');
             lowerTexts.forEach(text => {
                 text.style.visibility = 'visible';
             });
         }
+    }
+
+    /**
+     * Format Week mode labels.
+     * >= 50: "03 - 10" (day range, no months)
+     * < 50: "03" (first day only)
+     */
+    function formatWeekLabels(columnWidth) {
+        const lowerTexts = document.querySelectorAll('.lower-text');
+
+        lowerTexts.forEach(text => {
+            const original = text.textContent.trim();
+            // Frappe Gantt Week labels are typically like "03 - 10" or similar
+            // Extract just the first number if columnWidth < 50
+            if (columnWidth < 50) {
+                // Match first number (1 or 2 digits)
+                const match = original.match(/^(\d{1,2})/);
+                if (match) {
+                    text.textContent = match[1].padStart(2, '0');
+                }
+            }
+            // >= 50: Keep the range format, but ensure no month names
+            // Frappe already uses day numbers, so typically no change needed
+        });
+    }
+
+    /**
+     * Format Month mode labels.
+     * >= 72: Full month "January"
+     * >= 39: 3-letter "Jan"
+     * < 39: 1-letter "J"
+     */
+    function formatMonthLabels(columnWidth) {
+        const upperTexts = document.querySelectorAll('.upper-text');
+
+        upperTexts.forEach(text => {
+            const original = text.textContent.trim();
+
+            // Try to find which month this represents
+            let monthIndex = -1;
+
+            // Check if it's a full month name
+            for (let i = 0; i < MONTH_NAMES_FULL.length; i++) {
+                if (original.toLowerCase().includes(MONTH_NAMES_FULL[i].toLowerCase())) {
+                    monthIndex = i;
+                    break;
+                }
+            }
+
+            // If not found, check 3-letter abbreviations
+            if (monthIndex === -1) {
+                for (let i = 0; i < MONTH_NAMES_3.length; i++) {
+                    if (original.toLowerCase().startsWith(MONTH_NAMES_3[i].toLowerCase())) {
+                        monthIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (monthIndex === -1) return; // Not a month label
+
+            // Apply formatting based on column width
+            if (columnWidth >= 72) {
+                // Full month name - might need to extract year if present
+                const yearMatch = original.match(/\d{4}/);
+                const year = yearMatch ? ' ' + yearMatch[0] : '';
+                text.textContent = MONTH_NAMES_FULL[monthIndex] + year;
+            } else if (columnWidth >= 39) {
+                // 3-letter abbreviation
+                const yearMatch = original.match(/\d{4}/);
+                const year = yearMatch ? ' ' + yearMatch[0] : '';
+                text.textContent = MONTH_NAMES_3[monthIndex] + year;
+            } else {
+                // 1-letter abbreviation
+                text.textContent = MONTH_NAMES_1[monthIndex];
+            }
+        });
+    }
+
+    /**
+     * Format Year mode labels.
+     * >= 34: Full year "2024"
+     * < 34: 2-digit "24"
+     */
+    function formatYearLabels(columnWidth) {
+        const upperTexts = document.querySelectorAll('.upper-text');
+
+        upperTexts.forEach(text => {
+            const original = text.textContent.trim();
+
+            // Match 4-digit year
+            const yearMatch = original.match(/(\d{4})/);
+            if (!yearMatch) return;
+
+            const fullYear = yearMatch[1];
+
+            if (columnWidth >= 34) {
+                // Full year
+                text.textContent = fullYear;
+            } else {
+                // 2-digit year
+                text.textContent = fullYear.slice(-2);
+            }
+        });
+
+        // Also format lower-text year labels if present
+        const lowerTexts = document.querySelectorAll('.lower-text');
+        lowerTexts.forEach(text => {
+            const original = text.textContent.trim();
+            const yearMatch = original.match(/(\d{4})/);
+            if (!yearMatch) return;
+
+            const fullYear = yearMatch[1];
+
+            if (columnWidth < 34) {
+                text.textContent = fullYear.slice(-2);
+            }
+        });
     }
 
     // ===== INITIALIZATION =====
@@ -172,6 +357,14 @@
                 console.log('Received updated config:', webAppConfig);
 
                 validateConfig(webAppConfig);
+
+                // Validate date boundaries - block rendering if invalid
+                const dateBoundaryError = validateDateBoundaries();
+                if (dateBoundaryError) {
+                    displayError('Date Boundary Error', dateBoundaryError);
+                    return; // Don't render chart
+                }
+
                 initializeChart(webAppConfig, filters);
 
             } catch (error) {

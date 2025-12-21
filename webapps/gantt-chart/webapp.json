@@ -212,7 +212,7 @@
                 "label": "Column Width",
                 "description": "Width of time columns",
                 "defaultValue": 45,
-                "minI": 20,
+                "minI": 25,
                 "maxI": 100
             },
             {
