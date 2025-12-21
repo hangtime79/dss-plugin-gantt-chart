@@ -16,7 +16,7 @@ from functools import reduce
 
 # Import our transformation logic
 from ganttchart.task_transformer import TaskTransformer, TaskTransformerConfig
-from ganttchart.sort_utils import sort_tasks
+from ganttchart.sort_utils import sort_tasks, group_and_sort_tasks
 
 logger = logging.getLogger(__name__)
 logger.info("Gantt Chart backend module loading...")
@@ -96,6 +96,7 @@ def get_tasks():
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
                 tooltip_columns=config.get('tooltipColumns'),
+                group_by_columns=config.get('groupByColumns'),
                 max_tasks=int(config.get('maxTasks', 1000))
             )
         except Exception as e:
@@ -114,9 +115,13 @@ def get_tasks():
         try:
             result = transformer.transform(df)
 
-            # Apply sorting if specified
+            # Apply grouping and sorting
+            group_by = config.get('groupByColumns', [])
             sort_by = config.get('sortBy', 'none')
-            if sort_by and sort_by != 'none':
+
+            if group_by:
+                result['tasks'] = group_and_sort_tasks(result['tasks'], group_by, sort_by)
+            elif sort_by and sort_by != 'none':
                 result['tasks'] = sort_tasks(result['tasks'], sort_by)
         except ValueError as e:
             # Configuration validation error
