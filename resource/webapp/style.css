@@ -149,6 +149,12 @@ html, body {
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
 .gantt-container {
     font-family: inherit;
+    /* Override Frappe's overflow:auto to fix sticky header.
+       Frappe's container creates a scroll context that breaks position:sticky.
+       By setting overflow-y:visible, sticky becomes relative to #gantt-container.
+       Horizontal scrolling is preserved via overflow-x. */
+    overflow-y: visible !important;
+    overflow-x: auto;
 }
 
 .gantt .bar-label {
@@ -308,8 +314,8 @@ html, body {
 
 /* ===== STICKY HEADER FIX ===== */
 /* Ensure header stays visible during vertical scroll.
-   The library's .grid-header already has position:sticky, but our outer
-   #gantt-container can interfere. We ensure proper stacking context. */
+   With .gantt-container overflow-y:visible (set above), the header is now
+   sticky relative to #gantt-container where actual scrolling happens. */
 .gantt-container .grid-header {
     position: sticky;
     top: 0;
