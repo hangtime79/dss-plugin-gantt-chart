@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-22
+
+### Fixed
+- **View Mode Transitions**: Data no longer fails to render when switching between views (Hour, Quarter Day, Half Day, Day, Week, Month, Year)
+- **Scroll Position on View Change**: Chart now correctly centers on Today when switching view modes instead of jumping to arbitrary dates
+- **SVG Partial Render**: Fixed chart only partially rendering when transitioning from Hour view to other views
+- **Month/Year Today Button**: Today button now works correctly in Month and Year views
+- **Zoom-Out Auto-Center**: All zoom-out transitions (Hour→Quarter Day, Day→Week, Week→Month) now properly center on Today
+
+---
+
 ## [0.4.0] - 2025-12-22
 
 ### Added
