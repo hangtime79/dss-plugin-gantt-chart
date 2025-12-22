@@ -186,6 +186,48 @@ Either:
 
 ---
 
+## Bug #5: Smooth Scroll Timing Issue in set_scroll_position()
+
+**Discovered:** v0.4.1 QA (2025-12-22)
+**Severity:** MEDIUM (view transitions fail to center)
+**Upstream Issue:** Not yet reported
+
+### Symptom
+When switching view modes (especially zooming out: Hour→Quarter Day, Day→Week, Week→Month), the chart fails to center on Today even though `scroll_to: "today"` is configured.
+
+### Root Cause
+In `set_scroll_position()`:
+```javascript
+this.$container.scrollTo({
+  left: i - this.config.column_width / 6,
+  behavior: "smooth"  // Asynchronous!
+}), this.$current && this.$current.classList.remove("current-upper"),
+this.current_date = d.add(
+  this.gantt_start,
+  this.$container.scrollLeft / this.config.column_width,  // Reads OLD value!
+  this.config.unit
+);
+```
+
+The code uses `behavior: "smooth"` (asynchronous animation) but then immediately reads `this.$container.scrollLeft`. Since smooth scroll is async, `scrollLeft` still has the OLD value, causing incorrect `current_date` calculation and upper text highlighting.
+
+### Our Patch
+Changed to instant scroll:
+```javascript
+this.$container.scrollTo({
+  left: i - this.config.column_width / 6,
+  behavior: "instant"  // Synchronous
+});
+```
+
+### Upstream Fix Suggestion
+Either:
+1. Use `behavior: "instant"` (our approach) - loses animation but works correctly
+2. Move the scrollLeft-dependent code into a scroll event handler
+3. Use a Promise/callback pattern to execute code after scroll completes
+
+---
+
 ## Reporting Upstream
 
 ### Before Reporting
@@ -230,6 +272,8 @@ When updating Frappe Gantt, these patches must be reapplied:
 | `frappe-gantt.umd.js` | set_dimensions | Remove conditional, always set pixels |
 | `frappe-gantt.umd.js` | view_mode_select listener | Remove `!0` argument |
 | `frappe-gantt.umd.js` | get_closest_date | Return `[e, i]` instead of format+reparse |
+| `frappe-gantt.umd.js` | set_scroll_position | Change `behavior:"smooth"` to `"instant"` |
 | `frappe-gantt.es.js` | ~line 1077 | Remove `!0` from change_view_mode call |
 | `frappe-gantt.es.js` | ~line 1321-1324 | set_dimensions always sets pixel width |
 | `frappe-gantt.es.js` | ~line 1401-1404 | Return `[e, i]` instead of format+reparse |
+| `frappe-gantt.es.js` | ~line 1347-1350 | Change `behavior:"smooth"` to `"instant"` |
