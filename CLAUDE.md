@@ -117,23 +117,20 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** [ ] Open → [x] Implementing → [ ] QA Gate → [ ] Exit → [ ] Post-Merge
+**Phase:** Idle (on main)
 
-**Current Branch:** `bugfix/v0.4.1-fix-view-transitions`
-**Version:** 0.4.1
-**Intervention:** `plan/interventions/v0.4.1-intervention.md`
+**Current Branch:** `main`
+**Latest Release:** v0.4.1 (2025-12-22)
+**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.1
 
-**What's Done (v0.4.1):**
-- Fixed data disappearing on view transitions (removed maintain_scroll flag)
-- Fixed scroll position jumping to wrong date on view change
-- Spec: `plan/specs/bugfix-v0.4.1-spec.md`
-- Commit: `2193eab`
-
-**Next Action:**
-User QA verification of fixes
+**v0.4.1 Summary:**
+- Fixed 5 library bugs affecting view mode transitions
+- See `plan/post-mortems/v0.4.1-post-mortem.md` for details
 
 **Backlog for v0.4.2 (features):**
 - Sticky header (needs JS scroll sync)
 - Year in upper headers across views
 - Month letter visibility at narrow widths
 - Upper elements decade format (2020, 2030, 2040)
+- Configuration input debouncing (see v0.4.1 intervention deferred items)
+- Persist view mode state to localStorage
