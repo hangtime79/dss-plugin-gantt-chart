@@ -149,6 +149,12 @@ html, body {
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
 .gantt-container {
     font-family: inherit;
+    /* Override Frappe's overflow:auto to fix sticky header.
+       Frappe's container creates a scroll context that breaks position:sticky.
+       By setting overflow-y:visible, sticky becomes relative to #gantt-container.
+       Horizontal scrolling is preserved via overflow-x. */
+    overflow-y: visible !important;
+    overflow-x: auto;
 }
 
 .gantt .bar-label {
@@ -284,4 +290,35 @@ html, body {
 
 .field-value {
     color: #333;
+}
+
+/* ===== HEADER TEXT COLLISION FIX ===== */
+/* Prevent date labels from overlapping when switching view modes */
+.gantt-container .upper-text {
+    max-width: calc(var(--gv-column-width, 45px) * 4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gantt-container .lower-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Smaller font for narrow column views (Hour, Quarter Day) */
+.gantt-container[data-narrow-view="true"] .lower-text {
+    font-size: 10px;
+}
+
+/* ===== STICKY HEADER FIX ===== */
+/* Ensure header stays visible during vertical scroll.
+   With .gantt-container overflow-y:visible (set above), the header is now
+   sticky relative to #gantt-container where actual scrolling happens. */
+.gantt-container .grid-header {
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+    background-color: var(--g-header-background, #fff);
 }
