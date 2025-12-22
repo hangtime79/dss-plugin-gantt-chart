@@ -42,6 +42,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Month view DOM structure** — `.upper-text` = years, `.lower-text` = months (counterintuitive)
 - **Frappe Gantt no destroy()** — Event listeners persist after DOM cleared. Guard against undefined when accessing potentially stale DOM refs
 - **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
+- **SVG width 100% breaks rendering** — Library sets `width: "100%"` then conditionally overrides. Patched `set_dimensions()` to always set pixel width
+- **Library bugs tracked separately** — See `plan/frappe-gantt-upstream-bugs.md` for bugs to report upstream
 
 ---
 
@@ -115,19 +117,23 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle (no active work)
+**Phase:** [ ] Open → [x] Implementing → [ ] QA Gate → [ ] Exit → [ ] Post-Merge
 
-**Current Branch:** `main`
-**Latest Version:** 0.4.0
-**Last Release:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.0
+**Current Branch:** `bugfix/v0.4.1-fix-view-transitions`
+**Version:** 0.4.1
+**Intervention:** `plan/interventions/v0.4.1-intervention.md`
 
-**Backlog for v0.4.1 (bugs):**
-- Data fails to populate on Hour→Quarter Day→Half Day→Day transitions
-- Today button in Month View jumps incorrectly
+**What's Done (v0.4.1):**
+- Fixed data disappearing on view transitions (removed maintain_scroll flag)
+- Fixed scroll position jumping to wrong date on view change
+- Spec: `plan/specs/bugfix-v0.4.1-spec.md`
+- Commit: `2193eab`
+
+**Next Action:**
+User QA verification of fixes
 
 **Backlog for v0.4.2 (features):**
 - Sticky header (needs JS scroll sync)
 - Year in upper headers across views
 - Month letter visibility at narrow widths
 - Upper elements decade format (2020, 2030, 2040)
-- Cursor positioning on mode switch
