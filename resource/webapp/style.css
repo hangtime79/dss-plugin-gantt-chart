@@ -312,13 +312,13 @@ html, body {
     font-size: 10px;
 }
 
-/* ===== STICKY HEADER FIX ===== */
-/* Ensure header stays visible during vertical scroll.
-   With .gantt-container overflow-y:visible (set above), the header is now
-   sticky relative to #gantt-container where actual scrolling happens. */
+/* ===== STICKY HEADER (JS-CONTROLLED) ===== */
+/* CSS position:sticky doesn't work in Dataiku's nested scroll containers.
+   JavaScript in app.js handles sticky behavior via transform on scroll.
+   These base styles ensure the header renders correctly. */
 .gantt-container .grid-header {
-    position: sticky;
-    top: 0;
+    position: relative;  /* JS will apply transform */
     z-index: 1001;
     background-color: var(--g-header-background, #fff);
+    will-change: transform;  /* Optimize for animations */
 }

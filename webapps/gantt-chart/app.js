@@ -57,6 +57,8 @@
         console.warn('Initial dataiku.getWebAppConfig failed:', e);
     }
     let ganttInstance = null;
+    let configDebounceTimer = null;  // Debounce timer for config updates
+    const CONFIG_DEBOUNCE_MS = 500;  // 500ms debounce delay
 
     // ===== DATE BOUNDARY CONSTRAINTS =====
     // Monkey-patch Gantt.prototype.setup_gantt_dates to apply user-defined date boundaries
@@ -364,7 +366,14 @@
                     return; // Don't render chart
                 }
 
-                initializeChart(webAppConfig, filters);
+                // Debounce chart initialization to prevent excessive re-renders
+                // when user is rapidly adjusting numeric inputs (spinners)
+                if (configDebounceTimer) {
+                    clearTimeout(configDebounceTimer);
+                }
+                configDebounceTimer = setTimeout(() => {
+                    initializeChart(webAppConfig, filters);
+                }, CONFIG_DEBOUNCE_MS);
 
             } catch (error) {
                 console.error('Configuration processing error:', error);
@@ -572,6 +581,7 @@
                 enforceMinimumBarWidths();
                 updateSvgDimensions();
                 adjustHeaderLabels();
+                setupStickyHeader();
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
@@ -603,6 +613,39 @@
         }
         
         console.log(`Updated SVG dimensions: width=${svg.style.width}, height=${svg.style.height}`);
+    }
+
+    // ===== STICKY HEADER VIA JS SCROLL SYNC =====
+
+    /**
+     * Set up JavaScript-based sticky header behavior.
+     * CSS position:sticky fails in nested scroll containers (Dataiku's iframe structure).
+     * This manually syncs the header position during vertical scroll.
+     */
+    function setupStickyHeader() {
+        const container = document.getElementById('gantt-container');
+        const header = document.querySelector('.gantt-container .grid-header');
+
+        if (!container || !header) {
+            console.warn('Sticky header setup failed: container or header not found');
+            return;
+        }
+
+        // Apply base styles for JS-controlled sticky
+        header.style.position = 'relative';
+        header.style.zIndex = '1001';
+        header.style.backgroundColor = 'var(--g-header-background, #fff)';
+
+        // Track scroll position and update header transform
+        container.addEventListener('scroll', function onScroll() {
+            // Only apply vertical offset - horizontal scrolling should move header
+            const scrollTop = container.scrollTop;
+
+            // Use transform for smoother performance than top/position changes
+            header.style.transform = `translateY(${scrollTop}px)`;
+        }, { passive: true });
+
+        console.log('Sticky header initialized via JS scroll sync');
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
