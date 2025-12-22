@@ -1074,7 +1074,7 @@ class B {
       t.addEventListener(
         "change",
         (function() {
-          this.change_view_mode(t.value, !0);
+          this.change_view_mode(t.value);
         }).bind(this)
       ), this.$side_header.appendChild(t);
     }
