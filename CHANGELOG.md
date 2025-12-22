@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1.5] - 2025-12-22
+
+### Added
+- **GitHub Issue Forms**: Replaced legacy Markdown templates with interactive YAML forms for Bug Reports and Feature Requests
+- **Issue Management Protocol**: Added `issue-management-protocol.md` to standardize issue tracking workflow
+
+### Changed
+- **Protocol Structure**: Moved all branch protocols from `plan/` to `cli-docs/cli-protocols/` for better organization and discovery
+
+---
+
 ## [0.4.1] - 2025-12-22
 
 ### Fixed
