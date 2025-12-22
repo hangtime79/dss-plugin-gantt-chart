@@ -1342,9 +1342,12 @@ class B {
       this.gantt_start,
       this.config.unit
     ) / this.config.step * this.config.column_width;
+    // PATCH: Use instant scroll instead of smooth
+    // The code immediately after reads scrollLeft, but smooth scroll is async
+    // This caused zoom-out transitions to fail centering on Today
     this.$container.scrollTo({
       left: i - this.config.column_width / 6,
-      behavior: "smooth"
+      behavior: "instant"
     }), this.$current && this.$current.classList.remove("current-upper"), this.current_date = d.add(
       this.gantt_start,
       this.$container.scrollLeft / this.config.column_width,
