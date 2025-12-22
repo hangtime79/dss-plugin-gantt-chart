@@ -1,0 +1,61 @@
+name: Bug Report
+description: Report a bug or issue
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What's wrong?
+      placeholder: Clear description of the issue
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      placeholder: |
+        1. Step one
+        2. Step two
+        3. Error occurs
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: What should happen
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical - System broken
+        - High - Major function broken
+        - Medium - Workaround exists
+        - Low - Minor issue
+    validations:
+      required: false
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Output
+      description: Stack traces, logs, error messages
+      render: shell
+    validations:
+      required: false
+  
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Environment, related issues, attempted fixes
+    validations:
+      required: false
