@@ -1,0 +1,56 @@
+name: Feature Request
+description: New feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be built?
+      placeholder: Clear, direct description of the feature
+    validations:
+      required: true
+  
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Notes
+      description: Technical approach or key considerations
+      placeholder: |
+        - Files/modules affected
+        - Approach or algorithm
+        - Dependencies or integrations
+    validations:
+      required: false
+  
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know it's done?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: false
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: false
+  
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Context, links, or related issues
+    validations:
+      required: false
