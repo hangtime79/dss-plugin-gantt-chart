@@ -38,6 +38,10 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - Monkey-patching must happen BEFORE `new Gantt()` — store original, then patch
 - Post-render DOM manipulation needs `requestAnimationFrame` — DOM not ready immediately
 - Labels recreated on view change — must reapply formatting in `on_view_change`
+- **ganttInstance.options vs .config** — `options` = primitives (strings, numbers), `config` = computed objects. Use `options.view_mode` for string, NOT `config.view_mode`
+- **Month view DOM structure** — `.upper-text` = years, `.lower-text` = months (counterintuitive)
+- **Frappe Gantt no destroy()** — Event listeners persist after DOM cleared. Guard against undefined when accessing potentially stale DOM refs
+- **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
 
 ---
 
@@ -111,19 +115,40 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** [ ] Open → [ ] Implementing → [ ] QA Gate → [ ] Exit → [ ] Post-Merge
+**Phase:** [ ] Open → [x] Implementing → [x] QA Gate → [ ] Exit → [ ] Post-Merge
 
-**Branch:**
-**Version:**
-**Intervention:**
+**Branch:** `feature/v0.4.0-view-enhancements`
+**Version:** 0.4.0
+**Intervention:** `plan/interventions/v0.4.0-intervention.md`
 
 **Currently Working On:**
+QA verification of v0.4.0 fixes
 
+**Commits This Session:**
+- a8891a3: fix options vs config for view mode
+- 6cd755f: Fix responsive headers + Frappe clientWidth patch
 
 **Files Modified:**
--
+- `webapps/gantt-chart/app.js` - formatWeekLabels, formatMonthLabels fixed
+- `resource/frappe-gantt.umd.js` - Null guards for clientWidth
+- `resource/frappe-gantt.es.js` - Same patches (consistency)
 
-**Blockers:**
--
+**What's Done:**
+- Week view responsive (>=50 shows range, <50 shows day)
+- Month view responsive (>=75 full, >=39 3-letter, <39 1-letter)
+- Year view responsive (>=34 full, <34 2-digit)
+- Frappe clientWidth error patched
+
+**Known Bugs (NOT FIXED):**
+- Data fails to populate on transitions: Hour→Quarter Day→Half Day→Day
+- Today button in Month View jumps to first visible date
+- Cursor stays on static pixel on mode switch
+
+**Feature Requests (NOT IMPLEMENTED):**
+- Add Year to upper headers (Day, Half Day, Quarter Day, Hour, Week)
+- Month < 39: Show all letters (J F M A M J...) without skipping
 
 **Next Action:**
+1. QA verifies clientWidth error is gone
+2. QA verifies responsive labels work
+3. If passing, proceed to branch exit protocol
