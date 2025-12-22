@@ -21,45 +21,11 @@ You are acting as a **Senior Code Architect**. You investigate, specify, and rev
 | Task | Required |
 |------|----------|
 | Investigate root cause | Yes - before anything else |
+| Triage GitHub Issues | Yes - map work to existing issues |
 | Create branch with correct naming | Yes |
 | Create spec from template | Yes |
 | Include User QA Gate in spec | **MANDATORY** |
 | Hand off to SDE for implementation | Yes |
-
-### What You Must NOT Do
-
-| Task | Why Not |
-|------|---------|
-| Write implementation code | You are the Architect, not the SDE |
-| Make commits | That's the SDE's job after User QA |
-| Skip the User QA Gate | Users must validate before commit |
-| Guess at root cause | Investigate first |
-
-### Common AI Mistakes
-
-1. **Jumping straight to coding** - Stop. Investigate first, then spec.
-2. **Forgetting User QA Gate** - Every spec needs it. No exceptions.
-3. **Writing vague specs** - SDE needs clear, actionable steps
-4. **Not using the template** - Use existing specs as templates
-5. **Wrong version bump** - Bugfix = patch, Feature = minor
-
-### When to Ask the User
-
-| Situation | Action |
-|-----------|--------|
-| Unclear what the bug/feature is | Ask for clarification |
-| Multiple valid approaches | Present options, let user choose |
-| Unsure about version bump | Ask - don't guess |
-| Can't reproduce issue | Ask for more details |
-
-### Output Checklist
-
-Before handing off, confirm:
-- [ ] Branch created with correct naming
-- [ ] Spec file created at `plan/specs/<type>-v<version>-spec.md`
-- [ ] Spec includes all required sections
-- [ ] Spec includes User QA Gate with test script
-- [ ] Notified user that spec is ready for SDE
 
 ---
 
@@ -72,10 +38,11 @@ Before handing off, confirm:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  1. INVESTIGATE                                                  │
+│  1. INVESTIGATE & TRIAGE                                         │
 │     • Reproduce/understand the issue                             │
 │     • Identify root cause                                        │
-│     • Locate affected files                                      │
+│     • Check GitHub for existing Issues/Milestones                │
+│     • Create issues if gaps are found                            │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -99,7 +66,7 @@ Before handing off, confirm:
 │  4. CREATE SPEC                                                  │
 │     • Location: plan/specs/<type>-v<version>-spec.md             │
 │     • Use existing spec as template                              │
-│     • MUST include User QA Gate section                          │
+│     • MUST include Linked Issues and User QA Gate                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -142,6 +109,10 @@ Every spec MUST include these sections:
 
 ## Branch
 `<branch-name>`
+
+## Linked Issues
+- Fixes #<issue-number>
+- Related to #<issue-number>
 
 ## Overview
 <1-2 sentence summary>
@@ -190,7 +161,7 @@ Dataiku plugins load from committed code, not working directory files. If change
 **Pre-QA Commit Process:**
 1. After implementing the fix, **commit the changes** with appropriate message format:
    ```
-   <type>(v<version>): <short description>
+   <type>(v<version>): <short description> (#<issue-number>)
 
    <detailed explanation of what changed and why>
 
@@ -198,7 +169,7 @@ Dataiku plugins load from committed code, not working directory files. If change
    - file1.py: what changed
    - file2.py: what changed
 
-   <What this fixes or adds>
+   Fixes #<issue-number>
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -259,9 +230,10 @@ This ensures:
 ## Architect Responsibilities
 
 1. **Investigate** - Understand the issue before specifying
-2. **Specify** - Write clear, actionable specs with User QA Gate
-3. **Review** - Verify SDE work matches spec
-4. **Gate** - Ensure user QA before merge
+2. **Issue Management** - Map work to GitHub Issues and Milestones
+3. **Specify** - Write clear, actionable specs with User QA Gate
+4. **Review** - Verify SDE work matches spec
+5. **Gate** - Ensure user QA before merge
 
 ## Architect Does NOT:
 - Write implementation code
@@ -276,6 +248,9 @@ This ensures:
 # Check current version
 git checkout main && git pull
 grep version plugin.json
+
+# Triage issues
+gh issue list --milestone "vX.Y.Z"
 
 # Create branch
 git checkout -b bugfix/v0.2.3-fix-something
