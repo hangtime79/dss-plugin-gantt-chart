@@ -778,14 +778,50 @@ git commit -m "docs(vX.Y.Z): Add release notes and post-mortem
 git tag -a vX.Y.Z -m "Release vX.Y.Z - [Short Description]"
 ```
 
-### 4.6 Final Status
+### 4.6 Push to Origin
+
+```bash
+# Push branch and tags to remote
+git push origin [branch-name] --tags
+```
+
+### 4.7 Create Pull Request
+
+Use the release notes to create a PR:
+
+```bash
+gh pr create --title "vX.Y.Z: [Short Description]" --body "$(cat <<'EOF'
+## Summary
+[1-3 bullet points from release notes]
+
+## Changes
+
+### Added
+[From release notes]
+
+### Fixed
+[From release notes]
+
+## Files Modified
+[List key files]
+
+## Test Plan
+[QA verification checklist]
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+### 4.8 Final Status
 
 Report:
 
 - Files created/modified
 - Commit hash
 - Tag created
-- Branch ready for merge to main
+- PR URL
+- Ready for review and merge
 
 ---
 
