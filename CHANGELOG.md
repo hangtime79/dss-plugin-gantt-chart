@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-22
+
+### Added
+- **Fixed Date Boundaries**: New `chartStartDate` and `chartEndDate` parameters to constrain chart timeline to specific date ranges
+- **Responsive Header Abbreviations**: Labels automatically adjust based on column width
+  - Week view: shows range "11 - 17" at wide widths, single day "11" at narrow
+  - Month view: "January" → "Jan" → "J" as width decreases
+  - Year view: "2024" → "24" at narrow widths
+
+### Fixed
+- **Header Text Collisions**: Date labels no longer overlap when switching view modes
+- **Frappe Gantt Crash on View Switch**: Patched library error where `clientWidth` was accessed on undefined element
+- **Responsive Labels Not Updating**: Fixed property access bug (was reading `config` instead of `options`)
+
+---
+
 ## [0.3.0] - 2025-12-21
 
 ### Added
