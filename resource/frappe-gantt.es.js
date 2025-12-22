@@ -1319,8 +1319,8 @@ class B {
       t.arrows = this.arrows.filter((e) => e.from_task.task.id === t.task.id || e.to_task.task.id === t.task.id);
   }
   set_dimensions() {
-    const { width: t } = this.$svg.getBoundingClientRect(), e = this.$svg.querySelector(".grid .grid-row") ? this.$svg.querySelector(".grid .grid-row").getAttribute("width") : 0;
-    t < e && this.$svg.setAttribute("width", e);
+    const e = this.$svg.querySelector(".grid .grid-row") ? this.$svg.querySelector(".grid .grid-row").getAttribute("width") : 0;
+    if (e) this.$svg.setAttribute("width", e);
   }
   set_scroll_position(t) {
     if (this.options.infinite_padding && (!t || t === "start")) {
