@@ -83,10 +83,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 | Phase | Protocol | Role |
 |-------|----------|------|
-| **Open** | `plan/branch-open-protocol.md` | Architect: investigate, create spec |
+| **Open** | `cli-docs/cli-protocols/branch-open-protocol.md` | Architect: investigate, create spec |
 | **Implement** | Use intervention file | SDE: implement spec, update intervention |
-| **Exit** | `plan/branch-exit-protocol.md` | Generate release notes, changelog |
-| **Post-Merge** | `plan/branch-post-merge-protocol.md` | Create GitHub release, cleanup |
+| **Exit** | `cli-docs/cli-protocols/branch-exit-protocol.md` | Generate release notes, changelog |
+| **Post-Merge** | `cli-docs/cli-protocols/branch-post-merge-protocol.md` | Create GitHub release, cleanup |
 
 **Current Phase:** Check `plan/interventions/` for active work
 
