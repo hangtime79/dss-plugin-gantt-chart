@@ -1398,16 +1398,10 @@ class B {
           )
         )
       ), s++;
-    return [
-      /* @__PURE__ */ new Date(
-        d.format(
-          e,
-          this.config.date_format,
-          this.options.language
-        ) + " "
-      ),
-      i
-    ];
+    // PATCH: Use original date object instead of format+reparse
+    // Original code: new Date(d.format(e, date_format) + " ") breaks Month/Year views
+    // because "2024-12 " or "2024 " parses to Invalid Date
+    return [e, i];
   }
   bind_grid_click() {
     p.on(

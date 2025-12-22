@@ -144,6 +144,48 @@ Either:
 
 ---
 
+## Bug #4: get_closest_date() Date Parsing Breaks Month/Year Views
+
+**Discovered:** v0.4.1 QA (2025-12-22)
+**Severity:** HIGH (Today button broken)
+**Upstream Issue:** Not yet reported
+
+### Symptom
+Today button doesn't work in Month view. Clicking it scrolls to the first date instead of today. Also affects Year view.
+
+### Root Cause
+In `get_closest_date()`:
+```javascript
+return [
+  new Date(
+    d.format(e, this.config.date_format, this.options.language) + " "
+  ),
+  i
+];
+```
+
+The `+ " "` (trailing space) breaks date parsing for Month and Year formats:
+- Month: `new Date("2024-12 ")` → Invalid Date
+- Year: `new Date("2024 ")` → Invalid Date
+- Day: `new Date("2024-12-22 ")` → Works (browsers forgive trailing space)
+
+When an Invalid Date is returned, `set_scroll_position()` calculates NaN for scroll position, causing scroll to fail or go to start.
+
+### Our Patch
+Use the original date object instead of format+reparse:
+```javascript
+// Before: return [new Date(d.format(e, ...) + " "), i];
+return [e, i];  // Use original date object directly
+```
+
+### Upstream Fix Suggestion
+Either:
+1. Return the original date object `e` (our approach)
+2. Remove the trailing space: `d.format(e, ...) + " "` → `d.format(e, ...)`
+3. Add date format validation before creating new Date
+
+---
+
 ## Reporting Upstream
 
 ### Before Reporting
@@ -187,5 +229,7 @@ When updating Frappe Gantt, these patches must be reapplied:
 | `frappe-gantt.umd.js` | scroll handler | Null guard for `m.clientWidth` |
 | `frappe-gantt.umd.js` | set_dimensions | Remove conditional, always set pixels |
 | `frappe-gantt.umd.js` | view_mode_select listener | Remove `!0` argument |
+| `frappe-gantt.umd.js` | get_closest_date | Return `[e, i]` instead of format+reparse |
 | `frappe-gantt.es.js` | ~line 1077 | Remove `!0` from change_view_mode call |
 | `frappe-gantt.es.js` | ~line 1321-1324 | set_dimensions always sets pixel width |
+| `frappe-gantt.es.js` | ~line 1401-1404 | Return `[e, i]` instead of format+reparse |
