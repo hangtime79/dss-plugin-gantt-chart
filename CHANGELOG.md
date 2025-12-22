@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1.6] - 2025-12-22
+
+### Added
+- **Automated Milestone Closure**: Updated protocols to include automatic closing of GitHub Milestones upon release
+
+### Changed
+- **Branch Open Protocol**: Restored critical guidance sections and integrated Issue Triage steps
+
 ## [0.4.1.5] - 2025-12-22
 
 ### Added

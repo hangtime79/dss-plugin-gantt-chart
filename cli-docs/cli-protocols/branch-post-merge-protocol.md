@@ -104,6 +104,15 @@ Post-merge cleanup complete:
 │     • Delete local branch: git branch -d <branch-name>           │
 │     • Confirm deletion                                           │
 └─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  4. CLOSE GITHUB MILESTONE                                       │
+│     • Go to GitHub → Issues → Milestones                         │
+│     • Verify all issues in milestone are closed                  │
+│     • Click "Close" on the milestone                             │
+└─────────────────────────────────────────────────────────────────┘
+
 ```
 
 ---
@@ -214,6 +223,28 @@ git branch
 
 ---
 
+## Phase 4: Close GitHub Milestone
+
+### 4.1 Automating Milestone Closure
+
+Since the milestone name usually matches the version (e.g., `v0.4.2`), you can close it automatically:
+
+```bash
+# Get version from plugin.json
+VERSION=$(cat plugin.json | grep '"version"' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+# Close the milestone
+gh milestone edit "v${VERSION}" --state closed
+```
+
+**Or via GitHub Web UI:**
+
+1. Navigate to repository → **Issues** → **Milestones**.
+2. Locate milestone `vX.Y.Z`.
+3. Click **Close**.
+
+---
+
 ## Quick Reference Commands
 
 ```bash
@@ -231,7 +262,10 @@ git pull origin main
 # 3. Delete merged branch
 git branch -d "$BRANCH"
 
-# 4. Verify
+# 4. Close Milestone
+gh milestone edit "v${VERSION}" --state closed
+
+# 5. Verify
 git branch
 git log --oneline -3
 ```
@@ -298,6 +332,7 @@ After merge completion:
 - [ ] Release notes copied from `plan/releases/`
 - [ ] Local main pulled and up to date
 - [ ] Local feature branch deleted
+- [ ] **GitHub Milestone closed**
 - [ ] `git branch` shows only main (and active work branches)
 
 ---
