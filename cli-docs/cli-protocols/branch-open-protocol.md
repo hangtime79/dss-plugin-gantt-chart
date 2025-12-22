@@ -21,6 +21,7 @@ You are acting as a **Senior Code Architect**. You investigate, specify, and rev
 | Task | Required |
 |------|----------|
 | Investigate root cause | Yes - before anything else |
+| Triage GitHub Issues | Yes - map work to existing issues |
 | Create branch with correct naming | Yes |
 | Create spec from template | Yes |
 | Include User QA Gate in spec | **MANDATORY** |
@@ -72,10 +73,11 @@ Before handing off, confirm:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  1. INVESTIGATE                                                  │
+│  1. INVESTIGATE & TRIAGE                                         │
 │     • Reproduce/understand the issue                             │
 │     • Identify root cause                                        │
-│     • Locate affected files                                      │
+│     • Check GitHub for existing Issues/Milestones                │
+│     • Create issues if gaps are found                            │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -99,7 +101,7 @@ Before handing off, confirm:
 │  4. CREATE SPEC                                                  │
 │     • Location: plan/specs/<type>-v<version>-spec.md             │
 │     • Use existing spec as template                              │
-│     • MUST include User QA Gate section                          │
+│     • MUST include Linked Issues and User QA Gate                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -142,6 +144,10 @@ Every spec MUST include these sections:
 
 ## Branch
 `<branch-name>`
+
+## Linked Issues
+- Fixes #<issue-number>
+- Related to #<issue-number>
 
 ## Overview
 <1-2 sentence summary>
@@ -190,7 +196,7 @@ Dataiku plugins load from committed code, not working directory files. If change
 **Pre-QA Commit Process:**
 1. After implementing the fix, **commit the changes** with appropriate message format:
    ```
-   <type>(v<version>): <short description>
+   <type>(v<version>): <short description> (#<issue-number>)
 
    <detailed explanation of what changed and why>
 
@@ -198,7 +204,7 @@ Dataiku plugins load from committed code, not working directory files. If change
    - file1.py: what changed
    - file2.py: what changed
 
-   <What this fixes or adds>
+   Fixes #<issue-number>
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -259,9 +265,10 @@ This ensures:
 ## Architect Responsibilities
 
 1. **Investigate** - Understand the issue before specifying
-2. **Specify** - Write clear, actionable specs with User QA Gate
-3. **Review** - Verify SDE work matches spec
-4. **Gate** - Ensure user QA before merge
+2. **Issue Management** - Map work to GitHub Issues and Milestones
+3. **Specify** - Write clear, actionable specs with User QA Gate
+4. **Review** - Verify SDE work matches spec
+5. **Gate** - Ensure user QA before merge
 
 ## Architect Does NOT:
 - Write implementation code
@@ -276,6 +283,9 @@ This ensures:
 # Check current version
 git checkout main && git pull
 grep version plugin.json
+
+# Triage issues
+gh issue list --milestone "vX.Y.Z"
 
 # Create branch
 git checkout -b bugfix/v0.2.3-fix-something
