@@ -1074,7 +1074,7 @@ class B {
       t.addEventListener(
         "change",
         (function() {
-          this.change_view_mode(t.value, !0);
+          this.change_view_mode(t.value);
         }).bind(this)
       ), this.$side_header.appendChild(t);
     }
@@ -1319,8 +1319,8 @@ class B {
       t.arrows = this.arrows.filter((e) => e.from_task.task.id === t.task.id || e.to_task.task.id === t.task.id);
   }
   set_dimensions() {
-    const { width: t } = this.$svg.getBoundingClientRect(), e = this.$svg.querySelector(".grid .grid-row") ? this.$svg.querySelector(".grid .grid-row").getAttribute("width") : 0;
-    t < e && this.$svg.setAttribute("width", e);
+    const e = this.$svg.querySelector(".grid .grid-row") ? this.$svg.querySelector(".grid .grid-row").getAttribute("width") : 0;
+    if (e) this.$svg.setAttribute("width", e);
   }
   set_scroll_position(t) {
     if (this.options.infinite_padding && (!t || t === "start")) {
@@ -1342,9 +1342,12 @@ class B {
       this.gantt_start,
       this.config.unit
     ) / this.config.step * this.config.column_width;
+    // PATCH: Use instant scroll instead of smooth
+    // The code immediately after reads scrollLeft, but smooth scroll is async
+    // This caused zoom-out transitions to fail centering on Today
     this.$container.scrollTo({
       left: i - this.config.column_width / 6,
-      behavior: "smooth"
+      behavior: "instant"
     }), this.$current && this.$current.classList.remove("current-upper"), this.current_date = d.add(
       this.gantt_start,
       this.$container.scrollLeft / this.config.column_width,
@@ -1398,16 +1401,10 @@ class B {
           )
         )
       ), s++;
-    return [
-      /* @__PURE__ */ new Date(
-        d.format(
-          e,
-          this.config.date_format,
-          this.options.language
-        ) + " "
-      ),
-      i
-    ];
+    // PATCH: Use original date object instead of format+reparse
+    // Original code: new Date(d.format(e, date_format) + " ") breaks Month/Year views
+    // because "2024-12 " or "2024 " parses to Invalid Date
+    return [e, i];
   }
   bind_grid_click() {
     p.on(
