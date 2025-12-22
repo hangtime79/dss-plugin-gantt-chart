@@ -115,28 +115,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** [ ] Open → [x] Implementing → [x] QA Gate → [x] Exit → [ ] Post-Merge
+**Phase:** Idle (no active work)
 
-**Branch:** `feature/v0.4.0-view-enhancements`
-**Version:** 0.4.0
-**Status:** QA PASSED - Ready for merge
+**Current Branch:** `main`
+**Latest Version:** 0.4.0
+**Last Release:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.0
 
-**What Shipped (v0.4.0):**
-- Responsive header abbreviations (Week, Month, Year views)
-- Fixed date boundary controls (chartStartDate, chartEndDate)
-- Header text collision fixes
-- Frappe clientWidth crash fix
-
-**Deferred to v0.4.1 (bugs):**
+**Backlog for v0.4.1 (bugs):**
 - Data fails to populate on Hour→Quarter Day→Half Day→Day transitions
 - Today button in Month View jumps incorrectly
 
-**Deferred to v0.4.2 (features):**
+**Backlog for v0.4.2 (features):**
 - Sticky header (needs JS scroll sync)
 - Year in upper headers across views
 - Month letter visibility at narrow widths
 - Upper elements decade format (2020, 2030, 2040)
 - Cursor positioning on mode switch
-
-**Next Action:**
-Commit documentation artifacts and tag v0.4.0 release
