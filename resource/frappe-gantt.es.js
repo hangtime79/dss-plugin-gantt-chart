@@ -1357,6 +1357,8 @@ class B {
     ), r = this.upperTexts.find(
       (a) => a.textContent === s
     );
+    // PATCH: Guard against undefined r when DOM elements are stale
+    if (!r) return;
     this.current_date = d.add(
       this.gantt_start,
       (this.$container.scrollLeft + r.clientWidth) / this.config.column_width,
@@ -1365,7 +1367,10 @@ class B {
       this.current_date,
       null,
       this.options.language
-    ), r = this.upperTexts.find((a) => a.textContent === s), r.classList.add("current-upper"), this.$current = r;
+    ), r = this.upperTexts.find((a) => a.textContent === s);
+    // PATCH: Guard against undefined r
+    if (!r) return;
+    r.classList.add("current-upper"), this.$current = r;
   }
   scroll_current() {
     let t = this.get_closest_date();
@@ -1500,6 +1505,8 @@ class B {
       ), m = this.upperTexts.find(
         (w) => w.textContent === y
       );
+      // PATCH: Guard against undefined m when DOM elements are stale (e.g., after view mode switch)
+      if (!m) return;
       this.current_date = d.add(
         this.gantt_start,
         (g.currentTarget.scrollLeft + m.clientWidth) / this.config.column_width * this.config.step,
@@ -1510,7 +1517,10 @@ class B {
         this.options.language
       ), m = this.upperTexts.find(
         (w) => w.textContent === y
-      ), m !== this.$current && (this.$current && this.$current.classList.remove("current-upper"), m.classList.add("current-upper"), this.$current = m), i = g.currentTarget.scrollLeft;
+      );
+      // PATCH: Guard against undefined m
+      if (!m) return;
+      m !== this.$current && (this.$current && this.$current.classList.remove("current-upper"), m.classList.add("current-upper"), this.$current = m), i = g.currentTarget.scrollLeft;
       let [E, H, X] = this.get_start_end_positions();
       i > X + 100 ? (this.$adjust.innerHTML = "&larr;", this.$adjust.classList.remove("hide"), this.$adjust.onclick = () => {
         this.$container.scrollTo({

@@ -174,8 +174,6 @@
 
         if (!container) return;
 
-        console.log(`Adjusting labels: viewMode=${viewMode}, columnWidth=${columnWidth}`);
-
         // Handle narrow view marker for CSS
         if (columnWidth < 30) {
             container.setAttribute('data-narrow-view', 'true');
@@ -221,32 +219,40 @@
     function formatWeekLabels(columnWidth) {
         const lowerTexts = document.querySelectorAll('.lower-text');
 
-        lowerTexts.forEach(text => {
+        lowerTexts.forEach((text) => {
             const original = text.textContent.trim();
-            // Frappe Gantt Week labels are typically like "03 - 10" or similar
-            // Extract just the first number if columnWidth < 50
+            // Frappe Gantt Week labels can be "11 Dec - 17" or "03 - 10" format
+
             if (columnWidth < 50) {
-                // Match first number (1 or 2 digits)
+                // Extract just the first day number
                 const match = original.match(/^(\d{1,2})/);
                 if (match) {
                     text.textContent = match[1].padStart(2, '0');
                 }
+            } else {
+                // >= 50: Show day range without month names ("11 - 17" not "11 Dec - 17")
+                // Match patterns like "11 Dec - 17" or "28 Dec - 03" (cross-month)
+                const rangeMatch = original.match(/^(\d{1,2})\s*[A-Za-z]*\s*-\s*(\d{1,2})/);
+                if (rangeMatch) {
+                    const startDay = rangeMatch[1].padStart(2, '0');
+                    const endDay = rangeMatch[2].padStart(2, '0');
+                    text.textContent = `${startDay} - ${endDay}`;
+                }
             }
-            // >= 50: Keep the range format, but ensure no month names
-            // Frappe already uses day numbers, so typically no change needed
         });
     }
 
     /**
      * Format Month mode labels.
-     * >= 72: Full month "January"
+     * >= 75: Full month "January"
      * >= 39: 3-letter "Jan"
      * < 39: 1-letter "J"
      */
     function formatMonthLabels(columnWidth) {
-        const upperTexts = document.querySelectorAll('.upper-text');
+        // In Month view: .upper-text = years, .lower-text = month names
+        const lowerTexts = document.querySelectorAll('.lower-text');
 
-        upperTexts.forEach(text => {
+        lowerTexts.forEach((text) => {
             const original = text.textContent.trim();
 
             // Try to find which month this represents
@@ -273,18 +279,11 @@
             if (monthIndex === -1) return; // Not a month label
 
             // Apply formatting based on column width
-            if (columnWidth >= 72) {
-                // Full month name - might need to extract year if present
-                const yearMatch = original.match(/\d{4}/);
-                const year = yearMatch ? ' ' + yearMatch[0] : '';
-                text.textContent = MONTH_NAMES_FULL[monthIndex] + year;
+            if (columnWidth >= 75) {
+                text.textContent = MONTH_NAMES_FULL[monthIndex];
             } else if (columnWidth >= 39) {
-                // 3-letter abbreviation
-                const yearMatch = original.match(/\d{4}/);
-                const year = yearMatch ? ' ' + yearMatch[0] : '';
-                text.textContent = MONTH_NAMES_3[monthIndex] + year;
+                text.textContent = MONTH_NAMES_3[monthIndex];
             } else {
-                // 1-letter abbreviation
                 text.textContent = MONTH_NAMES_1[monthIndex];
             }
         });
