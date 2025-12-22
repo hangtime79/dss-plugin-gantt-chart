@@ -366,13 +366,35 @@
                     return; // Don't render chart
                 }
 
-                // Debounce chart initialization to prevent excessive re-renders
+                // Debounce config updates to prevent excessive re-renders
                 // when user is rapidly adjusting numeric inputs (spinners)
                 if (configDebounceTimer) {
                     clearTimeout(configDebounceTimer);
                 }
                 configDebounceTimer = setTimeout(() => {
-                    initializeChart(webAppConfig, filters);
+                    // If chart already exists, just update visual options
+                    // This preserves current view mode and scroll position
+                    if (ganttInstance) {
+                        const visualOptions = {
+                            bar_height: parseInt(webAppConfig.barHeight) || 30,
+                            bar_corner_radius: parseInt(webAppConfig.barCornerRadius) || 3,
+                            column_width: parseInt(webAppConfig.columnWidth) || 45,
+                            padding: parseInt(webAppConfig.padding) || 18
+                        };
+                        console.log('Updating visual options:', visualOptions);
+                        ganttInstance.update_options(visualOptions);
+
+                        // Re-apply post-render adjustments (DOM is recreated by update_options)
+                        requestAnimationFrame(() => {
+                            enforceMinimumBarWidths();
+                            updateSvgDimensions();
+                            adjustHeaderLabels();
+                            setupStickyHeader();
+                        });
+                    } else {
+                        // First load - need full initialization
+                        initializeChart(webAppConfig, filters);
+                    }
                 }, CONFIG_DEBOUNCE_MS);
 
             } catch (error) {
@@ -617,6 +639,9 @@
 
     // ===== STICKY HEADER VIA JS SCROLL SYNC =====
 
+    // Track scroll handler to avoid duplicate listeners
+    let stickyScrollHandler = null;
+
     /**
      * Set up JavaScript-based sticky header behavior.
      * CSS position:sticky fails in nested scroll containers (Dataiku's iframe structure).
@@ -631,19 +656,29 @@
             return;
         }
 
+        // Remove previous scroll handler if exists
+        if (stickyScrollHandler) {
+            container.removeEventListener('scroll', stickyScrollHandler);
+        }
+
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
-        header.style.backgroundColor = 'var(--g-header-background, #fff)';
+        header.style.backgroundColor = '#ffffff';  // Solid white background
 
-        // Track scroll position and update header transform
-        container.addEventListener('scroll', function onScroll() {
+        // Create scroll handler
+        stickyScrollHandler = function() {
             // Only apply vertical offset - horizontal scrolling should move header
             const scrollTop = container.scrollTop;
-
             // Use transform for smoother performance than top/position changes
             header.style.transform = `translateY(${scrollTop}px)`;
-        }, { passive: true });
+        };
+
+        // Attach scroll listener
+        container.addEventListener('scroll', stickyScrollHandler, { passive: true });
+
+        // Apply initial position in case already scrolled
+        stickyScrollHandler();
 
         console.log('Sticky header initialized via JS scroll sync');
     }
