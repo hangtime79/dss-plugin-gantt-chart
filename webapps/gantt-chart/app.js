@@ -547,6 +547,14 @@
                     enforceMinimumBarWidths();
                     updateSvgDimensions();
                     adjustHeaderLabels();
+
+                    // Re-scroll to Today after dimension updates
+                    // The library's smooth scroll can get interrupted by our DOM changes,
+                    // especially on zoom-out transitions where SVG dimensions shrink significantly.
+                    // This ensures we end up at the correct position.
+                    if (ganttInstance && ganttInstance.scroll_current) {
+                        ganttInstance.scroll_current();
+                    }
                 });
             }
         };
