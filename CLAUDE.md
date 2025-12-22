@@ -1,210 +1,142 @@
-# CLAUDE.md - Dataiku Plugin Development Guide
+# Gantt Chart Plugin
 
-This is the root navigation for Claude when developing Dataiku DSS plugins. Read this file first, then follow links to specific guides based on what you're building.
+Dataiku DSS plugin: interactive Gantt visualization using frappe-gantt. Python validates/transforms data, JS renders SVG.
 
----
-
-## New Plugin Session - Start Here
-
-When a user wants to build a Dataiku plugin, ask these questions to understand the scope:
-
-### 1. What type of plugin component(s) do you need?
-
-| Component | Use Case | Guide |
-|-----------|----------|-------|
-| **Custom Recipe** | Process data with custom logic (Python/R/SQL) | [cli-docs/guides/custom-recipes.md](cli-docs/guides/custom-recipes.md) |
-| **Webapp (Charts)** | Interactive visualizations using Plotly, Bokeh, D3 | [cli-docs/guides/webapps.md](cli-docs/guides/webapps.md) |
-| **Prediction Algorithm** | Custom ML algorithm for Visual ML | [cli-docs/guides/prediction-algorithms.md](cli-docs/guides/prediction-algorithms.md) |
-| **Macro** | Automated tasks, project utilities, batch operations | [cli-docs/guides/macros.md](cli-docs/guides/macros.md) |
-| **Dataset Connector** | Connect to custom data sources/APIs | [cli-docs/guides/datasets.md](cli-docs/guides/datasets.md) |
-| **Processor** | Custom Prepare recipe step | [cli-docs/guides/processors.md](cli-docs/guides/processors.md) |
-| **File Format** | Custom file format parser | [cli-docs/guides/file-formats.md](cli-docs/guides/file-formats.md) |
-
-### 2. Plugin identity questions:
-
-- **Plugin name**: What should this plugin be called? (lowercase, hyphen-separated, no "plugin" or "custom" in name)
-- **Description**: What does this plugin do? (1-2 sentences)
-- **Author**: Who is the author? (Format: "Organization (firstName LASTNAME)")
-- **Components**: What components will it contain? (can have multiple)
-
-### 3. Dependencies:
-
-- Does this plugin need external Python packages?
-- If building webapps: Which visualization library? (Plotly recommended for offline use, Bokeh, or custom JS)
-
----
-
-## Quick Reference
-
-### Plugin Structure
+## Data Flow
 ```
-your-plugin-id/
-├── plugin.json              # Plugin metadata (CONFIGURE FIRST)
-├── code-env/
-│   └── python/
-│       ├── desc.json        # Code environment config
-│       └── spec/
-│           └── requirements.txt  # Python dependencies
-├── custom-recipes/          # Recipe components
-│   └── {plugin-id}-{recipe-name}/
-│       ├── recipe.json
-│       └── recipe.py
-├── webapps/                 # Webapp components
-│   └── {webapp-name}/
-│       ├── webapp.json
-│       ├── backend.py
-│       └── app.html (optional)
-├── python-runnables/        # Macro components
-│   └── {macro-name}/
-│       ├── runnable.json
-│       └── runnable.py
-├── python-connectors/       # Dataset components
-│   └── {connector-name}/
-│       ├── connector.json
-│       └── connector.py
-├── python-prediction-algos/ # ML algorithm components
-│   └── {algo-name}/
-│       ├── algo.json
-│       └── algo.py
-├── python-lib/              # Shared Python code
-│   └── {your_module}/
-├── parameter-sets/          # Reusable parameter configurations
-├── tests/                   # Unit and integration tests
-└── README.md                # Plugin documentation
+DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON → app.js → frappe-gantt
 ```
 
-### First Steps After Cloning
+## Critical Files
 
-1. **Update plugin.json** - See [cli-docs/guides/plugin-configuration.md](cli-docs/guides/plugin-configuration.md)
-2. **Configure code-env** if you need external packages
-3. **Create your component(s)** using the appropriate guide
-4. **Test locally** - See [cli-docs/guides/testing.md](cli-docs/guides/testing.md)
+| File | Role | Gotcha |
+|------|------|--------|
+| `python-lib/ganttchart/task_transformer.py` | DataFrame → task list | Auto-generates missing IDs, clamps progress 0-100 |
+| `python-lib/ganttchart/dependency_validator.py` | DFS cycle detection | MUST run before render or UI infinite-loops |
+| `python-lib/ganttchart/date_parser.py` | Multi-format → ISO | Handles Unix timestamps, validates start < end |
+| `webapps/gantt-chart/backend.py` | DSS bridge | Zero business logic here |
+| `webapps/gantt-chart/app.js` | Gantt init + UI | View modes, tooltips, label formatting |
+| `resource/webapp/style.css` | Custom CSS | Override library with `!important` |
 
----
+## Hard Rules
 
-## Documentation Index
+1. **All validation in Python** — JS is display-only
+2. **Never mutate inputs** — Transform functions return new objects
+3. **Skip bad rows, don't crash** — Log warning, continue
+4. **python-lib/ has no dataiku imports** — Must be unit-testable standalone
+5. **frappe-gantt bundled in resource/** — Air-gap requirement, no CDN
 
-### Core Guides
-- [Quick Start](cli-docs/QUICK_START.md) - Get your first component running
-- [Plugin Configuration](cli-docs/guides/plugin-configuration.md) - plugin.json, code-env setup
-- [Naming Conventions](cli-docs/guides/naming-conventions.md) - Required naming rules
+## Discovered Gotchas
 
-### Component Guides
-- [Custom Recipes](cli-docs/guides/custom-recipes.md) - Data processing recipes
-- [Webapps & Charts](cli-docs/guides/webapps.md) - Interactive visualizations
-- [Prediction Algorithms](cli-docs/guides/prediction-algorithms.md) - Custom ML algorithms
-- [Macros](cli-docs/guides/macros.md) - Automated tasks and utilities
-- [Dataset Connectors](cli-docs/guides/datasets.md) - Custom data sources
-- [Processors](cli-docs/guides/processors.md) - Prepare recipe steps
-- [File Formats](cli-docs/guides/file-formats.md) - Custom file parsers
-
-### Reference
-- [Parameters Reference](cli-docs/reference/parameters.md) - All parameter types
-- [Type Conversions](cli-docs/reference/type-conversions.md) - Python types for parameters
-- [Dataset API Quick Ref](cli-docs/reference/dataset-api-quick.md) - Read/write methods
-- [Edge Cases](cli-docs/reference/edge-cases.md) - Validation and error handling
-- [Frappe Gantt](cli-docs/reference/frappe-gantt.md) - Frappe Gantt library patterns
-- [Testing Guide](cli-docs/guides/testing.md) - Unit and integration testing
-- [Best Practices](cli-docs/guides/best-practices.md) - Coding standards and patterns
-
----
-
-## Priority Components (Most Common)
-
-Based on typical usage, prioritize learning these:
-
-1. **Webapps for Charts** - Use Plotly for offline-capable visualizations
-2. **Custom Recipes** - Most common data processing extension
-3. **Prediction Algorithms** - Extend Visual ML capabilities
-4. **Macros** - Automation and batch operations
-5. **Dataset Connectors** - Custom data sources
+<!-- Add here as you hit issues — this is institutional memory -->
+- Dataiku loads from COMMITTED code, not working directory — must commit before User QA
+- Progress values from external data can be >100 or <0 — always clamp
+- Circular dependencies will infinite-loop frappe-gantt — cycle detection is mandatory
+- Nested scroll containers break sticky — override `.gantt-container { overflow-y: visible }`
+- Frappe CSS variables (`--gv-column-width`, `--gv-grid-height`) — don't set manually
+- View mode names are case-sensitive — "Week" not "week"
+- Monkey-patching must happen BEFORE `new Gantt()` — store original, then patch
+- Post-render DOM manipulation needs `requestAnimationFrame` — DOM not ready immediately
+- Labels recreated on view change — must reapply formatting in `on_view_change`
+- **ganttInstance.options vs .config** — `options` = primitives (strings, numbers), `config` = computed objects. Use `options.view_mode` for string, NOT `config.view_mode`
+- **Month view DOM structure** — `.upper-text` = years, `.lower-text` = months (counterintuitive)
+- **Frappe Gantt no destroy()** — Event listeners persist after DOM cleared. Guard against undefined when accessing potentially stale DOM refs
+- **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
 
 ---
 
-## Key Principles
+## Recovering From Compact
 
-### Code Structure
-- **Keep recipe/webapp code SHORT** - Business logic belongs in `python-lib/`
-- **Never `import dataiku` in libraries** - Keep libraries DSS-independent
-- **Separation of concerns** - Parameters class + Processing class pattern
+If you're reading this after a context compaction:
 
-### Naming Rules (MUST follow for Plugin Store)
-- Plugin ID: lowercase, hyphen-separated (e.g., `my-awesome-plugin`)
-- Component names: must start with plugin ID (e.g., `my-awesome-plugin-compute`)
-- No "plugin", "custom", "recipe", "dataset" in names
-- See [Naming Conventions](cli-docs/guides/naming-conventions.md) for complete rules
+1. **Check for active intervention:**
+   ```bash
+   ls plan/interventions/
+   ```
 
-### Testing
-- Always include unit tests in `tests/python/unit/`
-- Integration tests use DSS scenarios via `dataiku-plugin-tests-utils`
-- See [Testing Guide](cli-docs/guides/testing.md)
+2. **If intervention exists** — Read it for:
+   - What features are being implemented
+   - What's completed vs pending (checkbox TODOs)
+   - Files modified and why
+   - Resume from the TODO list
 
-### Git Branch Naming
-Use format: `<type>/<version>-<short-description>`
+3. **If no intervention exists** — Check:
+   - `git status` for modified files
+   - `git log --oneline -5` for recent commits
+   - `git branch` for current branch
+   - Read spec if branch follows naming convention
 
-| Prefix | Use Case |
-|--------|----------|
-| `feature/` | New functionality |
-| `bugfix/` | Bug fixes |
-| `release/` | Release preparation |
-| `hotfix/` | Urgent production fixes |
+### When to Create an Intervention
 
-Example: `feature/v0.1.0-ux-improvements`
+Create `plan/interventions/vX.Y.Z-intervention.md` when:
+- Context window is >50% used
+- Work is complex or multi-session
+- Multiple features being implemented
 
-### Documentation Structure
-- `CHANGELOG.md` - Version history (Keep a Changelog format)
-- `plugin-spec.md` - Living document, current state only
-- `plan/releases/vX.Y.Z-notes.md` - Version-specific planning
+Simple fixes with plenty of context don't need intervention tracking.
 
 ---
 
-## Common Patterns
+## Branch Workflow
 
-### Reading Plugin Parameters
-```python
-# In recipes
-from dataiku.customrecipe import get_recipe_config
-config = get_recipe_config()
-my_param = config.get('my_param', 'default_value')
+| Phase | Protocol | Role |
+|-------|----------|------|
+| **Open** | `plan/branch-open-protocol.md` | Architect: investigate, create spec |
+| **Implement** | Use intervention file | SDE: implement spec, update intervention |
+| **Exit** | `plan/branch-exit-protocol.md` | Generate release notes, changelog |
+| **Post-Merge** | `plan/branch-post-merge-protocol.md` | Create GitHub release, cleanup |
 
-# In webapps
-from dataiku.webapps import get_webapp_config
-config = get_webapp_config()
-
-# In macros (runnables)
-# Passed to __init__ as config dict
-def __init__(self, project_key, config, plugin_config):
-    self.my_param = config.get('my_param')
-```
-
-### Accessing Datasets
-```python
-import dataiku
-from dataiku.customrecipe import get_input_names_for_role
-
-# Get input dataset
-input_names = get_input_names_for_role('input_role_name')
-input_dataset = dataiku.Dataset(input_names[0])
-df = input_dataset.get_dataframe()
-
-# Write to output dataset
-output_names = get_output_names_for_role('output_role_name')
-output_dataset = dataiku.Dataset(output_names[0])
-output_dataset.write_with_schema(result_df)
-```
+**Current Phase:** Check `plan/interventions/` for active work
 
 ---
 
-## Troubleshooting
+## Documentation (Read When Needed)
 
-| Issue | Solution |
-|-------|----------|
-| Plugin not visible | Reload plugin from Actions menu, refresh browser |
-| Code env errors | Check requirements.txt, rebuild environment |
-| Parameter not appearing | Verify JSON syntax, check param type spelling |
-| Recipe not in menu | Add `"selectableFromDataset"` in recipe.json |
+**Don't load upfront. Read when you hit that domain.**
+
+### Plugin Development
+| Need to understand... | Read |
+|-----------------------|------|
+| Webapp structure, backend.py | `cli-docs/guides/webapps.md` |
+| Parameter types, webapp.json | `cli-docs/reference/parameters.md` |
+| Dataset API | `cli-docs/reference/dataset-api-quick.md` |
+| Generic plugin patterns | `cli-docs/guides/plugin-overview.md` |
+
+### Gantt-Specific
+| Need to understand... | Read |
+|-----------------------|------|
+| frappe-gantt API, events | `cli-docs/reference/frappe-gantt.md` |
+| Color mapping | `python-lib/ganttchart/color_mapper.py` |
+| Previous decisions | `plan/post-mortems/` (most recent first) |
+| Current work | `plan/interventions/` |
+| Feature designs | `plan/specs/` |
 
 ---
 
-**Version:** 1.0
-**Template Base:** dss-plugin-template
+## Session State
+
+**Phase:** [ ] Open → [x] Implementing → [x] QA Gate → [x] Exit → [ ] Post-Merge
+
+**Branch:** `feature/v0.4.0-view-enhancements`
+**Version:** 0.4.0
+**Status:** QA PASSED - Ready for merge
+
+**What Shipped (v0.4.0):**
+- Responsive header abbreviations (Week, Month, Year views)
+- Fixed date boundary controls (chartStartDate, chartEndDate)
+- Header text collision fixes
+- Frappe clientWidth crash fix
+
+**Deferred to v0.4.1 (bugs):**
+- Data fails to populate on Hour→Quarter Day→Half Day→Day transitions
+- Today button in Month View jumps incorrectly
+
+**Deferred to v0.4.2 (features):**
+- Sticky header (needs JS scroll sync)
+- Year in upper headers across views
+- Month letter visibility at narrow widths
+- Upper elements decade format (2020, 2030, 2040)
+- Cursor positioning on mode switch
+
+**Next Action:**
+Commit documentation artifacts and tag v0.4.0 release
