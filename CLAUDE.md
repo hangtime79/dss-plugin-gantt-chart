@@ -127,10 +127,5 @@ Simple fixes with plenty of context don't need intervention tracking.
 - Fixed 5 library bugs affecting view mode transitions
 - See `plan/post-mortems/v0.4.1-post-mortem.md` for details
 
-**Backlog for v0.4.2 (features):**
-- Sticky header (needs JS scroll sync)
-- Year in upper headers across views
-- Month letter visibility at narrow widths
-- Upper elements decade format (2020, 2030, 2040)
-- Configuration input debouncing (see v0.4.1 intervention deferred items)
-- Persist view mode state to localStorage
+**Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
+**Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
