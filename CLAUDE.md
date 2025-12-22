@@ -42,6 +42,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Month view DOM structure** — `.upper-text` = years, `.lower-text` = months (counterintuitive)
 - **Frappe Gantt no destroy()** — Event listeners persist after DOM cleared. Guard against undefined when accessing potentially stale DOM refs
 - **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
+- **SVG width 100% breaks rendering** — Library sets `width: "100%"` then conditionally overrides. Patched `set_dimensions()` to always set pixel width
+- **Library bugs tracked separately** — See `plan/frappe-gantt-upstream-bugs.md` for bugs to report upstream
 
 ---
 
