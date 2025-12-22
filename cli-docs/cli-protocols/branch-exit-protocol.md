@@ -15,6 +15,7 @@ You are preparing a branch for merge. You must generate all documentation artifa
 1. **Verify all code changes are complete** - User should have approved via QA Gate
 2. **Verify tests pass** - Run test suite before documentation
 3. **Verify version is bumped** - Check plugin.json matches branch version
+4. **Identify linked issues** - Note the GitHub issue numbers fixed by this branch
 
 ### The Four Phases (Do Not Skip Any)
 
@@ -95,10 +96,8 @@ git branch --show-current
 # Get current version from plugin.json
 cat plugin.json | grep '"version"'
 
-# Determine branch type from name prefix
-# feature/ → Feature release
-# bugfix/  → Bugfix release  
-# hotfix/  → Hotfix release
+# Identify linked issues from branch history or spec
+git log main..HEAD --oneline | grep -oE "#[0-9]+" | sort -u
 ```
 
 **Extract from branch name:**
@@ -787,10 +786,13 @@ git push origin [branch-name] --tags
 
 ### 4.7 Create Pull Request
 
-Use the release notes to create a PR:
+Use the release notes to create a PR, ensuring you link the issues:
 
 ```bash
-gh pr create --title "vX.Y.Z: [Short Description]" --body "$(cat <<'EOF'
+# Set your issue numbers (e.g., "12, 15")
+ISSUES="<issue-numbers>"
+
+gh pr create --title "vX.Y.Z: [Short Description]" --body "$(cat <<EOF
 ## Summary
 [1-3 bullet points from release notes]
 
@@ -804,6 +806,9 @@ gh pr create --title "vX.Y.Z: [Short Description]" --body "$(cat <<'EOF'
 
 ## Files Modified
 [List key files]
+
+## Linked Issues
+$(for i in ${ISSUES//,/ }; do echo "Fixes #$i"; done)
 
 ## Test Plan
 [QA verification checklist]
