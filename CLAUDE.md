@@ -46,6 +46,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Library bugs tracked separately** — See `plan/frappe-gantt-upstream-bugs.md` for bugs to report upstream
 - **Dataiku config messaging** — Dataiku does NOT send periodic config heartbeats; only real user changes trigger messages. "Keep alive" pings every 10s don't include config.
 - **Sticky header narrow content** — JS transform-based sticky works when content fills viewport but is janky when SVG narrower than container (browser paint/composite issue). See #21.
+- **on_view_change mode parameter** — The `mode` passed to frappe-gantt's `on_view_change` callback is an object `{name, padding, step, ...}`, not a string. Use `mode.name` to get the view mode string.
+- **Dataiku iframe context** — The webapp runs in an iframe. DOM queries from parent console return empty. Debug logging must be in app.js code, not browser console.
 
 ---
 
@@ -119,7 +121,17 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - Ready for new work
+**Phase:** Implementation - Clean re-implementation of v0.4.3
+
+**Active Branch:** `feature/v0.4.3-header-enhancements-clean`
+**Intervention:** `plan/interventions/v0.4.3-intervention.md`
+
+**Features in Scope:**
+- #13: Month single-letter visibility (don't skip in Month view)
+- #12: Year context in Day/Week upper headers
+- #16: View mode persistence with hashed localStorage keys
+
+**Deferred:** #14 (decade format) - caused instability, abandoned
 
 **Latest Release:** v0.4.2 (2025-12-23)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.2

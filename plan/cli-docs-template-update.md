@@ -65,3 +65,38 @@ Each learning should have:
 - Verification: How to confirm the solution works
 - Related: Links to relevant docs (added after integration)
 -->
+
+### Context
+Handling view mode changes in frappe-gantt's `on_view_change` callback.
+
+### The Problem
+The `mode` parameter passed to `on_view_change` is an **object** `{name: "Week", padding: "2m", step: "1m", ...}`, not a string. Saving this directly to localStorage results in `[object Object]` which fails validation on reload, causing errors like `TypeError: can't access property "name", t is undefined` when frappe-gantt tries to use the invalid view mode.
+
+### The Solution
+Extract the `name` property from the mode object before using it as a string value.
+
+### Implementation
+
+```javascript
+// BAD - mode is an object, not a string
+on_view_change: function(mode) {
+    localStorage.setItem('viewMode', mode); // Stores "[object Object]"
+}
+
+// GOOD - Extract mode.name for the string value
+on_view_change: function(mode) {
+    const viewModeName = typeof mode === 'string' ? mode : mode.name;
+    localStorage.setItem('viewMode', viewModeName); // Stores "Week"
+}
+```
+
+### Verification
+1. Change view mode in the Gantt chart
+2. Check browser console - should log the string "Week" not an object
+3. Check localStorage in DevTools - value should be "Week" not "[object Object]"
+4. Refresh page - view mode should persist correctly
+
+### Related
+- To be integrated into: `cli-docs/reference/frappe-gantt.md` → "Callbacks" section
+
+---
