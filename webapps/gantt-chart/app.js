@@ -673,14 +673,17 @@
 
     // ===== STICKY HEADER VIA JS SCROLL SYNC =====
 
-    // Track scroll handler to avoid duplicates
+    // Track scroll handler for cleanup
     let stickyScrollHandler = null;
-    let lastStickyHeader = null;  // Track the actual header element
 
     /**
      * Set up JavaScript-based sticky header behavior.
      * CSS position:sticky fails in nested scroll containers (Dataiku's iframe structure).
      * This manually syncs the header position during vertical scroll.
+     *
+     * IMPORTANT: Always fully re-initializes on every call.
+     * Do NOT optimize by skipping based on element reference - Year view's
+     * narrow content can corrupt sticky state without creating a new element.
      */
     function setupStickyHeader() {
         const container = document.getElementById('gantt-container');
@@ -691,36 +694,30 @@
             return;
         }
 
-        // Only re-setup if header element changed (DOM was recreated)
-        if (header === lastStickyHeader && stickyScrollHandler) {
-            console.log('Sticky header already set up for this element');
-            return;
-        }
-
-        // Remove previous scroll handler if exists
+        // ALWAYS clean up previous state (fixes Year view state corruption)
         if (stickyScrollHandler) {
             container.removeEventListener('scroll', stickyScrollHandler);
             stickyScrollHandler = null;
         }
 
-        // Track this header element
-        lastStickyHeader = header;
+        // Reset transform to prevent stale state from previous view
+        header.style.transform = '';
 
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
         header.style.backgroundColor = '#ffffff';
 
-        // Create simple scroll handler - direct update, no rAF needed for simple transform
+        // Create scroll handler with GPU-accelerated 3D transform
         stickyScrollHandler = function() {
-            header.style.transform = `translateY(${container.scrollTop}px)`;
+            header.style.transform = `translate3d(0, ${container.scrollTop}px, 0)`;
         };
 
         // Attach scroll listener
         container.addEventListener('scroll', stickyScrollHandler, { passive: true });
 
         // Apply initial position
-        header.style.transform = `translateY(${container.scrollTop}px)`;
+        stickyScrollHandler();
 
         console.log('Sticky header initialized');
     }
