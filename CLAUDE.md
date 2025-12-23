@@ -44,6 +44,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
 - **SVG width 100% breaks rendering** — Library sets `width: "100%"` then conditionally overrides. Patched `set_dimensions()` to always set pixel width
 - **Library bugs tracked separately** — See `plan/frappe-gantt-upstream-bugs.md` for bugs to report upstream
+- **Dataiku config messaging** — Dataiku does NOT send periodic config heartbeats; only real user changes trigger messages. "Keep alive" pings every 10s don't include config.
+- **Sticky header narrow content** — JS transform-based sticky works when content fills viewport but is janky when SVG narrower than container (browser paint/composite issue). See #21.
 
 ---
 
@@ -117,22 +119,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** ACTIVE - SDE Implementation (QA Round 5 pending)
+**Phase:** Branch Exit - v0.4.2 ready for merge
 
 **Current Branch:** `feature/v0.4.2-debounce-and-sticky-header`
-**Intervention:** `plan/interventions/v0.4.2-intervention.md` ← READ THIS FIRST
+**Outcome:** ⚠️ Partial Success
 
-**v0.4.2 Work In Progress:**
-- Issues: #15 (debouncing), #11 (sticky header)
-- 4 attempts completed, all partially failed
-- Awaiting user console test to verify hypothesis
-- Next: Implement config hash comparison if hypothesis confirmed
+**v0.4.2 Completed:**
+- Issue #15 (debouncing): ✅ Fully resolved
+- Issue #11 (sticky header): ⚠️ Partially resolved (works with edge-to-edge content, known limitation with narrow content - see #21)
 
-**CRITICAL FOR NEW SDE:**
-1. Read `plan/interventions/v0.4.2-intervention.md` for full context
-2. Check if user has console test results
-3. If "Changed: false" messages seen → implement Attempt 5 (config hash)
-4. If no duplicate messages → investigate other re-render sources
+**Documentation:**
+- Release notes: `plan/releases/v0.4.2-release-notes.md`
+- Post-mortem: `plan/post-mortems/v0.4.2-post-mortem.md`
+- Intervention log: `plan/interventions/v0.4.2-intervention.md`
 
 **Latest Release:** v0.4.1 (2025-12-22)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.1
