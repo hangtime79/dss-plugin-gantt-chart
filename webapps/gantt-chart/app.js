@@ -708,6 +708,9 @@
         header.style.zIndex = '1001';
         header.style.backgroundColor = '#ffffff';
 
+        // Force header to span full container width (fixes jank when content is narrow)
+        header.style.minWidth = container.offsetWidth + 'px';
+
         // Create scroll handler with GPU-accelerated 3D transform
         stickyScrollHandler = function() {
             header.style.transform = `translate3d(0, ${container.scrollTop}px, 0)`;
