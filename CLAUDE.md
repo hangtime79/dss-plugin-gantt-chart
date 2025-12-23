@@ -119,22 +119,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Branch Exit - v0.4.2 ready for merge
+**Phase:** Idle - Ready for new work
 
-**Current Branch:** `feature/v0.4.2-debounce-and-sticky-header`
-**Outcome:** ⚠️ Partial Success
-
-**v0.4.2 Completed:**
-- Issue #15 (debouncing): ✅ Fully resolved
-- Issue #11 (sticky header): ⚠️ Partially resolved (works with edge-to-edge content, known limitation with narrow content - see #21)
-
-**Documentation:**
-- Release notes: `plan/releases/v0.4.2-release-notes.md`
-- Post-mortem: `plan/post-mortems/v0.4.2-post-mortem.md`
-- Intervention log: `plan/interventions/v0.4.2-intervention.md`
-
-**Latest Release:** v0.4.1 (2025-12-22)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.1
+**Latest Release:** v0.4.2 (2025-12-23)
+**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.2
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
