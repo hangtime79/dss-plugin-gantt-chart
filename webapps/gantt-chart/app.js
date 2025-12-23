@@ -61,6 +61,64 @@
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
 
+    // ===== VIEW MODE PERSISTENCE =====
+
+    // Valid view modes for validation (frappe-gantt modes)
+    const VALID_VIEW_MODES = ['Hour', 'Quarter Day', 'Half Day', 'Day', 'Week', 'Month', 'Year'];
+
+    /**
+     * Simple hash function for localStorage key generation.
+     * Hashes dataset name to prevent information leakage in browser storage.
+     * Uses djb2 algorithm - fast, deterministic, not reversible.
+     */
+    function hashString(str) {
+        let hash = 5381;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+        }
+        return (hash >>> 0).toString(16);
+    }
+
+    /**
+     * Get localStorage key for view mode persistence.
+     * Key is opaque (hashed) to protect dataset name privacy.
+     */
+    function getViewModeStorageKey(datasetName) {
+        return `gantt-vm-${hashString(datasetName || 'default')}`;
+    }
+
+    /**
+     * Load persisted view mode from localStorage.
+     * Self-healing: removes invalid entries automatically.
+     */
+    function loadPersistedViewMode(datasetName) {
+        try {
+            const key = getViewModeStorageKey(datasetName);
+            const saved = localStorage.getItem(key);
+            if (!saved) return null;
+            if (VALID_VIEW_MODES.includes(saved)) {
+                return saved;
+            }
+            // Invalid - remove and return null (self-healing)
+            localStorage.removeItem(key);
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Save view mode to localStorage.
+     */
+    function saveViewMode(datasetName, viewMode) {
+        try {
+            const key = getViewModeStorageKey(datasetName);
+            localStorage.setItem(key, viewMode);
+        } catch (e) {
+            console.warn('Failed to save view mode:', e);
+        }
+    }
+
     // ===== DATE BOUNDARY CONSTRAINTS =====
     // Monkey-patch Gantt.prototype.setup_gantt_dates to apply user-defined date boundaries
     // This must happen before any Gantt instance is created
@@ -186,6 +244,9 @@
 
         // Apply view-mode specific formatting
         switch (viewMode) {
+            case 'Day':
+                formatDayLabels(columnWidth);
+                break;
             case 'Week':
                 formatWeekLabels(columnWidth);
                 break;
@@ -196,12 +257,13 @@
                 formatYearLabels(columnWidth);
                 break;
             default:
-                // Hour, Quarter Day, Half Day, Day - no special formatting needed
+                // Hour, Quarter Day, Half Day - no special formatting needed
                 break;
         }
 
         // For very narrow views, hide every other lower-text label
-        if (columnWidth < 30) {
+        // EXCEPTION: Month view uses single-letter abbreviations which fit without skipping
+        if (columnWidth < 30 && viewMode !== 'Month') {
             const lowerTexts = document.querySelectorAll('.lower-text');
             lowerTexts.forEach((text, i) => {
                 text.style.visibility = (i % 2 === 0) ? 'visible' : 'hidden';
@@ -241,6 +303,74 @@
                     const endDay = rangeMatch[2].padStart(2, '0');
                     text.textContent = `${startDay} - ${endDay}`;
                 }
+            }
+        });
+
+        // Add year context to upper headers
+        formatUpperMonthsWithYear();
+    }
+
+    /**
+     * Format Day mode labels.
+     * Adds year context to upper headers showing months.
+     */
+    function formatDayLabels(columnWidth) {
+        formatUpperMonthsWithYear();
+    }
+
+    /**
+     * Format upper-text month labels with year context.
+     * Shows year on first month of each year only (e.g., "Dec 2024", then "Jan", "Feb"...)
+     * Uses ganttInstance.gantt_start for accurate year calculation.
+     */
+    function formatUpperMonthsWithYear() {
+        const upperTexts = document.querySelectorAll('.upper-text');
+        if (!upperTexts.length) return;
+
+        // Get starting year from gantt instance
+        let currentYear = ganttInstance?.gantt_start?.getFullYear() ?? new Date().getFullYear();
+        let lastMonthIndex = ganttInstance?.gantt_start?.getMonth() ?? 0;
+        const seenYears = new Set();
+
+        upperTexts.forEach(text => {
+            const original = text.textContent.trim();
+            if (!original) return;
+
+            // Find month index from text
+            let monthIndex = -1;
+
+            // Check full month names first
+            for (let i = 0; i < MONTH_NAMES_FULL.length; i++) {
+                if (original.toLowerCase().includes(MONTH_NAMES_FULL[i].toLowerCase())) {
+                    monthIndex = i;
+                    break;
+                }
+            }
+
+            // If not found, check 3-letter abbreviations
+            if (monthIndex === -1) {
+                for (let i = 0; i < MONTH_NAMES_3.length; i++) {
+                    if (original.toLowerCase().startsWith(MONTH_NAMES_3[i].toLowerCase())) {
+                        monthIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (monthIndex === -1) return; // Not a month label
+
+            // Detect year transition (month went backwards = new year)
+            if (monthIndex < lastMonthIndex) {
+                currentYear++;
+            }
+            lastMonthIndex = monthIndex;
+
+            // Show year on first month of each year, 3-letter month otherwise
+            if (!seenYears.has(currentYear)) {
+                seenYears.add(currentYear);
+                text.textContent = `${MONTH_NAMES_3[monthIndex]} ${currentYear}`;
+            } else {
+                text.textContent = MONTH_NAMES_3[monthIndex];
             }
         });
     }
@@ -486,9 +616,13 @@
      * backend call which could return stale data.
      */
     function buildGanttConfig(webAppConfig) {
+        // Load persisted view mode (localStorage, per-chart)
+        const persistedViewMode = loadPersistedViewMode(webAppConfig.dataset);
+        const effectiveViewMode = persistedViewMode || webAppConfig.viewMode || 'Week';
+
         const ganttConfig = {
-            // View settings
-            view_mode: webAppConfig.viewMode || 'Week',
+            // View settings - use persisted mode if available
+            view_mode: effectiveViewMode,
             view_mode_select: webAppConfig.viewModeSelect !== false,
 
             // Appearance - parseInt with fallback for safety
@@ -580,7 +714,13 @@
             },
 
             on_view_change: function(mode) {
-                console.log('View changed:', mode);
+                // CRITICAL: mode is an OBJECT {name, padding, step, ...}, NOT a string!
+                const viewModeName = typeof mode === 'string' ? mode : mode.name;
+                console.log('View changed:', viewModeName);
+
+                // Persist view mode to localStorage
+                saveViewMode(webAppConfig.dataset, viewModeName);
+
                 // Re-enforce minimum bar widths and adjust labels after view mode change
                 requestAnimationFrame(() => {
                     enforceMinimumBarWidths();
