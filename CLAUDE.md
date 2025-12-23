@@ -44,6 +44,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **frappe-gantt.umd.js is loaded** — NOT .es.js. Patch the UMD file for browser fixes
 - **SVG width 100% breaks rendering** — Library sets `width: "100%"` then conditionally overrides. Patched `set_dimensions()` to always set pixel width
 - **Library bugs tracked separately** — See `plan/frappe-gantt-upstream-bugs.md` for bugs to report upstream
+- **Dataiku config messaging** — Dataiku does NOT send periodic config heartbeats; only real user changes trigger messages. "Keep alive" pings every 10s don't include config.
+- **Sticky header narrow content** — JS transform-based sticky works when content fills viewport but is janky when SVG narrower than container (browser paint/composite issue). See #21.
 
 ---
 
@@ -117,15 +119,22 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle (on main)
+**Phase:** Branch Exit - v0.4.2 ready for merge
 
-**Current Branch:** `main`
+**Current Branch:** `feature/v0.4.2-debounce-and-sticky-header`
+**Outcome:** ⚠️ Partial Success
+
+**v0.4.2 Completed:**
+- Issue #15 (debouncing): ✅ Fully resolved
+- Issue #11 (sticky header): ⚠️ Partially resolved (works with edge-to-edge content, known limitation with narrow content - see #21)
+
+**Documentation:**
+- Release notes: `plan/releases/v0.4.2-release-notes.md`
+- Post-mortem: `plan/post-mortems/v0.4.2-post-mortem.md`
+- Intervention log: `plan/interventions/v0.4.2-intervention.md`
+
 **Latest Release:** v0.4.1 (2025-12-22)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.1
-
-**v0.4.1 Summary:**
-- Fixed 5 library bugs affecting view mode transitions
-- See `plan/post-mortems/v0.4.1-post-mortem.md` for details
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`

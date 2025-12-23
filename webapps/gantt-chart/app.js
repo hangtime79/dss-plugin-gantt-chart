@@ -57,6 +57,9 @@
         console.warn('Initial dataiku.getWebAppConfig failed:', e);
     }
     let ganttInstance = null;
+    let configDebounceTimer = null;  // Debounce timer for config updates
+    let renderInProgress = false;    // Prevent overlapping renders
+    const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
 
     // ===== DATE BOUNDARY CONSTRAINTS =====
     // Monkey-patch Gantt.prototype.setup_gantt_dates to apply user-defined date boundaries
@@ -364,7 +367,43 @@
                     return; // Don't render chart
                 }
 
-                initializeChart(webAppConfig, filters);
+                // Debounce config updates to prevent excessive re-renders
+                // when user is rapidly adjusting numeric inputs (spinners)
+                if (configDebounceTimer) {
+                    clearTimeout(configDebounceTimer);
+                }
+                configDebounceTimer = setTimeout(() => {
+                    // Skip if a render is already in progress - just wait for next debounce
+                    if (renderInProgress) {
+                        console.log('Render in progress, skipping this update');
+                        return;
+                    }
+
+                    // Save current view state before re-init
+                    let savedViewMode = null;
+                    let savedScrollLeft = 0;
+                    let savedScrollTop = 0;
+
+                    if (ganttInstance) {
+                        savedViewMode = ganttInstance.options.view_mode;
+                        const container = document.getElementById('gantt-container');
+                        if (container) {
+                            savedScrollLeft = container.scrollLeft;
+                            savedScrollTop = container.scrollTop;
+                        }
+                        console.log('Saving view state:', { savedViewMode, savedScrollLeft, savedScrollTop });
+                    }
+
+                    // Store state to restore after render
+                    window._ganttRestoreState = {
+                        viewMode: savedViewMode,
+                        scrollLeft: savedScrollLeft,
+                        scrollTop: savedScrollTop
+                    };
+
+                    renderInProgress = true;
+                    initializeChart(webAppConfig, filters);
+                }, CONFIG_DEBOUNCE_MS);
 
             } catch (error) {
                 console.error('Configuration processing error:', error);
@@ -547,6 +586,7 @@
                     enforceMinimumBarWidths();
                     updateSvgDimensions();
                     adjustHeaderLabels();
+                    setupStickyHeader();  // Re-setup after view change recreates DOM
                 });
             }
         };
@@ -572,10 +612,36 @@
                 enforceMinimumBarWidths();
                 updateSvgDimensions();
                 adjustHeaderLabels();
+                setupStickyHeader();
+
+                // Restore view state if we have saved state from config update
+                if (window._ganttRestoreState) {
+                    const state = window._ganttRestoreState;
+                    console.log('Restoring view state:', state);
+
+                    // Restore view mode if different from current
+                    if (state.viewMode && ganttInstance && state.viewMode !== ganttInstance.options.view_mode) {
+                        ganttInstance.change_view_mode(state.viewMode);
+                    }
+
+                    // Restore scroll position
+                    const container = document.getElementById('gantt-container');
+                    if (container) {
+                        container.scrollLeft = state.scrollLeft;
+                        container.scrollTop = state.scrollTop;
+                    }
+
+                    // Clear the restore state
+                    window._ganttRestoreState = null;
+                }
+
+                // Mark render as complete
+                renderInProgress = false;
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
             displayError('Rendering Error', error.message, error);
+            renderInProgress = false;  // Reset on error too
         }
     }
 
@@ -603,6 +669,60 @@
         }
         
         console.log(`Updated SVG dimensions: width=${svg.style.width}, height=${svg.style.height}`);
+    }
+
+    // ===== STICKY HEADER VIA JS SCROLL SYNC =====
+
+    // Track scroll handler for cleanup
+    let stickyScrollHandler = null;
+
+    /**
+     * Set up JavaScript-based sticky header behavior.
+     * CSS position:sticky fails in nested scroll containers (Dataiku's iframe structure).
+     * This manually syncs the header position during vertical scroll.
+     *
+     * IMPORTANT: Always fully re-initializes on every call.
+     * Do NOT optimize by skipping based on element reference - Year view's
+     * narrow content can corrupt sticky state without creating a new element.
+     */
+    function setupStickyHeader() {
+        const container = document.getElementById('gantt-container');
+        const header = document.querySelector('.gantt-container .grid-header');
+
+        if (!container || !header) {
+            console.warn('Sticky header setup failed: container or header not found');
+            return;
+        }
+
+        // ALWAYS clean up previous state (fixes Year view state corruption)
+        if (stickyScrollHandler) {
+            container.removeEventListener('scroll', stickyScrollHandler);
+            stickyScrollHandler = null;
+        }
+
+        // Reset transform to prevent stale state from previous view
+        header.style.transform = '';
+
+        // Apply base styles for JS-controlled sticky
+        header.style.position = 'relative';
+        header.style.zIndex = '1001';
+        header.style.backgroundColor = '#ffffff';
+
+        // Force header to span full container width (fixes jank when content is narrow)
+        header.style.minWidth = container.offsetWidth + 'px';
+
+        // Create scroll handler with GPU-accelerated 3D transform
+        stickyScrollHandler = function() {
+            header.style.transform = `translate3d(0, ${container.scrollTop}px, 0)`;
+        };
+
+        // Attach scroll listener
+        container.addEventListener('scroll', stickyScrollHandler, { passive: true });
+
+        // Apply initial position
+        stickyScrollHandler();
+
+        console.log('Sticky header initialized');
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====

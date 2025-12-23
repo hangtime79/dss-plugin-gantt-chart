@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-12-23
+
+### Added
+- **Configuration Debouncing**: 300ms debounce prevents excessive chart re-renders when rapidly adjusting numeric inputs (Bar Height, Column Width, etc.)
+- **View State Preservation**: View mode and scroll position are now saved and restored across configuration changes
+- **Render Overlap Prevention**: Prevents browser hangs from multiple simultaneous render operations
+
+### Fixed
+- Rapid adjustment of numeric config inputs no longer causes visual jank or scroll position jumps
+
+### Known Limitations
+- **Sticky Header**: Works when chart content fills viewport; may be janky with narrow content (see #21)
+
+---
+
 ## [0.4.1.6] - 2025-12-22
 
 ### Added
