@@ -117,15 +117,25 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle (on main)
+**Phase:** ACTIVE - SDE Implementation (QA Round 5 pending)
 
-**Current Branch:** `main`
+**Current Branch:** `feature/v0.4.2-debounce-and-sticky-header`
+**Intervention:** `plan/interventions/v0.4.2-intervention.md` ← READ THIS FIRST
+
+**v0.4.2 Work In Progress:**
+- Issues: #15 (debouncing), #11 (sticky header)
+- 4 attempts completed, all partially failed
+- Awaiting user console test to verify hypothesis
+- Next: Implement config hash comparison if hypothesis confirmed
+
+**CRITICAL FOR NEW SDE:**
+1. Read `plan/interventions/v0.4.2-intervention.md` for full context
+2. Check if user has console test results
+3. If "Changed: false" messages seen → implement Attempt 5 (config hash)
+4. If no duplicate messages → investigate other re-render sources
+
 **Latest Release:** v0.4.1 (2025-12-22)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.1
-
-**v0.4.1 Summary:**
-- Fixed 5 library bugs affecting view mode transitions
-- See `plan/post-mortems/v0.4.1-post-mortem.md` for details
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
