@@ -58,7 +58,8 @@
     }
     let ganttInstance = null;
     let configDebounceTimer = null;  // Debounce timer for config updates
-    const CONFIG_DEBOUNCE_MS = 500;  // 500ms debounce delay
+    let renderInProgress = false;    // Prevent overlapping renders
+    const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
 
     // ===== DATE BOUNDARY CONSTRAINTS =====
     // Monkey-patch Gantt.prototype.setup_gantt_dates to apply user-defined date boundaries
@@ -372,6 +373,12 @@
                     clearTimeout(configDebounceTimer);
                 }
                 configDebounceTimer = setTimeout(() => {
+                    // Skip if a render is already in progress - just wait for next debounce
+                    if (renderInProgress) {
+                        console.log('Render in progress, skipping this update');
+                        return;
+                    }
+
                     // Save current view state before re-init
                     let savedViewMode = null;
                     let savedScrollLeft = 0;
@@ -394,6 +401,7 @@
                         scrollTop: savedScrollTop
                     };
 
+                    renderInProgress = true;
                     initializeChart(webAppConfig, filters);
                 }, CONFIG_DEBOUNCE_MS);
 
@@ -626,10 +634,14 @@
                     // Clear the restore state
                     window._ganttRestoreState = null;
                 }
+
+                // Mark render as complete
+                renderInProgress = false;
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
             displayError('Rendering Error', error.message, error);
+            renderInProgress = false;  // Reset on error too
         }
     }
 
@@ -661,9 +673,9 @@
 
     // ===== STICKY HEADER VIA JS SCROLL SYNC =====
 
-    // Track scroll handler and animation frame to avoid duplicates
+    // Track scroll handler to avoid duplicates
     let stickyScrollHandler = null;
-    let stickyAnimationFrame = null;
+    let lastStickyHeader = null;  // Track the actual header element
 
     /**
      * Set up JavaScript-based sticky header behavior.
@@ -679,43 +691,38 @@
             return;
         }
 
+        // Only re-setup if header element changed (DOM was recreated)
+        if (header === lastStickyHeader && stickyScrollHandler) {
+            console.log('Sticky header already set up for this element');
+            return;
+        }
+
         // Remove previous scroll handler if exists
         if (stickyScrollHandler) {
             container.removeEventListener('scroll', stickyScrollHandler);
+            stickyScrollHandler = null;
         }
 
-        // Cancel any pending animation frame
-        if (stickyAnimationFrame) {
-            cancelAnimationFrame(stickyAnimationFrame);
-        }
+        // Track this header element
+        lastStickyHeader = header;
 
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
-        header.style.backgroundColor = '#ffffff';  // Solid white background
-        header.style.willChange = 'transform';     // Hint for GPU acceleration
+        header.style.backgroundColor = '#ffffff';
 
-        // Create scroll handler with requestAnimationFrame for smoothness
+        // Create simple scroll handler - direct update, no rAF needed for simple transform
         stickyScrollHandler = function() {
-            // Cancel previous frame if still pending
-            if (stickyAnimationFrame) {
-                cancelAnimationFrame(stickyAnimationFrame);
-            }
-
-            stickyAnimationFrame = requestAnimationFrame(function() {
-                const scrollTop = container.scrollTop;
-                header.style.transform = `translateY(${scrollTop}px)`;
-            });
+            header.style.transform = `translateY(${container.scrollTop}px)`;
         };
 
         // Attach scroll listener
         container.addEventListener('scroll', stickyScrollHandler, { passive: true });
 
-        // Apply initial position in case already scrolled
-        const scrollTop = container.scrollTop;
-        header.style.transform = `translateY(${scrollTop}px)`;
+        // Apply initial position
+        header.style.transform = `translateY(${container.scrollTop}px)`;
 
-        console.log('Sticky header initialized via JS scroll sync');
+        console.log('Sticky header initialized');
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
