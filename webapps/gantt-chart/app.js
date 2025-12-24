@@ -322,10 +322,20 @@
      * Format upper-text month labels with year context.
      * Shows year on first month of each year only (e.g., "Dec 2024", then "Jan", "Feb"...)
      * Uses ganttInstance.gantt_start for accurate year calculation.
+     *
+     * CRITICAL: Must sort elements by x-position before processing.
+     * DOM order does NOT match visual left-to-right order!
      */
     function formatUpperMonthsWithYear() {
-        const upperTexts = document.querySelectorAll('.upper-text');
+        const upperTexts = Array.from(document.querySelectorAll('.upper-text'));
         if (!upperTexts.length) return;
+
+        // Sort by x-position (left to right) - DOM order is NOT visual order!
+        upperTexts.sort((a, b) => {
+            const aX = parseFloat(a.getAttribute('x')) || 0;
+            const bX = parseFloat(b.getAttribute('x')) || 0;
+            return aX - bX;
+        });
 
         // Get starting year from gantt instance
         let currentYear = ganttInstance?.gantt_start?.getFullYear() ?? new Date().getFullYear();
