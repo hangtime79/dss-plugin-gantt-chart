@@ -121,20 +121,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Implementation - Clean re-implementation of v0.4.3
+**Phase:** Idle - Ready for new work
 
-**Active Branch:** `feature/v0.4.3-header-enhancements-clean`
-**Intervention:** `plan/interventions/v0.4.3-intervention.md`
-
-**Features in Scope:**
-- #13: Month single-letter visibility (don't skip in Month view)
-- #12: Year context in Day/Week upper headers
-- #16: View mode persistence with hashed localStorage keys
-
-**Deferred:** #14 (decade format) - caused instability, abandoned
-
-**Latest Release:** v0.4.2 (2025-12-23)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.2
+**Latest Release:** v0.4.3 (2025-12-24)
+**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.3
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
