@@ -244,9 +244,6 @@
 
         // Apply view-mode specific formatting
         switch (viewMode) {
-            case 'Day':
-                formatDayLabels(columnWidth);
-                break;
             case 'Week':
                 formatWeekLabels(columnWidth);
                 break;
@@ -257,7 +254,7 @@
                 formatYearLabels(columnWidth);
                 break;
             default:
-                // Hour, Quarter Day, Half Day - no special formatting needed
+                // Hour, Quarter Day, Half Day, Day - no special formatting needed
                 break;
         }
 
@@ -303,84 +300,6 @@
                     const endDay = rangeMatch[2].padStart(2, '0');
                     text.textContent = `${startDay} - ${endDay}`;
                 }
-            }
-        });
-
-        // Add year context to upper headers
-        formatUpperMonthsWithYear();
-    }
-
-    /**
-     * Format Day mode labels.
-     * Adds year context to upper headers showing months.
-     */
-    function formatDayLabels(columnWidth) {
-        formatUpperMonthsWithYear();
-    }
-
-    /**
-     * Format upper-text month labels with year context.
-     * Shows year on first month of each year only (e.g., "Dec 2024", then "Jan", "Feb"...)
-     * Uses ganttInstance.gantt_start for accurate year calculation.
-     *
-     * CRITICAL: Must sort elements by x-position before processing.
-     * DOM order does NOT match visual left-to-right order!
-     */
-    function formatUpperMonthsWithYear() {
-        const upperTexts = Array.from(document.querySelectorAll('.upper-text'));
-        if (!upperTexts.length) return;
-
-        // Sort by x-position (left to right) - DOM order is NOT visual order!
-        upperTexts.sort((a, b) => {
-            const aX = parseFloat(a.getAttribute('x')) || 0;
-            const bX = parseFloat(b.getAttribute('x')) || 0;
-            return aX - bX;
-        });
-
-        // Get starting year from gantt instance
-        let currentYear = ganttInstance?.gantt_start?.getFullYear() ?? new Date().getFullYear();
-        let lastMonthIndex = ganttInstance?.gantt_start?.getMonth() ?? 0;
-        const seenYears = new Set();
-
-        upperTexts.forEach(text => {
-            const original = text.textContent.trim();
-            if (!original) return;
-
-            // Find month index from text
-            let monthIndex = -1;
-
-            // Check full month names first
-            for (let i = 0; i < MONTH_NAMES_FULL.length; i++) {
-                if (original.toLowerCase().includes(MONTH_NAMES_FULL[i].toLowerCase())) {
-                    monthIndex = i;
-                    break;
-                }
-            }
-
-            // If not found, check 3-letter abbreviations
-            if (monthIndex === -1) {
-                for (let i = 0; i < MONTH_NAMES_3.length; i++) {
-                    if (original.toLowerCase().startsWith(MONTH_NAMES_3[i].toLowerCase())) {
-                        monthIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            if (monthIndex === -1) return; // Not a month label
-
-            // Detect year transition (month went backwards = new year)
-            if (monthIndex < lastMonthIndex) {
-                currentYear++;
-            }
-            lastMonthIndex = monthIndex;
-
-            // Show year on first month of each year, 3-letter month otherwise
-            if (!seenYears.has(currentYear)) {
-                seenYears.add(currentYear);
-                text.textContent = `${MONTH_NAMES_3[monthIndex]} ${currentYear}`;
-            } else {
-                text.textContent = MONTH_NAMES_3[monthIndex];
             }
         });
     }
