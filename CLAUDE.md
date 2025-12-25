@@ -48,6 +48,9 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Sticky header narrow content** — JS transform-based sticky works when content fills viewport but is janky when SVG narrower than container (browser paint/composite issue). See #21.
 - **on_view_change mode parameter** — The `mode` passed to frappe-gantt's `on_view_change` callback is an object `{name, padding, step, ...}`, not a string. Use `mode.name` to get the view mode string.
 - **Dataiku iframe context** — The webapp runs in an iframe. DOM queries from parent console return empty. Debug logging must be in app.js code, not browser console.
+- **Frappe Gantt custom_class whitespace** — `custom_class` must be a single class name without spaces. Frappe uses `classList.add()` which throws DOMException on whitespace.
+- **SVG transform centering** — Use `transform-box: fill-box` when scaling SVG elements. Default `transform-origin` is relative to viewport, not element bounding box.
+- **Dataiku body.html is a fragment** — Never add `<!DOCTYPE html>` to body.html. It's injected into Dataiku's iframe wrapper, not a standalone document. DOCTYPE triggers Quirks Mode warning.
 
 ---
 
@@ -121,10 +124,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - Ready for new work
+**Phase:** Branch Exit - PR pending for v0.5.0
 
-**Latest Release:** v0.4.3 (2025-12-24)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.4.3
+**Latest Release:** v0.5.0 (2025-12-25)
+**Branch:** feature/v0.5.0-ui-overhaul
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
