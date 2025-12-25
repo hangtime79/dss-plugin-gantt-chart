@@ -462,35 +462,51 @@ body {
 /* When no color column is selected, bars use grayscale with black text */
 /* Combined class names (no spaces) because Frappe Gantt uses classList.add() */
 
-/* Tier 0: 0% progress */
-.bar-default-tier-0 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-0 .bar-label { fill: #2d3436 !important; }
+/* Base bar fill for all default tiers */
+.bar-default-tier-0 .bar,
+.bar-default-tier-1 .bar,
+.bar-default-tier-25 .bar,
+.bar-default-tier-50 .bar,
+.bar-default-tier-75 .bar,
+.bar-default-tier-100 .bar {
+    fill: #f0f3f6 !important;
+}
+
+/* Black text labels for all default tiers - multiple selector patterns for Frappe Gantt DOM */
+.bar-default-tier-0 .bar-label,
+.bar-default-tier-1 .bar-label,
+.bar-default-tier-25 .bar-label,
+.bar-default-tier-50 .bar-label,
+.bar-default-tier-75 .bar-label,
+.bar-default-tier-100 .bar-label,
+.bar-wrapper.bar-default-tier-0 .bar-label,
+.bar-wrapper.bar-default-tier-1 .bar-label,
+.bar-wrapper.bar-default-tier-25 .bar-label,
+.bar-wrapper.bar-default-tier-50 .bar-label,
+.bar-wrapper.bar-default-tier-75 .bar-label,
+.bar-wrapper.bar-default-tier-100 .bar-label,
+.bar-group.bar-default-tier-0 .bar-label,
+.bar-group.bar-default-tier-1 .bar-label,
+.bar-group.bar-default-tier-25 .bar-label,
+.bar-group.bar-default-tier-50 .bar-label,
+.bar-group.bar-default-tier-75 .bar-label,
+.bar-group.bar-default-tier-100 .bar-label {
+    fill: #2d3436 !important;
+}
+
+/* Progress overlay colors - darken as progress increases */
 .bar-default-tier-0 .bar-progress { fill: #f0f3f6 !important; }
-
-/* Tier 1: 1-24% progress */
-.bar-default-tier-1 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-1 .bar-label { fill: #2d3436 !important; }
 .bar-default-tier-1 .bar-progress { fill: #d4d9de !important; }
-
-/* Tier 25: 25-49% progress */
-.bar-default-tier-25 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-25 .bar-label { fill: #2d3436 !important; }
 .bar-default-tier-25 .bar-progress { fill: #bac2ca !important; }
-
-/* Tier 50: 50-74% progress */
-.bar-default-tier-50 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-50 .bar-label { fill: #2d3436 !important; }
 .bar-default-tier-50 .bar-progress { fill: #a8b1ba !important; }
-
-/* Tier 75: 75-99% progress */
-.bar-default-tier-75 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-75 .bar-label { fill: #2d3436 !important; }
 .bar-default-tier-75 .bar-progress { fill: #96a0a8 !important; }
-
-/* Tier 100: 100% complete - green tint */
-.bar-default-tier-100 .bar { fill: #f0f3f6 !important; }
-.bar-default-tier-100 .bar-label { fill: #2d3436 !important; }
 .bar-default-tier-100 .bar-progress { fill: #8faa94 !important; }
+
+/* Progress bar height: 60% of task bar height, centered */
+.gantt .bar-progress {
+    transform: scaleY(0.6);
+    transform-origin: center;
+}
 
 /* ===== METADATA BANNER (TOAST) ===== */
 .metadata-banner {
