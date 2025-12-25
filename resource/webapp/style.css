@@ -1,210 +1,646 @@
-/* ===== LAYOUT ===== */
-html, body {
+/* ===== DESIGN SYSTEM ===== */
+:root {
+    /* Palette - refined blue/slate */
+    --color-primary: #2c3e50;
+    --color-secondary: #576574;
+    --color-accent: #0984e3;
+    --color-accent-hover: #0773c5;
+    --color-background: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-border: #dfe6e9;
+
+    /* Semantic Colors */
+    --color-success: #00b894;
+    --color-warning: #fdcb6e;
+    --color-error: #ff7675;
+
+    /* Text Colors */
+    --text-main: #2d3436;
+    --text-muted: #636e72;
+    --text-inverted: #ffffff;
+
+    /* Typography */
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-size-xs: 12px;
+    --font-size-sm: 13px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 600;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+
+    /* Components */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+    /* Chart Specific */
+    --chart-grid-line: #f1f2f6;
+    --chart-today-line: #fab1a0;
+
+    /* Layout */
+    --header-height: 56px;
+}
+
+/* ===== RESET & BASE ===== */
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-stack);
+    background-color: var(--color-background);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LAYOUT STRUCTURE ===== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.control-bar {
+    height: var(--header-height);
+    background-color: var(--color-background);
+    /* dim background for contrast */
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    z-index: 1002;
+    /* Above stick header */
+    flex-shrink: 0;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.brand-title {
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.brand-icon {
+    color: var(--color-accent);
+}
+
+.zoom-indicator {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    min-width: 45px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-medium);
 }
 
 #gantt-container {
+    flex: 1;
     width: 100%;
-    height: 100%;
-    overflow: auto;
+    overflow-y: visible !important;
+    /* Fix for sticky header */
+    overflow-x: auto;
+    position: relative;
+    background-color: var(--color-surface);
+}
+
+/* ===== CONTROLS ===== */
+.btn {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    padding: 6px 12px;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+}
+
+.btn:hover {
+    background-color: var(--color-background);
+    border-color: #b2bec3;
+}
+
+.btn:active {
+    background-color: #dfe6e9;
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-group {
+    display: flex;
+    flex-direction: row;
+    /* Explicit row */
+    align-items: center;
+    flex-wrap: nowrap;
+    /* Prevent stacking */
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    height: 30px;
+    /* Explicit height */
+}
+
+.btn-group .btn {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+.btn-group .btn:hover {
+    background-color: var(--color-background);
+}
+
+.btn-group .zoom-indicator {
+    padding: 0 8px;
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    color: var(--text-main);
+    background: var(--color-background);
+}
+
+.select-wrapper {
     position: relative;
 }
 
-/* NOTE: Do NOT override .gantt-container height here!
-   Frappe Gantt dynamically sets height via --gv-grid-height CSS variable.
-   Overriding with height:100% breaks scrolling by forcing container to viewport size.
-   Our #gantt-container (overflow:auto) handles scrolling when Frappe's container exceeds viewport.
-*/
+.select-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 6px 32px 6px 12px;
+    /* Space for arrow */
+    font-size: var(--font-size-sm);
+    color: var(--text-main);
+    cursor: pointer;
+    font-family: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636e72' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.762L10.825 4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
 
-/* ===== LOADING OVERLAY ===== */
+.select-input:hover {
+    border-color: #b2bec3;
+}
+
+.select-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(9, 132, 227, 0.1);
+}
+
+/* ===== LOADING OVERLAY (SKELETON) ===== */
 .loading-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--color-surface);
+    z-index: 9999;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    transition: opacity 0.3s ease;
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
 }
 
 .loading-overlay.hide {
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.3s ease;
 }
 
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
+.skeleton-header {
+    height: 45px;
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+    background: #f0f2f5;
+    border-radius: var(--radius-sm);
+    animation: pulse 1.5s infinite ease-in-out;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.skeleton-row {
+    height: 30px;
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+    background: #f0f2f5;
+    border-radius: var(--radius-sm);
+    animation: pulse 1.5s infinite ease-in-out;
+    opacity: 0.7;
 }
 
-.loading-overlay p {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
+.skeleton-row:nth-child(even) {
+    width: 85%;
+}
+
+.skeleton-row:nth-child(3n) {
+    width: 60%;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
 }
 
 /* ===== CUSTOM COLOR CLASSES (12-color palette) ===== */
+/* Contrast ratios optimized for WCAG AA/AAA */
+
 .bar-blue .bar {
     fill: #3498db !important;
+}
+
+.bar-blue .bar-label {
+    fill: #ffffff !important;
 }
 
 .bar-green .bar {
     fill: #2ecc71 !important;
 }
 
+.bar-green .bar-label {
+    fill: #2d3436 !important;
+}
+
+/* Bright green -> Dark text */
+
 .bar-orange .bar {
     fill: #e67e22 !important;
+}
+
+.bar-orange .bar-label {
+    fill: #ffffff !important;
 }
 
 .bar-purple .bar {
     fill: #9b59b6 !important;
 }
 
+.bar-purple .bar-label {
+    fill: #ffffff !important;
+}
+
 .bar-red .bar {
     fill: #e74c3c !important;
+}
+
+.bar-red .bar-label {
+    fill: #ffffff !important;
 }
 
 .bar-teal .bar {
     fill: #1abc9c !important;
 }
 
+.bar-teal .bar-label {
+    fill: #ffffff !important;
+}
+
 .bar-pink .bar {
     fill: #e91e63 !important;
+}
+
+.bar-pink .bar-label {
+    fill: #ffffff !important;
 }
 
 .bar-indigo .bar {
     fill: #3f51b5 !important;
 }
 
+.bar-indigo .bar-label {
+    fill: #ffffff !important;
+}
+
 .bar-cyan .bar {
     fill: #00bcd4 !important;
 }
+
+.bar-cyan .bar-label {
+    fill: #2d3436 !important;
+}
+
+/* Bright cyan -> Dark text */
 
 .bar-amber .bar {
     fill: #ffc107 !important;
 }
 
+.bar-amber .bar-label {
+    fill: #2d3436 !important;
+}
+
+/* Bright amber -> Dark text */
+
 .bar-lime .bar {
     fill: #cddc39 !important;
 }
+
+.bar-lime .bar-label {
+    fill: #2d3436 !important;
+}
+
+/* Bright lime -> Dark text */
 
 .bar-gray .bar {
     fill: #607d8b !important;
 }
 
-/* ===== METADATA BANNER ===== */
+.bar-gray .bar-label {
+    fill: #ffffff !important;
+}
+
+/* Apply robust text colors - supporting multiple DOM structures */
+.bar-wrapper.bar-blue .bar-label,
+.bar-group.bar-blue .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-green .bar-label,
+.bar-group.bar-green .bar-label {
+    fill: #2d3436 !important;
+}
+
+.bar-wrapper.bar-orange .bar-label,
+.bar-group.bar-orange .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-purple .bar-label,
+.bar-group.bar-purple .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-red .bar-label,
+.bar-group.bar-red .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-teal .bar-label,
+.bar-group.bar-teal .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-pink .bar-label,
+.bar-group.bar-pink .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-indigo .bar-label,
+.bar-group.bar-indigo .bar-label {
+    fill: #ffffff !important;
+}
+
+.bar-wrapper.bar-cyan .bar-label,
+.bar-group.bar-cyan .bar-label {
+    fill: #2d3436 !important;
+}
+
+.bar-wrapper.bar-amber .bar-label,
+.bar-group.bar-amber .bar-label {
+    fill: #2d3436 !important;
+}
+
+.bar-wrapper.bar-lime .bar-label,
+.bar-group.bar-lime .bar-label {
+    fill: #2d3436 !important;
+}
+
+.bar-wrapper.bar-gray .bar-label,
+.bar-group.bar-gray .bar-label {
+    fill: #ffffff !important;
+}
+
+/* ===== METADATA BANNER (TOAST) ===== */
 .metadata-banner {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
-    background: rgba(255, 255, 255, 0.98);
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px 16px;
-    font-size: 12px;
-    color: #666;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    max-width: 300px;
-    z-index: 1000;
+    bottom: 24px;
+    right: 24px;
+    background: var(--color-surface);
+    border-left: 4px solid var(--color-success);
+    /* Default */
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: var(--font-size-sm);
+    color: var(--text-main);
+    box-shadow: var(--shadow-lg);
+    min-width: 280px;
+    max-width: 320px;
+    z-index: 1005;
+    animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .metadata-banner.warning {
-    background: rgba(255, 243, 205, 0.98);
-    border-color: #ffc107;
-    color: #856404;
+    border-left-color: var(--color-warning);
+}
+
+.metadata-banner.error {
+    border-left-color: var(--color-error);
 }
 
 .metadata-banner .close-btn {
     float: right;
-    margin-left: 8px;
     cursor: pointer;
+    color: var(--text-muted);
     font-weight: bold;
-    color: #999;
+    font-size: 16px;
+    line-height: 1;
+    margin-left: 8px;
 }
 
 .metadata-banner .close-btn:hover {
-    color: #333;
+    color: var(--text-main);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
-.gantt-container {
-    font-family: inherit;
-    /* Override Frappe's overflow:auto to fix sticky header.
-       Frappe's container creates a scroll context that breaks position:sticky.
-       By setting overflow-y:visible, sticky becomes relative to #gantt-container.
-       Horizontal scrolling is preserved via overflow-x. */
-    overflow-y: visible !important;
-    overflow-x: auto;
+.gantt .grid-header {
+    background-color: var(--color-surface);
+    height: 50px;
+    /* Force consistent header height */
+}
+
+/* Specificity war with Frappe */
+.gantt .grid-row {
+    fill: var(--color-surface) !important;
+    stroke: var(--chart-grid-line) !important;
+    stroke-width: 1;
+}
+
+.gantt .row-line {
+    stroke: var(--chart-grid-line) !important;
+}
+
+.gantt .tick {
+    stroke: var(--chart-grid-line) !important;
+}
+
+.gantt .bar {
+    stroke: none;
+    /* Remove default stroke */
+    /* Add subtle rounding overrides if needed */
 }
 
 .gantt .bar-label {
-    fill: #fff;
-    font-size: 12px;
-    font-weight: 500;
+    fill: var(--text-main) !important;
+    /* Default to DARK for safety */
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-stack) !important;
+    /* Ensure no FontAwesome fallback */
+}
+
+/* Ensure header text is visible */
+.gantt .grid-header text {
+    fill: var(--text-muted) !important;
 }
 
 .gantt .bar-progress {
-    fill: rgba(0, 0, 0, 0.2);
+    fill: rgba(0, 0, 0, 0.15);
+    /* Softer progress overlay */
 }
 
-.gantt .bar-invalid {
-    fill: transparent;
-    stroke: #e74c3c;
-    stroke-width: 2;
-    stroke-dasharray: 5,5;
+.gantt .today-highlight {
+    fill: var(--chart-today-line);
+    opacity: 0.5;
 }
 
-/* Custom popup styling */
+/* ===== POPUP (CARD STYLE) ===== */
 .gantt-popup {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-md);
     font-family: inherit;
+    min-width: 200px;
+    z-index: 1010;
+}
+
+/* Hide default frappe pointer triangle if it looks bad, 
+   or styling it to match: */
+.gantt-popup::before {
+    border-bottom-color: var(--color-surface) !important;
 }
 
 .popup-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #333;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-main);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-xs);
 }
 
 .popup-dates {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .popup-progress {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .popup-deps {
-    font-size: 12px;
-    color: #666;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
     font-style: italic;
+    margin-top: var(--spacing-xs);
 }
 
-/* ===== ERROR DISPLAY ===== */
+/* ===== CUSTOM TOOLTIP FIELDS ===== */
+.popup-custom-fields {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+.popup-field {
+    font-size: var(--font-size-sm);
+    margin: 2px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.field-label {
+    color: var(--text-muted);
+    font-weight: var(--font-weight-medium);
+    margin-right: var(--spacing-sm);
+}
+
+.field-value {
+    color: var(--text-main);
+    text-align: right;
+}
+
+/* ===== ERROR/EMPTY STATES ===== */
 .error-container {
     display: flex;
     flex-direction: column;
@@ -213,112 +649,85 @@ html, body {
     height: 100%;
     padding: 40px;
     text-align: center;
+    color: var(--text-muted);
 }
 
 .error-icon {
     font-size: 48px;
-    color: #e74c3c;
-    margin-bottom: 16px;
+    color: var(--color-error);
+    margin-bottom: var(--spacing-md);
+    opacity: 0.8;
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: var(--color-secondary);
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
 }
 
 .error-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-main);
+    margin-bottom: var(--spacing-sm);
 }
 
 .error-message {
-    font-size: 14px;
-    color: #666;
-    max-width: 600px;
+    font-size: var(--font-size-md);
+    color: var(--text-muted);
+    max-width: 500px;
     line-height: 1.5;
 }
 
-/* ===== RESPONSIVE ADJUSTMENTS ===== */
-@media (max-width: 768px) {
-    #gantt-container {
-        font-size: 10px;
-    }
-
-    .metadata-banner {
-        font-size: 11px;
-        padding: 8px 12px;
-        max-width: 200px;
-    }
-
-    .bar-label {
-        font-size: 10px !important;
-    }
-}
-
-/* ===== ACCESSIBILITY ===== */
-.gantt .bar:focus {
-    outline: 2px solid #3498db;
-    outline-offset: 2px;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .gantt .grid-row {
-        stroke: #000;
-        stroke-width: 1.5;
-    }
-
-    .gantt .bar {
-        stroke: #000;
-        stroke-width: 2;
-    }
-}
-
-/* ===== CUSTOM TOOLTIP FIELDS ===== */
-.popup-custom-fields {
-    margin-top: 8px;
-    border-top: 1px solid #eee;
-    padding-top: 8px;
-}
-
-.popup-field {
-    font-size: 12px;
-    margin: 4px 0;
-}
-
-.field-label {
-    color: #666;
-    font-weight: 500;
-}
-
-.field-value {
-    color: #333;
-}
-
 /* ===== HEADER TEXT COLLISION FIX ===== */
-/* Prevent date labels from overlapping when switching view modes */
 .gantt-container .upper-text {
     max-width: calc(var(--gv-column-width, 45px) * 4);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    fill: var(--text-muted) !important;
 }
 
 .gantt-container .lower-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    fill: var(--text-main) !important;
+    font-weight: var(--font-weight-medium);
 }
 
-/* Smaller font for narrow column views (Hour, Quarter Day) */
+/* Smaller font for narrow views */
 .gantt-container[data-narrow-view="true"] .lower-text {
     font-size: 10px;
 }
 
-/* ===== STICKY HEADER (JS-CONTROLLED) ===== */
-/* CSS position:sticky doesn't work in Dataiku's nested scroll containers.
-   JavaScript in app.js handles sticky behavior via transform on scroll.
-   These base styles ensure the header renders correctly. */
+/* ===== STICKY HEADER ===== */
 .gantt-container .grid-header {
-    position: relative;  /* JS will apply transform */
+    position: relative;
     z-index: 1001;
-    background-color: var(--g-header-background, #fff);
-    will-change: transform;  /* Optimize for animations */
+    background-color: var(--color-surface);
+    /* Must be opaque */
+    will-change: transform;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 600px) {
+    .control-bar {
+        height: auto;
+        padding: var(--spacing-sm);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .control-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .brand-title {
+        display: none;
+        /* Hide title on small mobile to save space */
+    }
 }

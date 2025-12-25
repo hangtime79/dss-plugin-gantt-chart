@@ -1,11 +1,72 @@
+<!DOCTYPE html>
 <link rel="stylesheet" href="/plugins/gantt-chart/resource/frappe-gantt.css">
 <link rel="stylesheet" href="/plugins/gantt-chart/resource/webapp/style.css">
 
-<div id="gantt-container"></div>
+<div class="app-container">
+    <!-- Control Bar -->
+    <header class="control-bar">
+        <div class="control-group">
+            <div class="brand-title">
+                <!-- Inline SVG for independent icon rendering -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="brand-icon" stroke="currentColor"
+                    stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Project Timeline
+            </div>
+        </div>
 
-<div id="loading" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>Loading Gantt chart...</p>
+        <div class="control-group">
+            <div class="select-wrapper">
+                <select id="view-mode-select" class="select-input" aria-label="View Mode">
+                    <option value="Hour">Hour</option>
+                    <option value="Quarter Day">Quarter Day</option>
+                    <option value="Half Day">Half Day</option>
+                    <option value="Day">Day</option>
+                    <option value="Week" selected>Week</option>
+                    <option value="Month">Month</option>
+                    <option value="Year">Year</option>
+                </select>
+            </div>
+
+            <button id="btn-today" class="btn" title="Go to Today">
+                Today
+            </button>
+
+            <div class="btn-group">
+                <button id="btn-zoom-out" class="btn btn-icon" title="Zoom Out" aria-label="Zoom Out">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <div id="zoom-level-indicator" class="zoom-indicator">100%</div>
+                <button id="btn-zoom-in" class="btn btn-icon" title="Zoom In" aria-label="Zoom In">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chart Container -->
+    <div id="gantt-container"></div>
 </div>
 
+<!-- Modern Skeleton Loader -->
+<div id="loading" class="loading-overlay">
+    <div class="skeleton-header"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+</div>
+
+<!-- Scripts -->
 <script src="/plugins/gantt-chart/resource/frappe-gantt.umd.js"></script>
