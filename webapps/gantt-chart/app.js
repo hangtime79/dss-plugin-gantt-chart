@@ -916,15 +916,14 @@
             const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
             clipPath.setAttribute('id', clipId);
 
-            // Create a sharp rectangle clip matching task bar bounds (no rounded corners)
+            // ClipPath matches task bar shape (including rounded corners)
             const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             clipRect.setAttribute('x', taskBar.getAttribute('x'));
             clipRect.setAttribute('y', taskBar.getAttribute('y'));
             clipRect.setAttribute('width', taskBar.getAttribute('width'));
             clipRect.setAttribute('height', taskBar.getAttribute('height'));
-            // Sharp corners - just constrain to task bar bounds
-            clipRect.setAttribute('rx', 0);
-            clipRect.setAttribute('ry', 0);
+            clipRect.setAttribute('rx', taskBar.getAttribute('rx'));
+            clipRect.setAttribute('ry', taskBar.getAttribute('ry'));
 
             clipPath.appendChild(clipRect);
             defs.appendChild(clipPath);
@@ -932,11 +931,9 @@
             // Apply clipPath to progress bar
             progressBar.setAttribute('clip-path', `url(#${clipId})`);
 
-            // Make progress bar a plain rectangle - let clipPath handle corner shaping
-            const oldRx = progressBar.getAttribute('rx');
+            // Reset progress bar to sharp corners - clipPath handles the shaping
             progressBar.setAttribute('rx', 0);
             progressBar.setAttribute('ry', 0);
-            console.log(`Progress bar ${index}: rx changed from ${oldRx} to ${progressBar.getAttribute('rx')}`);
 
             // Extend progress bar beyond task bar bounds to fill corner pixels
             // The clipPath will clip it to the correct shape
