@@ -502,10 +502,11 @@ body {
 .bar-default-tier-75 .bar-progress { fill: #96a0a8 !important; }
 .bar-default-tier-100 .bar-progress { fill: #8faa94 !important; }
 
-/* Progress bar height: 60% of task bar height, centered */
+/* Progress bar height: 60% of task bar height, centered within task */
 .gantt .bar-progress {
+    transform-box: fill-box;
+    transform-origin: center center;
     transform: scaleY(0.6);
-    transform-origin: center;
 }
 
 /* ===== METADATA BANNER (TOAST) ===== */
