@@ -502,7 +502,7 @@ body {
 .bar-default-tier-75 .bar-progress { fill: #96a0a8 !important; }
 .bar-default-tier-100 .bar-progress { fill: #8faa94 !important; }
 
-/* Progress bar height: 60% of task bar height, centered within task */
+/* Progress bar: 60% height, centered. rx/ry set via JS fixProgressBarRadius() (#28) */
 .gantt .bar-progress {
     transform-box: fill-box;
     transform-origin: center center;
@@ -587,7 +587,11 @@ body {
 .gantt .bar {
     stroke: none;
     /* Remove default stroke */
-    /* Add subtle rounding overrides if needed */
+}
+
+/* Remove dated 1px outline from task bars (#27) */
+.gantt .bar-wrapper .bar {
+    outline: none !important;
 }
 
 .gantt .bar-label {
