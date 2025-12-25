@@ -932,8 +932,10 @@
             progressBar.setAttribute('clip-path', `url(#${clipId})`);
 
             // Make progress bar a plain rectangle - let clipPath handle corner shaping
+            const oldRx = progressBar.getAttribute('rx');
             progressBar.setAttribute('rx', 0);
             progressBar.setAttribute('ry', 0);
+            console.log(`Progress bar ${index}: rx changed from ${oldRx} to ${progressBar.getAttribute('rx')}`);
 
             // Extend progress bar beyond task bar bounds to fill corner pixels
             // The clipPath will clip it to the correct shape
