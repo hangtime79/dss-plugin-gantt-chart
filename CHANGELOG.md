@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-25
+
+### Added
+- **Design System**: CSS custom properties for consistent theming (colors, spacing, typography, shadows)
+- **Control Bar**: New header bar with view mode dropdown, zoom in/out buttons with percentage indicator, Today button, and brand title with inline SVG icon
+- **Skeleton Loader**: Modern animated placeholder during initial load (replaces spinner)
+- **Progress-Based Default Colors**: When no color column is selected:
+  - Gray base bar (`#f0f3f6`) with black text
+  - Progress overlay darkens as completion increases (0% → 100%)
+  - 100% complete tasks show green-tinted progress (`#8faa94`)
+  - Progress bar renders at 60% of task height, centered
+
+### Changed
+- **Typography**: System font stack for premium appearance (air-gap safe, no external fonts)
+- **Visual Polish**: Softer colors, rounded corners, lightened grid lines
+- **Tooltips**: Card-style design with shadows and improved layout
+- **Metadata Banner**: Now styled as floating toast notification
+- **Error States**: Uses Dataiku's FontAwesome icons instead of emoji
+
+### Fixed
+- Progress bar now properly centered within task bars using SVG `transform-box: fill-box`
+
+---
+
 ## [0.4.2] - 2025-12-23
 
 ### Added
