@@ -294,9 +294,10 @@ class TaskTransformer:
             task['custom_class'] = color_class
         else:
             # No color column: use default gray bar with progress-based overlay color
+            # Single class (no spaces) - Frappe Gantt uses classList.add() which rejects whitespace
             progress = task.get('progress', 0) or 0
             progress_tier = self._get_progress_tier(progress)
-            task['custom_class'] = f'bar-default progress-tier-{progress_tier}'
+            task['custom_class'] = f'bar-default-tier-{progress_tier}'
 
         # Add custom tooltip fields
         if self.config.tooltip_columns:

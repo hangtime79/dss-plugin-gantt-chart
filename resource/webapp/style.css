@@ -460,36 +460,41 @@ body {
 
 /* ===== DEFAULT BAR (No Color Column) ===== */
 /* When no color column is selected, bars use grayscale with black text */
-.bar-default .bar {
+/* Combined class names (no spaces) because Frappe Gantt uses classList.add() */
+
+/* Base styles for all default tiers */
+[class^="bar-default-tier-"] .bar,
+[class*=" bar-default-tier-"] .bar {
     fill: #f0f3f6 !important;
 }
 
-.bar-default .bar-label {
+[class^="bar-default-tier-"] .bar-label,
+[class*=" bar-default-tier-"] .bar-label {
     fill: #2d3436 !important;
 }
 
 /* Progress tier overlay colors - darken as progress increases */
-.progress-tier-0 .bar-progress {
+.bar-default-tier-0 .bar-progress {
     fill: #f0f3f6 !important;  /* Same as base - invisible at 0% */
 }
 
-.progress-tier-1 .bar-progress {
+.bar-default-tier-1 .bar-progress {
     fill: #d4d9de !important;  /* 1-24% */
 }
 
-.progress-tier-25 .bar-progress {
+.bar-default-tier-25 .bar-progress {
     fill: #bac2ca !important;  /* 25-49% */
 }
 
-.progress-tier-50 .bar-progress {
+.bar-default-tier-50 .bar-progress {
     fill: #a8b1ba !important;  /* 50-74% */
 }
 
-.progress-tier-75 .bar-progress {
+.bar-default-tier-75 .bar-progress {
     fill: #96a0a8 !important;  /* 75-99% */
 }
 
-.progress-tier-100 .bar-progress {
+.bar-default-tier-100 .bar-progress {
     fill: #8faa94 !important;  /* 100% - green tint for complete */
 }
 
