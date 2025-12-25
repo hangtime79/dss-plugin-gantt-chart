@@ -1,33 +1,29 @@
 {
     // Plugin identifiers are globally unique and only contain A-Za-z0-9_-
     "id": "gantt-chart",
-
     // It is highly recommended to use Semantic Versioning
-    "version": "0.4.3",
-
+    "version": "0.5.0",
     // Meta data for display purposes:
     "meta": {
         // label: name of the plugin as displayed, should be short
         "label": "Gantt Chart",
-
         // description: longer string to help end users understand what this plugin does
         "description": "Interactive Gantt chart visualization with task dependencies, progress tracking, and color coding. Works offline with bundled Frappe Gantt library.",
-
         "author": "Grant Case (Dataiku)",
-
         // icon: must be one of the FontAwesome 5.15.4 icons, complete list here at https://fontawesome.com/v5/docs/
         "icon": "icon-calendar",
-
         // recipesCategory: optional, can be one of 'visual', 'code', 'genai' or 'other'
         // defines the category of the plugin in the right panel
         "recipesCategory": "visual",
-
         // List of tags for filtering the list of plugins
-        "tags": ["Visualization", "Project Management", "Timeline", "Charts"],
-
+        "tags": [
+            "Visualization",
+            "Project Management",
+            "Timeline",
+            "Charts"
+        ],
         // URL where the user can learn more about the plugin
         "url": "https://github.com/frappe/gantt",
-
         "licenseInfo": "Apache Software License"
     }
 }
