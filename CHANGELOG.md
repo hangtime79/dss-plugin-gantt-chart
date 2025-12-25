@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-12-26
+
+### Fixed
+- Task bar 1px gray outline removed for cleaner appearance (#27)
+- Progress bars no longer bleed outside task bar rounded corners (#28)
+
+---
+
 ## [0.5.0] - 2025-12-25
 
 ### Added
