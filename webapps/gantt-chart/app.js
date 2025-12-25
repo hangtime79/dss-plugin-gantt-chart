@@ -685,6 +685,7 @@
                 // Re-enforce minimum bar widths and adjust labels after view mode change
                 requestAnimationFrame(() => {
                     enforceMinimumBarWidths();
+                    fixProgressBarRadius();
                     updateSvgDimensions();
                     adjustHeaderLabels();
                     setupStickyHeader();  // Re-setup after view change recreates DOM
@@ -714,6 +715,7 @@
             // Post-render adjustments
             requestAnimationFrame(() => {
                 enforceMinimumBarWidths();
+                fixProgressBarRadius();
                 updateSvgDimensions();
                 adjustHeaderLabels();
                 setupStickyHeader();
@@ -869,6 +871,81 @@
                 }
             }
         });
+    }
+
+    /**
+     * Fix progress bar to fit within task bar bounds (#28).
+     *
+     * Problem: With large corner radii, the scaled progress bar bleeds outside
+     * the task bar's rounded corners. scaleY(0.6) only affects height, not the
+     * corner geometry relative to the task bar's curve.
+     *
+     * Solution: Use SVG clipPath to clip each progress bar to its task bar shape.
+     */
+    function fixProgressBarRadius() {
+        if (!ganttInstance) return;
+
+        const svg = document.querySelector('.gantt');
+        if (!svg) return;
+
+        // Ensure we have a defs element for clipPaths
+        // Use id instead of class (classList doesn't work reliably on SVG elements)
+        const defsId = 'gantt-progress-clips';
+        let defs = document.getElementById(defsId);
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            defs.setAttribute('id', defsId);
+            svg.insertBefore(defs, svg.firstChild);
+            console.log('Created defs element for progress bar clips');
+        } else {
+            // Clear old clipPaths on re-render
+            defs.innerHTML = '';
+        }
+
+        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+        console.log(`Fixing progress bar radius for ${barWrappers.length} bars`);
+
+        barWrappers.forEach((wrapper, index) => {
+            const taskBar = wrapper.querySelector('.bar');
+            const progressBar = wrapper.querySelector('.bar-progress');
+
+            if (!taskBar || !progressBar) return;
+
+            // Create a clipPath using the task bar's shape
+            const clipId = `progress-clip-${index}`;
+            const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            clipPath.setAttribute('id', clipId);
+
+            // Clone the task bar rect for the clip shape
+            const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            clipRect.setAttribute('x', taskBar.getAttribute('x'));
+            clipRect.setAttribute('y', taskBar.getAttribute('y'));
+            clipRect.setAttribute('width', taskBar.getAttribute('width'));
+            clipRect.setAttribute('height', taskBar.getAttribute('height'));
+            clipRect.setAttribute('rx', taskBar.getAttribute('rx'));
+            clipRect.setAttribute('ry', taskBar.getAttribute('ry'));
+
+            clipPath.appendChild(clipRect);
+            defs.appendChild(clipPath);
+
+            // Apply clipPath to progress bar
+            progressBar.setAttribute('clip-path', `url(#${clipId})`);
+
+            // Extend progress bar beyond task bar bounds to fill corner pixels
+            // The clipPath will clip it to the correct shape
+            const cornerRadius = parseFloat(taskBar.getAttribute('rx')) || 0;
+            const originalX = parseFloat(progressBar.getAttribute('x')) || 0;
+            const originalWidth = parseFloat(progressBar.getAttribute('width')) || 0;
+
+            if (cornerRadius > 0 && originalWidth > 0) {
+                // Extend left by corner radius
+                progressBar.setAttribute('x', originalX - cornerRadius);
+                // Extend width to cover both left extension and right corner
+                progressBar.setAttribute('width', originalWidth + cornerRadius * 2);
+            }
+        });
+
+        console.log(`Created ${defs.children.length} clipPath definitions`);
     }
 
     // ===== POPUP BUILDER =====
