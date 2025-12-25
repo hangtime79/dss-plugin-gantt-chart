@@ -540,12 +540,11 @@ body {
 }
 
 .gantt .bar-label {
-    fill: var(--text-main) !important;
-    /* Default to DARK for safety */
+    fill: #ffffff !important;
+    /* Default WHITE - bars are colored, text must contrast */
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     font-family: var(--font-stack) !important;
-    /* Ensure no FontAwesome fallback */
 }
 
 /* Ensure header text is visible */
