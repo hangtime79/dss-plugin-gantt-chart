@@ -287,11 +287,17 @@ class TaskTransformer:
             deps = self._extract_dependencies(raw_value)
             task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
 
-        # Add color class if column specified
+        # Add color class based on color column OR progress-based default
         if self.config.color_column and color_mapping:
             color_value = row[self.config.color_column]
             color_class = get_task_color_class(color_value, color_mapping)
             task['custom_class'] = color_class
+        else:
+            # No color column: use default gray bar with progress-based overlay color
+            # Single class (no spaces) - Frappe Gantt uses classList.add() which rejects whitespace
+            progress = task.get('progress', 0) or 0
+            progress_tier = self._get_progress_tier(progress)
+            task['custom_class'] = f'bar-default-tier-{progress_tier}'
 
         # Add custom tooltip fields
         if self.config.tooltip_columns:
@@ -361,6 +367,37 @@ class TaskTransformer:
         except (ValueError, TypeError):
             logger.warning(f"Invalid progress value: {value}. Using None.")
             return None
+
+    def _get_progress_tier(self, progress: int) -> int:
+        """
+        Get progress tier for CSS class assignment.
+
+        Maps progress percentage to discrete tiers for styling:
+        - 0%: tier 0 (invisible overlay - same as base)
+        - 1-24%: tier 1
+        - 25-49%: tier 25
+        - 50-74%: tier 50
+        - 75-99%: tier 75
+        - 100%: tier 100 (complete - green tint)
+
+        Args:
+            progress: Progress value 0-100
+
+        Returns:
+            Tier value (0, 1, 25, 50, 75, or 100)
+        """
+        if progress == 0:
+            return 0
+        elif progress < 25:
+            return 1
+        elif progress < 50:
+            return 25
+        elif progress < 75:
+            return 50
+        elif progress < 100:
+            return 75
+        else:
+            return 100
 
     def _normalize_id(self, value: Any) -> str:
         """

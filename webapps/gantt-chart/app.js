@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     // ===== BACKEND HELPERS =====
@@ -6,12 +6,12 @@
     if (typeof dataiku !== 'undefined' && !dataiku.webappBackend) {
         console.log("Initializing dataiku.webappBackend helper...");
         dataiku.webappBackend = {
-            getUrl: function(path) {
+            getUrl: function (path) {
                 return dataiku.getWebAppBackendUrl(path);
             },
-            get: function(path, params) {
+            get: function (path, params) {
                 let url = this.getUrl(path);
-                
+
                 // Append query parameters
                 if (params && Object.keys(params).length > 0) {
                     const queryString = Object.keys(params).map(key => {
@@ -27,22 +27,22 @@
                         'Content-Type': 'application/json'
                     }
                 })
-                .then(response => {
-                    if (response.status == 502) {
-                        throw new Error("Webapp backend is not running or not reachable (502).");
-                    }
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            let errorMsg = response.statusText;
-                            try {
-                                const json = JSON.parse(text);
-                                if (json.error) errorMsg = json.error;
-                            } catch(e) {}
-                            throw new Error(`Backend Error (${response.status}): ${errorMsg}`);
-                        });
-                    }
-                    return response.json();
-                });
+                    .then(response => {
+                        if (response.status == 502) {
+                            throw new Error("Webapp backend is not running or not reachable (502).");
+                        }
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                let errorMsg = response.statusText;
+                                try {
+                                    const json = JSON.parse(text);
+                                    if (json.error) errorMsg = json.error;
+                                } catch (e) { }
+                                throw new Error(`Backend Error (${response.status}): ${errorMsg}`);
+                            });
+                        }
+                        return response.json();
+                    });
             }
         };
     }
@@ -60,6 +60,12 @@
     let configDebounceTimer = null;  // Debounce timer for config updates
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
+
+    // Zoom State
+    let currentColumnWidth = 45;
+    const ZOOM_STEP = 5;
+    const MIN_ZOOM = 15;
+    const MAX_ZOOM = 150;
 
     // ===== VIEW MODE PERSISTENCE =====
 
@@ -130,7 +136,7 @@
 
         originalSetupGanttDates = Gantt.prototype.setup_gantt_dates;
 
-        Gantt.prototype.setup_gantt_dates = function(forceRecalc) {
+        Gantt.prototype.setup_gantt_dates = function (forceRecalc) {
             // Run original calculation first
             originalSetupGanttDates.apply(this, arguments);
 
@@ -214,9 +220,9 @@
 
     // Month name mappings for responsive formatting
     const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
+        'July', 'August', 'September', 'October', 'November', 'December'];
     const MONTH_NAMES_3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const MONTH_NAMES_1 = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
     /**
@@ -403,12 +409,15 @@
         // both webAppConfig AND filters, ensuring filters are applied on first render.
         showLoading();
         window.parent.postMessage("sendConfig", "*");
+
+        // Initialize Control Bar Events
+        setupControls();
     } catch (e) {
         console.error('Initialization error:', e);
     }
 
     // Listen for config updates
-    window.addEventListener('message', function(event) {
+    window.addEventListener('message', function (event) {
         if (event.data) {
             try {
                 const eventData = JSON.parse(event.data);
@@ -499,30 +508,30 @@
 
         // Fetch task data from backend
         fetchTasks(config, filters)
-        .then(tasksResponse => {
-            hideLoading();
+            .then(tasksResponse => {
+                hideLoading();
 
-            if (tasksResponse.error) {
-                displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
-                return;
-            }
+                if (tasksResponse.error) {
+                    displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
+                    return;
+                }
 
-            if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                displayError('No Tasks', 'No valid tasks to display.');
-                return;
-            }
+                if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
+                    displayError('No Tasks', 'No valid tasks to display.');
+                    return;
+                }
 
-            if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
-                displayMetadata(tasksResponse.metadata);
-            }
+                if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
+                    displayMetadata(tasksResponse.metadata);
+                }
 
-            renderGantt(tasksResponse.tasks, ganttConfig);
-        })
-        .catch(error => {
-            console.error('Chart load failed:', error);
-            hideLoading();
-            displayError('Failed to load chart', error.message || error);
-        });
+                renderGantt(tasksResponse.tasks, ganttConfig);
+            })
+            .catch(error => {
+                console.error('Chart load failed:', error);
+                hideLoading();
+                displayError('Failed to load chart', error.message || error);
+            });
     }
 
     // ===== DATA FETCHING =====
@@ -537,27 +546,45 @@
 
     // ===== CONFIG BUILDING =====
 
+    // Track the last width received from panel to detect explicit changes
+    let lastConfiguredColumnWidth = null;
+
     /**
      * Build Gantt configuration from webapp config.
      *
-     * This derives Frappe Gantt options directly from the webAppConfig
-     * received via the message event, eliminating the need for a separate
-     * backend call which could return stale data.
+     * Smartly handles Zoom persistence:
+     * - If user changes 'columnWidth' in the panel, we reset to that value.
+     * - If user changes OTHER settings, we preserve our local 'currentColumnWidth'.
      */
     function buildGanttConfig(webAppConfig) {
         // Load persisted view mode (localStorage, per-chart)
         const persistedViewMode = loadPersistedViewMode(webAppConfig.dataset);
         const effectiveViewMode = persistedViewMode || webAppConfig.viewMode || 'Week';
 
+        // Detect if columnWidth setting changed in the panel
+        const configWidth = parseInt(webAppConfig.columnWidth) || 45;
+
+        if (lastConfiguredColumnWidth === null) {
+            // First load
+            lastConfiguredColumnWidth = configWidth;
+            currentColumnWidth = configWidth;
+        } else if (configWidth !== lastConfiguredColumnWidth) {
+            // User explicitly changed setting -> Reset local zoom
+            console.log('User changed Column Width setting. Resetting zoom.');
+            lastConfiguredColumnWidth = configWidth;
+            currentColumnWidth = configWidth;
+        }
+        // Else: configWidth is same, preserve 'currentColumnWidth' (manual zoom)
+
         const ganttConfig = {
-            // View settings - use persisted mode if available
+            // View settings
             view_mode: effectiveViewMode,
             view_mode_select: webAppConfig.viewModeSelect !== false,
 
-            // Appearance - parseInt with fallback for safety
-            bar_height: parseInt(webAppConfig.barHeight) || 30,
+            // Appearance
+            bar_height: parseInt(webAppConfig.barHeight) || 35,
             bar_corner_radius: parseInt(webAppConfig.barCornerRadius) || 3,
-            column_width: parseInt(webAppConfig.columnWidth) || 45,
+            column_width: currentColumnWidth, // Use our smart local width
             padding: parseInt(webAppConfig.padding) || 18,
 
             // Behavior
@@ -577,7 +604,7 @@
             };
         }
 
-        console.log('Built ganttConfig from webAppConfig:', JSON.stringify(ganttConfig, null, 2));
+        console.log('Built ganttConfig (Zoom Preserved):', JSON.stringify(ganttConfig, null, 2));
         return ganttConfig;
     }
 
@@ -585,7 +612,7 @@
 
     function renderGantt(tasks, config) {
         console.log(`Rendering Gantt with ${tasks.length} tasks`);
-        console.log('Gantt config:', JSON.stringify(config, null, 2));
+        // console.log('Gantt config:', JSON.stringify(config, null, 2));
 
         const container = document.getElementById('gantt-container');
 
@@ -604,7 +631,7 @@
         const ganttOptions = {
             // View settings
             view_mode: config.view_mode ?? 'Week',
-            view_mode_select: config.view_mode_select !== false,
+            view_mode_select: false, // Custom control used
 
             // Appearance - use nullish coalescing to allow 0 values
             bar_height: config.bar_height ?? 30,
@@ -615,7 +642,7 @@
             // Behavior
             readonly: config.readonly !== false,
             popup_on: config.popup_on || 'click',
-            today_button: config.today_button !== false,
+            today_button: false,
             scroll_to: config.scroll_to || 'today',
 
             // Holidays (weekends)
@@ -625,27 +652,32 @@
             language: config.language || 'en',
 
             // Custom popup content
-            popup: function(task) {
+            popup: function (task) {
                 return buildPopupHTML(task);
             },
 
             // Event handlers
-            on_click: function(task) {
+            on_click: function (task) {
                 console.log('Task clicked:', task);
             },
 
-            on_date_change: function(task, start, end) {
+            on_date_change: function (task, start, end) {
                 console.log('Date changed:', task.id, start, end);
             },
 
-            on_progress_change: function(task, progress) {
+            on_progress_change: function (task, progress) {
                 console.log('Progress changed:', task.id, progress);
             },
 
-            on_view_change: function(mode) {
-                // CRITICAL: mode is an OBJECT {name, padding, step, ...}, NOT a string!
+            on_view_change: function (mode) {
                 const viewModeName = typeof mode === 'string' ? mode : mode.name;
                 console.log('View changed:', viewModeName);
+
+                // Update our custom dropdown to match
+                const viewModeSelect = document.getElementById('view-mode-select');
+                if (viewModeSelect && viewModeSelect.value !== viewModeName) {
+                    viewModeSelect.value = viewModeName;
+                }
 
                 // Persist view mode to localStorage
                 saveViewMode(webAppConfig.dataset, viewModeName);
@@ -675,6 +707,9 @@
         try {
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
+
+            // Sync controls
+            updateControlsState(ganttOptions);
 
             // Post-render adjustments
             requestAnimationFrame(() => {
@@ -736,7 +771,7 @@
         if (widthAttr) {
             svg.style.width = widthAttr + (String(widthAttr).endsWith('%') ? '' : 'px');
         }
-        
+
         console.log(`Updated SVG dimensions: width=${svg.style.width}, height=${svg.style.height}`);
     }
 
@@ -781,7 +816,7 @@
         header.style.minWidth = container.offsetWidth + 'px';
 
         // Create scroll handler with GPU-accelerated 3D transform
-        stickyScrollHandler = function() {
+        stickyScrollHandler = function () {
             header.style.transform = `translate3d(0, ${container.scrollTop}px, 0)`;
         };
 
@@ -840,7 +875,7 @@
 
     function buildPopupHTML(task) {
         console.log('Popup task object:', task);
-        
+
         // Handle wrapper object (some versions of Frappe Gantt pass {task: ..., chart: ...})
         if (task && task.task) {
             task = task.task;
@@ -925,7 +960,7 @@
         const container = document.getElementById('gantt-container');
         container.innerHTML = `
             <div class="error-container">
-                <div class="error-icon">⚠️</div>
+                <div class="error-icon"><i class="icon-warning-sign"></i></div>
                 <div class="error-title">${escapeHtml(title)}</div>
                 <div class="error-message">${escapeHtml(message)}</div>
             </div>
@@ -990,12 +1025,90 @@
 
     // ===== WINDOW RESIZE HANDLER =====
 
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         if (ganttInstance) {
             // Frappe Gantt handles resize automatically via SVG
             console.log('Window resized');
         }
     });
+
+    // ===== CONTROLS =====
+
+    function setupControls() {
+        const viewModeSelect = document.getElementById('view-mode-select');
+        const zoomInBtn = document.getElementById('btn-zoom-in');
+        const zoomOutBtn = document.getElementById('btn-zoom-out');
+        const todayBtn = document.getElementById('btn-today');
+
+        if (viewModeSelect) {
+            viewModeSelect.addEventListener('change', (e) => {
+                const mode = e.target.value;
+                if (ganttInstance) {
+                    ganttInstance.change_view_mode(mode);
+                }
+            });
+        }
+
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', () => adjustZoom(ZOOM_STEP));
+        }
+
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', () => adjustZoom(-ZOOM_STEP));
+        }
+
+        // Init indicator
+        updateZoomIndicator();
+
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                if (ganttInstance) {
+                    const currentMode = ganttInstance.options.view_mode;
+                    ganttInstance.change_view_mode(currentMode); // Triggers re-center on today
+                }
+            });
+        }
+    }
+
+    function adjustZoom(delta) {
+        if (!ganttInstance) return;
+
+        let newWidth = currentColumnWidth + delta;
+        if (newWidth < MIN_ZOOM) newWidth = MIN_ZOOM;
+        if (newWidth > MAX_ZOOM) newWidth = MAX_ZOOM;
+
+        if (newWidth === currentColumnWidth) return;
+
+        currentColumnWidth = newWidth;
+        ganttInstance.options.column_width = currentColumnWidth;
+
+        // Force refresh
+        ganttInstance.change_view_mode(ganttInstance.options.view_mode);
+        updateZoomIndicator();
+        console.log('Zoom adjusted to:', currentColumnWidth);
+    }
+
+    function updateZoomIndicator() {
+        const indicator = document.getElementById('zoom-level-indicator');
+        if (indicator) {
+            // Base is 45px (100%)
+            const pct = Math.round((currentColumnWidth / 45) * 100);
+            indicator.textContent = `${pct}%`;
+        }
+    }
+
+    function updateControlsState(config) {
+        const viewModeSelect = document.getElementById('view-mode-select');
+        if (viewModeSelect && config.view_mode) {
+            viewModeSelect.value = config.view_mode;
+            if (viewModeSelect.value !== config.view_mode) {
+                viewModeSelect.value = 'Week';
+            }
+        }
+        if (config.column_width) {
+            currentColumnWidth = config.column_width;
+        }
+    }
 
     console.log('Gantt Chart webapp initialized');
 
