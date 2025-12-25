@@ -916,14 +916,15 @@
             const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
             clipPath.setAttribute('id', clipId);
 
-            // Clone the task bar rect for the clip shape
+            // Create a sharp rectangle clip matching task bar bounds (no rounded corners)
             const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             clipRect.setAttribute('x', taskBar.getAttribute('x'));
             clipRect.setAttribute('y', taskBar.getAttribute('y'));
             clipRect.setAttribute('width', taskBar.getAttribute('width'));
             clipRect.setAttribute('height', taskBar.getAttribute('height'));
-            clipRect.setAttribute('rx', taskBar.getAttribute('rx'));
-            clipRect.setAttribute('ry', taskBar.getAttribute('ry'));
+            // Sharp corners - just constrain to task bar bounds
+            clipRect.setAttribute('rx', 0);
+            clipRect.setAttribute('ry', 0);
 
             clipPath.appendChild(clipRect);
             defs.appendChild(clipPath);
