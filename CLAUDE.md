@@ -131,3 +131,18 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
+
+---
+
+## Roadmap to v1.0.0
+
+| Milestone | Issues | Theme |
+|-----------|--------|-------|
+| **v0.6.0** | #18, #19, #29, #37 | Stability: Dataset limits, filter optimization, test infra, pandas fix |
+| **v0.7.0** | #33, #21 | Analytics: Expected progress indicator, sticky header fix |
+| **v0.8.0** | #31, #34 | Theming: Dark mode, grid lines configuration |
+| **v0.9.0** | #32, #35, #12, #14 | i18n: Language support, date formats, header improvements |
+| **v0.10.0** | #24, #25, #36 | Export: Print/export, global parameters, scroll padding |
+| **v1.0.0** | — | Public Release: Final polish |
+
+**Next milestone:** v0.6.0 (Python-focused, requires test infrastructure fix first)
