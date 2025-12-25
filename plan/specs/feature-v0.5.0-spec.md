@@ -54,6 +54,32 @@ The current UI looks basic, with raw HTML elements and default styling. The user
 - **Grid**: Lighten lines (`#f1f2f6`).
 - **Tooltips**: Style as "Cards" with shadow and padding.
 
+### Step 4: Progress-Based Default Colors (No Color Column)
+**Files:** `python-lib/ganttchart/task_transformer.py`, `resource/webapp/style.css`
+
+When **no color column is selected**:
+
+**Base bar**: `#f0f3f6` (light gray)
+**Text**: Black (`#2d3436`)
+**Progress overlay**: Color changes based on completion percentage:
+
+| Progress | Overlay Color | CSS Class |
+|----------|---------------|-----------|
+| 0% | `#f0f3f6` (invisible - same as base) | `progress-tier-0` |
+| 1-24% | `#d4d9de` | `progress-tier-1` |
+| 25-49% | `#bac2ca` | `progress-tier-25` |
+| 50-74% | `#a8b1ba` | `progress-tier-50` |
+| 75-99% | `#96a0a8` | `progress-tier-75` |
+| 100% | `#8faa94` (green tint - complete) | `progress-tier-100` |
+
+**Logic**:
+- In `task_transformer.py`, when `color_column` is None/empty:
+  - Set `custom_class` = `bar-default` (base gray bar with black text)
+  - Calculate progress tier and add `progress-tier-{N}` class
+- CSS targets `.bar-default .bar` for base color, `.progress-tier-{N} .bar-progress` for overlay
+
+**Visual effect**: Progress overlay darkens as completion increases, with green tint at 100%.
+
 ### Step N: Version Bump
 **File:** `plugin.json`
 - Bump version to `0.5.0`
@@ -63,9 +89,10 @@ The current UI looks basic, with raw HTML elements and default styling. The user
 ## Files to Modify
 | File | Action | Description |
 |------|--------|-------------|
-| `resource/webapp/style.css` | Rewrite | Implement CSS variables, new component styles |
+| `resource/webapp/style.css` | Rewrite | CSS variables, component styles, progress tier classes |
 | `webapps/gantt-chart/body.html` | Modify | Add control bar structure, skeleton loader markup |
 | `webapps/gantt-chart/app.js` | Modify | Update logic for controls and loading states |
+| `python-lib/ganttchart/task_transformer.py` | Modify | Progress tier class assignment when no color column |
 | `plugin.json` | Modify | Bump version |
 
 ---
