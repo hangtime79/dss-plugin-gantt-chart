@@ -124,10 +124,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - Ready for new work
+**Phase:** Branch Exit - v0.5.1 ready for merge
 
 **Latest Release:** v0.5.0 (2025-12-25)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.5.0
+**Pending Release:** v0.5.1 (bugfix/v0.5.1-visual-polish)
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
