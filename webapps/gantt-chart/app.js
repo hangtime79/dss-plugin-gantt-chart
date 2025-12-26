@@ -714,6 +714,16 @@
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
+            // Debug: Log gantt instance date boundaries
+            console.log('Gantt date debug:', {
+                gantt_start: ganttInstance.gantt_start,
+                gantt_end: ganttInstance.gantt_end,
+                config_unit: ganttInstance.config?.unit,
+                config_step: ganttInstance.config?.step,
+                column_width: ganttInstance.config?.column_width,
+                view_mode: ganttInstance.options?.view_mode
+            });
+
             // Sync controls
             updateControlsState(ganttOptions);
 
