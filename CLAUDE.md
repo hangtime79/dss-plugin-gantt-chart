@@ -125,7 +125,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - Ready for new work
+**Phase:** Implementation - v0.7.0 QA Round 2
+
+**Current Branch:** `feature/v0.7.0-expected-progress-and-polish`
+**Intervention File:** `plan/interventions/v0.7.0-intervention.md`
 
 **Latest Release:** v0.6.1 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.6.1
