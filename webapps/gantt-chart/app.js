@@ -1346,11 +1346,8 @@
     function adjustZoom(delta) {
         if (!ganttInstance) return;
 
-        // Use the higher of MIN_ZOOM or minColumnWidthForViewport as floor
-        const effectiveMinZoom = Math.max(MIN_ZOOM, minColumnWidthForViewport);
-
         let newWidth = currentColumnWidth + delta;
-        if (newWidth < effectiveMinZoom) newWidth = effectiveMinZoom;
+        if (newWidth < MIN_ZOOM) newWidth = MIN_ZOOM;
         if (newWidth > MAX_ZOOM) newWidth = MAX_ZOOM;
 
         if (newWidth === currentColumnWidth) return;
@@ -1361,7 +1358,7 @@
         // Force refresh
         ganttInstance.change_view_mode(ganttInstance.options.view_mode);
         updateZoomIndicator();
-        console.log('Zoom adjusted to:', currentColumnWidth, '(min:', effectiveMinZoom, ')');
+        console.log('Zoom adjusted to:', currentColumnWidth);
     }
 
     function updateZoomIndicator() {
