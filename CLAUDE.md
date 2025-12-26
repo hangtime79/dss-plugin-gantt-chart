@@ -128,21 +128,21 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** QA Round 10 - awaiting user feedback
+**Phase:** QA Round 11 - awaiting user feedback
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
-**Latest Commit:** `bf3aecd` - v10 with per-view zoom
+**Latest Commit:** `f5abe16` - v11 with view switch fix
 
 **Active Intervention:** `plan/interventions/v0.7.1-intervention.md` ← READ THIS FIRST
 
-**What's New in v10:**
-- Per-view zoom tracking (each view has independent column width)
-- Per-view floor calculation (containerWidth / columnCount)
-- User feedback messages when zoom limits reached
-- 75px = 100% baseline, 25px = absolute floor
+**What's New in v11:**
+- Fixed: Detect wrong column width after view switch (compares rendered SVG to desired)
+- Fixed: Show feedback message when config panel value bumped by edge-to-edge
+- Created #52: Markers askew at lower grains
+- Created #53: Zoom stops feature request
 
-**What's Being Tested (v10):**
+**What's Being Tested (v11):**
 - Per-view zoom preservation across view switches
 - Zoom floor enforcement per view
 - Feedback messages on limits
@@ -150,6 +150,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 **Known Limitations (Accepted):**
 - Label bleeding at extreme zoom (separate issue)
+- Performance at low granularities (Hour) is slow
 
 **Next Steps:**
 - If QA passes: Run `cli-docs/cli-protocols/branch-exit-protocol.md`
