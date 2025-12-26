@@ -96,6 +96,7 @@ def get_tasks():
                 progress_column=config.get('progressColumn'),
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
+                color_palette=config.get('colorPalette', 'classic'),  # (#49)
                 tooltip_columns=config.get('tooltipColumns'),
                 group_by_columns=config.get('groupByColumns'),
                 max_tasks=int(config.get('maxTasks', 1000))

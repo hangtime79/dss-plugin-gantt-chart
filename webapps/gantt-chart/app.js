@@ -890,7 +890,10 @@
                     adjustHeaderLabels();
                     addHeaderSeparators();  // Add column separators (#50)
                     setupStickyHeader();  // Re-setup after view change recreates DOM
+                    applyGridSettings();  // Re-apply grid settings (#34)
+                    addPillBackgrounds();  // Re-add pill backgrounds (#47)
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
+                    ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                     updateZoomIndicator();  // Update indicator for new view's zoom
                 });
@@ -928,13 +931,17 @@
 
             // Post-render adjustments
             requestAnimationFrame(() => {
+                initTheme();  // Apply theme before visual adjustments (#31)
                 enforceMinimumBarWidths();
                 fixProgressBarRadius();
                 updateSvgDimensions();
                 adjustHeaderLabels();
                 addHeaderSeparators();  // Add column separators (#50)
                 setupStickyHeader();
+                applyGridSettings();  // Apply grid line visibility/opacity (#34)
+                addPillBackgrounds();  // Add pill backgrounds behind labels (#47)
                 addExpectedProgressMarkers();
+                ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
 
                 // Restore view state if we have saved state from config update
@@ -1052,6 +1059,8 @@
 
     // Guard to prevent re-render loop
     let edgeToEdgeInProgress = false;
+    // Track expected view mode for race condition detection (#54)
+    let edgeToEdgeExpectedViewMode = null;
 
     /**
      * Calculate and enforce minimum column width to fill viewport.
@@ -1065,10 +1074,16 @@
      *
      * Issue #21: When SVG doesn't fill container, browser paint/composite
      * behavior during scroll transform causes visual jank.
+     *
+     * Issue #54: Added view mode mismatch guard to prevent zoom carryover
+     * during rapid view switching.
      */
     function ensureEdgeToEdgeContent() {
         if (!ganttInstance) return;
         if (edgeToEdgeInProgress) return;
+
+        // Capture expected view mode at call time for race detection (#54)
+        edgeToEdgeExpectedViewMode = currentViewMode;
 
         const container = document.getElementById('gantt-container');
         const svg = document.getElementById('gantt-svg');
@@ -1112,6 +1127,15 @@
         const needsRerender = storedWidth < neededWidth || Math.abs(renderedWidth - neededWidth) > 2;
 
         if (needsRerender) {
+            // Guard: Check if view mode changed during calculations (#54)
+            // This prevents zoom carryover when user switches views rapidly
+            const actualViewMode = ganttInstance?.options?.view_mode;
+            if (actualViewMode !== edgeToEdgeExpectedViewMode) {
+                console.log('Edge-to-edge: View mode changed during calculation, aborting',
+                    '(expected:', edgeToEdgeExpectedViewMode, 'actual:', actualViewMode, ')');
+                return;
+            }
+
             console.log('Edge-to-edge: Re-rendering at', neededWidth, '(was', renderedWidth, ')');
 
             // If stored width was below floor, show feedback to user
@@ -1138,6 +1162,206 @@
         } else {
             // Just update indicator to reflect current state
             updateZoomIndicator();
+        }
+    }
+
+    // ===== DARK MODE SUPPORT (#31) =====
+
+    // Track system preference listener for cleanup
+    let systemThemeListener = null;
+
+    /**
+     * Initialize theme based on config setting.
+     * Called during initial render.
+     */
+    function initTheme() {
+        const themeSetting = webAppConfig?.theme ?? 'light';
+        applyTheme(themeSetting);
+    }
+
+    /**
+     * Apply theme to the document.
+     * Supports 'light', 'dark', and 'auto' (system preference).
+     */
+    function applyTheme(setting) {
+        const body = document.body;
+
+        // Remove existing theme class
+        body.classList.remove('dark-theme');
+
+        // Clean up previous system listener if exists
+        if (systemThemeListener) {
+            window.matchMedia('(prefers-color-scheme: dark)')
+                .removeEventListener('change', systemThemeListener);
+            systemThemeListener = null;
+        }
+
+        let useDark = false;
+
+        if (setting === 'auto') {
+            // Detect system preference
+            useDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            // Listen for system changes
+            systemThemeListener = (e) => {
+                body.classList.toggle('dark-theme', e.matches);
+                console.log('System theme changed:', e.matches ? 'dark' : 'light');
+            };
+            window.matchMedia('(prefers-color-scheme: dark)')
+                .addEventListener('change', systemThemeListener);
+        } else {
+            useDark = setting === 'dark';
+        }
+
+        if (useDark) {
+            body.classList.add('dark-theme');
+        }
+
+        console.log('Theme applied:', setting, '(dark:', useDark, ')');
+    }
+
+    // ===== GRID LINES CONFIGURATION (#34) =====
+
+    /**
+     * Apply grid line visibility and opacity settings.
+     * Controlled by showVerticalGridLines, showHorizontalGridLines, and gridLineOpacity.
+     *
+     * Called after render and view changes.
+     */
+    function applyGridSettings() {
+        const showVertical = webAppConfig?.showVerticalGridLines ?? true;
+        const showHorizontal = webAppConfig?.showHorizontalGridLines ?? true;
+        const opacity = (webAppConfig?.gridLineOpacity ?? 100) / 100;
+
+        // Vertical lines (column ticks)
+        document.querySelectorAll('.gantt .tick').forEach(el => {
+            el.style.display = showVertical ? '' : 'none';
+            el.style.opacity = opacity;
+        });
+
+        // Horizontal lines (row separators)
+        document.querySelectorAll('.gantt .row-line').forEach(el => {
+            el.style.display = showHorizontal ? '' : 'none';
+            el.style.opacity = opacity;
+        });
+
+        // Also apply to grid rows stroke (alternate approach for row lines)
+        document.querySelectorAll('.gantt .grid-row').forEach(el => {
+            el.style.strokeOpacity = showHorizontal ? opacity : 0;
+        });
+
+        console.log('Grid settings applied:', { showVertical, showHorizontal, opacity });
+    }
+
+    // ===== PILL BOX LABELS (#47) =====
+
+    /**
+     * Add pill background rectangles behind bar labels.
+     * SVG text elements don't support CSS background/padding, so we insert
+     * rect elements behind each label for contrast.
+     *
+     * Called after render and view changes.
+     */
+    function addPillBackgrounds() {
+        const svg = document.querySelector('.gantt svg');
+        if (!svg) return;
+
+        // Remove existing pills first (handles re-render)
+        svg.querySelectorAll('.bar-label-pill').forEach(p => p.remove());
+
+        const barWrappers = svg.querySelectorAll('.bar-wrapper');
+        let pillsAdded = 0;
+
+        barWrappers.forEach(wrapper => {
+            const label = wrapper.querySelector('.bar-label');
+            if (!label) return;
+
+            // Get label bounding box
+            const bbox = label.getBBox();
+            if (!bbox || bbox.width === 0) return;
+
+            // Check if this is an external label (.big class)
+            const isBig = label.classList.contains('big');
+            if (isBig) {
+                wrapper.classList.add('has-big-label');
+            }
+
+            // Create pill rectangle
+            const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            pill.setAttribute('class', 'bar-label-pill');
+
+            // Add padding around text
+            const paddingX = 6;
+            const paddingY = 2;
+            pill.setAttribute('x', bbox.x - paddingX);
+            pill.setAttribute('y', bbox.y - paddingY);
+            pill.setAttribute('width', bbox.width + (paddingX * 2));
+            pill.setAttribute('height', bbox.height + (paddingY * 2));
+            pill.setAttribute('rx', '3');
+            pill.setAttribute('ry', '3');
+
+            // Insert pill before label (so label renders on top)
+            label.parentNode.insertBefore(pill, label);
+            pillsAdded++;
+        });
+
+        console.log('Pill backgrounds added:', pillsAdded);
+    }
+
+    // ===== VISUAL STACKING ORDER (#57) =====
+
+    /**
+     * Ensure proper visual stacking order for SVG elements.
+     * SVG doesn't support z-index - elements render in DOM order (later = on top).
+     *
+     * Desired order (bottom to top):
+     * 1. Grid rows and lines (background)
+     * 2. Task bars
+     * 3. Today line
+     * 4. Expected progress markers
+     *
+     * Called after render and view changes to maintain proper layering.
+     */
+    function ensureStackingOrder() {
+        const svg = document.querySelector('.gantt svg');
+        if (!svg) return;
+
+        // Find the today highlight element (frappe-gantt uses 'today-highlight' class)
+        const todayHighlight = svg.querySelector('.today-highlight');
+
+        // Find all bar wrappers (task bars)
+        const barWrappers = svg.querySelectorAll('.bar-wrapper');
+        if (barWrappers.length === 0) return;
+
+        // Get the parent of bar wrappers (the bars layer)
+        const barsLayer = barWrappers[0].parentElement;
+        if (!barsLayer) return;
+
+        // Move today highlight after all bars (renders on top of bars)
+        if (todayHighlight && barsLayer) {
+            // Append to same parent as bars, after all bars
+            barsLayer.appendChild(todayHighlight);
+            console.log('Stacking order: Moved today-highlight above bars');
+        }
+
+        // Expected progress markers are added per-bar in addExpectedProgressMarkers()
+        // They're already inside bar groups, but we can move them to a top layer
+        const markers = svg.querySelectorAll('.expected-progress-marker');
+        if (markers.length > 0) {
+            // Create or get markers layer at end of SVG (topmost)
+            let markersLayer = svg.querySelector('.markers-layer');
+            if (!markersLayer) {
+                markersLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                markersLayer.setAttribute('class', 'markers-layer');
+                svg.appendChild(markersLayer);
+            }
+
+            // Move all markers to this top layer
+            markers.forEach(marker => {
+                // Clone position from current location
+                markersLayer.appendChild(marker);
+            });
+            console.log('Stacking order: Moved', markers.length, 'markers to top layer');
         }
     }
 
