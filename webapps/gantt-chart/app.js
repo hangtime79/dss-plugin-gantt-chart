@@ -293,6 +293,9 @@
                 break;
         }
 
+        // Ensure year is visible in upper headers (#12)
+        ensureYearInUpperHeaders(viewMode);
+
         // For very narrow views, hide every other lower-text label
         // EXCEPTION: Month view uses single-letter abbreviations which fit without skipping
         if (columnWidth < 30 && viewMode !== 'Month') {
@@ -387,13 +390,18 @@
     }
 
     /**
-     * Format Year mode labels.
-     * >= 34: Full year "2024"
-     * < 34: 2-digit "24"
+     * Format Year mode labels (#14).
+     * Upper headers: Show decade format (2020s, 2030s)
+     * Lower headers: Show individual years, responsive abbreviation
      */
     function formatYearLabels(columnWidth) {
         const upperTexts = document.querySelectorAll('.upper-text');
+        const lowerTexts = document.querySelectorAll('.lower-text');
 
+        // Track which decades we've seen to show label only once per decade
+        const seenDecades = new Set();
+
+        // Process upper-text: Convert to decade format (#14)
         upperTexts.forEach(text => {
             const original = text.textContent.trim();
 
@@ -401,19 +409,20 @@
             const yearMatch = original.match(/(\d{4})/);
             if (!yearMatch) return;
 
-            const fullYear = yearMatch[1];
+            const year = parseInt(yearMatch[1]);
+            const decade = Math.floor(year / 10) * 10;
 
-            if (columnWidth >= 34) {
-                // Full year
-                text.textContent = fullYear;
+            if (!seenDecades.has(decade)) {
+                // First occurrence of this decade - show decade label
+                seenDecades.add(decade);
+                text.textContent = `${decade}s`;
             } else {
-                // 2-digit year
-                text.textContent = fullYear.slice(-2);
+                // Subsequent years in same decade - hide label to avoid clutter
+                text.textContent = '';
             }
         });
 
-        // Also format lower-text year labels if present
-        const lowerTexts = document.querySelectorAll('.lower-text');
+        // Process lower-text: Show individual years with responsive abbreviation
         lowerTexts.forEach(text => {
             const original = text.textContent.trim();
             const yearMatch = original.match(/(\d{4})/);
@@ -422,9 +431,132 @@
             const fullYear = yearMatch[1];
 
             if (columnWidth < 34) {
+                // 2-digit year for narrow columns
                 text.textContent = fullYear.slice(-2);
+            } else {
+                // Full year
+                text.textContent = fullYear;
             }
         });
+    }
+
+    /**
+     * Ensure year is visible in upper headers across all view modes (#12).
+     * Frappe Gantt may show only month names in upper-text for Day/Week views
+     * when all visible dates are in the same year. This adds year context.
+     * Uses abbreviated format at narrow column widths for better fit.
+     */
+    function ensureYearInUpperHeaders(viewMode) {
+        const upperTexts = document.querySelectorAll('.upper-text');
+        if (!upperTexts.length) return;
+
+        // Year and Month views already handled by formatYearLabels/formatMonthLabels
+        // Focus on Day, Week, Hour, Quarter Day, Half Day views
+        if (viewMode === 'Year' || viewMode === 'Month') return;
+
+        const columnWidth = ganttInstance?.options?.column_width ?? 45;
+
+        // Get current year from gantt dates for reference
+        const currentYear = ganttInstance?.dates?.[0]?.getFullYear() ||
+            new Date().getFullYear();
+
+        // Month name mappings for responsive formatting
+        const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        upperTexts.forEach((text) => {
+            const content = text.textContent.trim();
+
+            // Skip if already contains a 4-digit year
+            if (/\d{4}/.test(content)) return;
+
+            // Skip if empty
+            if (!content) return;
+
+            // Check if this looks like a month name without year
+            // Frappe Gantt typically shows "December" or "Dec" for upper headers
+            const monthPattern = /^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
+            if (monthPattern.test(content)) {
+                // Try to infer year from gantt dates array
+                // Find dates that fall in this month
+                const monthMap = {
+                    'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
+                    'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
+                    'august': 7, 'aug': 7, 'september': 8, 'sep': 8, 'october': 9, 'oct': 9,
+                    'november': 10, 'nov': 10, 'december': 11, 'dec': 11
+                };
+                const monthNum = monthMap[content.toLowerCase()];
+
+                // Find a date with this month to get the year
+                let inferredYear = currentYear;
+                if (ganttInstance?.dates && monthNum !== undefined) {
+                    const matchingDate = ganttInstance.dates.find(d => d.getMonth() === monthNum);
+                    if (matchingDate) {
+                        inferredYear = matchingDate.getFullYear();
+                    }
+                }
+
+                // Use abbreviated month at narrow widths (<100px), full at wider
+                // Threshold chosen to fit "Dec 2025" comfortably
+                if (columnWidth < 100) {
+                    const shortMonth = monthNamesShort[monthNum] || content.slice(0, 3);
+                    text.textContent = `${shortMonth} ${inferredYear}`;
+                } else {
+                    text.textContent = `${content} ${inferredYear}`;
+                }
+            }
+        });
+    }
+
+    /**
+     * Add subtle vertical separator lines between lower header elements (#50).
+     * Creates small dividers in the lower-text area only.
+     */
+    function addHeaderSeparators() {
+        // The grid-header is an HTML div, not an SVG group
+        const headerDiv = document.querySelector('.gantt-container .grid-header');
+        if (!headerDiv || !ganttInstance) {
+            console.warn('addHeaderSeparators: headerDiv or ganttInstance not found');
+            return;
+        }
+
+        const columnWidth = ganttInstance.options?.column_width ?? 45;
+        const columnCount = ganttInstance.dates?.length ?? 0;
+
+        // Remove any existing separators
+        headerDiv.querySelectorAll('.header-separator').forEach(el => el.remove());
+
+        // Get lower-text position and size to center separators vertically
+        const lowerText = headerDiv.querySelector('.lower-text');
+        const separatorHeight = 12; // Small height for subtle appearance
+
+        // Calculate vertical center of lower-text area
+        let separatorTop = 20; // fallback
+        if (lowerText) {
+            const lowerTop = parseInt(lowerText.style.top) || 20;
+            const lowerHeight = lowerText.getBoundingClientRect().height || 14;
+            // Center separator with lower-text: lowerTop + (lowerHeight/2) - (separatorHeight/2)
+            separatorTop = lowerTop + (lowerHeight / 2) - (separatorHeight / 2);
+        }
+
+        // Add subtle vertical separators at column boundaries (centered with lower-text)
+        for (let i = 1; i < columnCount; i++) {
+            const x = i * columnWidth;
+            const sep = document.createElement('div');
+            sep.className = 'header-separator';
+            sep.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${separatorTop}px;
+                width: 1px;
+                height: ${separatorHeight}px;
+                background-color: #dfe6e9;
+                pointer-events: none;
+            `;
+            headerDiv.appendChild(sep);
+        }
+
+        console.log(`Header separators: added ${columnCount - 1} subtle separators at lower-text level`);
     }
 
     // ===== INITIALIZATION =====
@@ -756,6 +888,7 @@
                     fixProgressBarRadius();
                     updateSvgDimensions();
                     adjustHeaderLabels();
+                    addHeaderSeparators();  // Add column separators (#50)
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
@@ -799,6 +932,7 @@
                 fixProgressBarRadius();
                 updateSvgDimensions();
                 adjustHeaderLabels();
+                addHeaderSeparators();  // Add column separators (#50)
                 setupStickyHeader();
                 addExpectedProgressMarkers();
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
@@ -1223,6 +1357,50 @@
         console.log(`Created ${defs.children.length} clipPath definitions`);
     }
 
+    // ===== DATE FORMATTING (#35) =====
+
+    /**
+     * Format a date according to user's selected format preference.
+     * @param {Date|string} date - Date to format
+     * @returns {string} Formatted date string
+     */
+    function formatDateForDisplay(date) {
+        if (!date) return 'N/A';
+
+        // Ensure Date object
+        let d = date;
+        if (!(date instanceof Date)) {
+            d = new Date(date);
+        }
+        if (isNaN(d.getTime())) return 'N/A';
+
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const day = d.getDate();
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const pad = (n) => n.toString().padStart(2, '0');
+        const format = webAppConfig?.dateFormat || 'ISO';
+
+        switch (format) {
+            case 'US':
+                return `${pad(month + 1)}/${pad(day)}/${year}`;
+            case 'EU':
+                return `${pad(day)}/${pad(month + 1)}/${year}`;
+            case 'LONG':
+                return `${monthNames[month]} ${day}, ${year}`;
+            case 'SHORT':
+                return `${monthNamesShort[month]} ${day}`;
+            case 'ISO':
+            default:
+                return `${year}-${pad(month + 1)}-${pad(day)}`;
+        }
+    }
+
     // ===== POPUP BUILDER =====
 
     function buildPopupHTML(task) {
@@ -1239,19 +1417,10 @@
         `;
 
         // Date range - Frappe Gantt uses _start and _end internally
-        // These are Date objects, need to format them
-        const formatDate = (date) => {
-            if (!date) return 'N/A';
-            if (date instanceof Date) {
-                return date.toISOString().split('T')[0];
-            }
-            return String(date);
-        };
-
         // Try _start/_end first (Frappe Gantt internal), fallback to start/end
         const startDate = task._start || task.start;
         const endDate = task._end || task.end;
-        html += `<div class="popup-dates">${formatDate(startDate)} to ${formatDate(endDate)}</div>`;
+        html += `<div class="popup-dates">${formatDateForDisplay(startDate)} to ${formatDateForDisplay(endDate)}</div>`;
 
         // Progress (if available)
         if (task.progress !== undefined && task.progress !== null) {

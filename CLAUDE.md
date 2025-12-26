@@ -128,20 +128,22 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Branch Exit - Creating PR
+**Phase:** Branch Open - Spec Complete
 
-**Current Branch:** `bugfix/v0.7.2-markers-and-zoom`
+**Current Branch:** `feature/v0.8.0-headers-and-date-formats`
 
-**Latest Release:** v0.7.1 (2025-12-27)
+**Latest Release:** v0.7.2
 
-**What's Complete:**
-- ✅ #52: Markers align with Today line
-- ✅ #53: Zoom passes through stops, no max limit
-- ✅ QA Passed
+**What's In Scope (v0.8.0):**
+- #12: Year in upper headers across views
+- #14: Decade format in Year view (2020s, 2030s)
+- #35: Custom date format configuration
+- #41: Thinner header to save pixel space
+- #50: Vertical separators between header columns
 
-**Next Step:** Merge PR, then post-merge protocol
+**Spec:** `plan/specs/feature-v0.8.0-spec.md`
 
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.1
+**Next Step:** Hand off to SDE for implementation
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -155,7 +157,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish~~ ✅ |
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
 | ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
-| **v0.8.0** | #12, #14, #35, #41, #50 | Headers & Date Formats |
+| **v0.8.0** | #12, #14, #35, #41, #50 | Headers & Date Formats ← *current* |
 | **v0.9.0** | #31, #34, #47, #49 | Theming: Dark mode, grid lines, colors |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |

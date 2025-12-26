@@ -48,7 +48,7 @@
     --chart-today-line: #fab1a0;
 
     /* Layout */
-    --header-height: 56px;
+    --header-height: 44px;
 }
 
 /* ===== RESET & BASE ===== */
@@ -81,10 +81,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--spacing-md);
+    padding: 0 var(--spacing-sm);
     box-shadow: var(--shadow-sm);
     z-index: 1002;
-    /* Above stick header */
+    /* Above sticky header */
     flex-shrink: 0;
 }
 
@@ -618,8 +618,8 @@ body {
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
 .gantt .grid-header {
     background-color: var(--color-surface);
-    height: 50px;
-    /* Force consistent header height */
+    height: 38px;
+    /* Reduced from 50px for compact layout (#41) */
 }
 
 /* Specificity war with Frappe */
@@ -821,6 +821,14 @@ body {
     background-color: var(--color-surface);
     /* Must be opaque */
     will-change: transform;
+}
+
+/* ===== HEADER COLUMN SEPARATORS (#50) ===== */
+.grid-header .header-separator {
+    position: absolute;
+    width: 1px;
+    background-color: var(--color-border);
+    pointer-events: none;
 }
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
