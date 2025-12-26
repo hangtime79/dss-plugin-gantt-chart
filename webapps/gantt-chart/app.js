@@ -66,7 +66,6 @@
     let currentColumnWidth = 45;
     const ZOOM_STEP = 5;
     const MIN_ZOOM = 15;
-    const MAX_ZOOM = 150;
 
     // ===== VIEW MODE PERSISTENCE =====
 
@@ -1348,7 +1347,7 @@
 
         let newWidth = currentColumnWidth + delta;
         if (newWidth < MIN_ZOOM) newWidth = MIN_ZOOM;
-        if (newWidth > MAX_ZOOM) newWidth = MAX_ZOOM;
+        // No upper cap - allow zoom to match auto-zoom levels
 
         if (newWidth === currentColumnWidth) return;
 
