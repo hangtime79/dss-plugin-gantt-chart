@@ -60,6 +60,7 @@
     let configDebounceTimer = null;  // Debounce timer for config updates
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
+    let currentTasks = [];           // Store tasks for expected progress markers
 
     // Zoom State
     let currentColumnWidth = 45;
@@ -587,8 +588,8 @@
             column_width: currentColumnWidth, // Use our smart local width
             padding: parseInt(webAppConfig.padding) || 18,
 
-            // Behavior
-            readonly: webAppConfig.readonly !== false,
+            // Behavior (editing always disabled - no write-back in Dataiku)
+            readonly: true,
             popup_on: webAppConfig.popupOn || 'click',
             today_button: webAppConfig.todayButton !== false,
             scroll_to: webAppConfig.scrollTo || 'today',
@@ -613,6 +614,9 @@
     function renderGantt(tasks, config) {
         console.log(`Rendering Gantt with ${tasks.length} tasks`);
         // console.log('Gantt config:', JSON.stringify(config, null, 2));
+
+        // Store tasks for expected progress markers
+        currentTasks = tasks;
 
         const container = document.getElementById('gantt-container');
 
@@ -639,8 +643,8 @@
             column_width: config.column_width ?? 45,
             padding: config.padding ?? 18,
 
-            // Behavior
-            readonly: config.readonly !== false,
+            // Behavior (editing always disabled - no write-back in Dataiku)
+            readonly: true,
             popup_on: config.popup_on || 'click',
             today_button: false,
             scroll_to: config.scroll_to || 'today',
@@ -689,6 +693,7 @@
                     updateSvgDimensions();
                     adjustHeaderLabels();
                     setupStickyHeader();  // Re-setup after view change recreates DOM
+                    addExpectedProgressMarkers();  // Re-add markers after DOM recreated
                 });
             }
         };
@@ -719,6 +724,7 @@
                 updateSvgDimensions();
                 adjustHeaderLabels();
                 setupStickyHeader();
+                addExpectedProgressMarkers();
 
                 // Restore view state if we have saved state from config update
                 if (window._ganttRestoreState) {
@@ -829,6 +835,84 @@
         stickyScrollHandler();
 
         console.log('Sticky header initialized');
+    }
+
+    // ===== EXPECTED PROGRESS MARKERS =====
+
+    /**
+     * Add expected progress markers to task bars.
+     * Shows where progress *should* be based on current date vs task dates.
+     * Only visible when showExpectedProgress is enabled in config.
+     */
+    function addExpectedProgressMarkers() {
+        // Check if feature is enabled
+        if (!webAppConfig.showExpectedProgress) {
+            return;
+        }
+
+        if (!currentTasks || currentTasks.length === 0) {
+            return;
+        }
+
+        // Remove existing markers first (handles re-render/view change)
+        document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
+
+        // Get all bar wrappers
+        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+
+        barWrappers.forEach((wrapper) => {
+            // Find matching task by data-id attribute
+            const barGroup = wrapper.closest('.bar-group');
+            const taskId = barGroup?.getAttribute('data-id');
+            if (!taskId) return;
+
+            const task = currentTasks.find(t => t.id === taskId);
+            if (!task || task.expected_progress === undefined || task.expected_progress === null) {
+                return;
+            }
+
+            // Get the bar element
+            const bar = wrapper.querySelector('.bar');
+            if (!bar) return;
+
+            // Get bar dimensions
+            const barWidth = parseFloat(bar.getAttribute('width')) || 0;
+            const barHeight = parseFloat(bar.getAttribute('height')) || 0;
+            const barX = parseFloat(bar.getAttribute('x')) || 0;
+            const barY = parseFloat(bar.getAttribute('y')) || 0;
+
+            if (barWidth <= 0) return;
+
+            // Calculate marker position
+            const markerX = barX + (task.expected_progress / 100) * barWidth;
+
+            // Create SVG line for marker
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            marker.setAttribute('class', 'expected-progress-marker');
+            marker.setAttribute('x1', markerX);
+            marker.setAttribute('y1', barY);
+            marker.setAttribute('x2', markerX);
+            marker.setAttribute('y2', barY + barHeight);
+            marker.setAttribute('stroke', '#e74c3c');
+            marker.setAttribute('stroke-width', '2');
+            marker.setAttribute('stroke-dasharray', '3,2');
+
+            // Create small triangle indicator at top
+            const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            triangle.setAttribute('class', 'expected-progress-marker');
+            const triSize = 5;
+            const triPoints = `${markerX - triSize},${barY - triSize} ${markerX + triSize},${barY - triSize} ${markerX},${barY}`;
+            triangle.setAttribute('points', triPoints);
+            triangle.setAttribute('fill', '#e74c3c');
+
+            // Insert markers into the bar group
+            if (barGroup) {
+                barGroup.appendChild(marker);
+                barGroup.appendChild(triangle);
+            }
+        });
+
+        console.log('Expected progress markers added');
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====

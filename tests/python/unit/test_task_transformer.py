@@ -632,3 +632,146 @@ class TestIDNormalization:
         assert result['tasks'][1]['dependencies'] == ['task_a']
         assert result['tasks'][2]['id'] == 'task_c'
         assert result['tasks'][2]['dependencies'] == ['task_a', 'task_b']
+
+
+class TestExpectedProgress:
+    """Tests for expected progress calculation."""
+
+    def test_expected_progress_in_progress_task(self):
+        """Test expected progress for a task that spans today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=5)
+        end = today + timedelta(days=5)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Test Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'expected_progress' in task
+        # 5 days elapsed out of 10 total = 50%
+        assert 49 <= task['expected_progress'] <= 51  # Allow small variance
+
+    def test_expected_progress_future_task(self):
+        """Test that future tasks have no expected progress marker."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today + timedelta(days=5)
+        end = today + timedelta(days=15)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Future Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'expected_progress' not in task
+
+    def test_expected_progress_past_task(self):
+        """Test that past tasks have no expected progress marker."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=20)
+        end = today - timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Past Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'expected_progress' not in task
+
+    def test_expected_progress_starts_today(self):
+        """Test expected progress when task starts today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        end = today + timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Starts Today'],
+            'start': [today.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'expected_progress' in task
+        # 0 days elapsed out of 10 = 0%
+        assert task['expected_progress'] == 0.0
+
+    def test_expected_progress_ends_today(self):
+        """Test expected progress when task ends today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Ends Today'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [today.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert 'expected_progress' in task
+        # 10 days elapsed out of 10 = 100%
+        assert task['expected_progress'] == 100.0

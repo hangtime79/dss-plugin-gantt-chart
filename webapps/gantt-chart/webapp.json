@@ -164,6 +164,13 @@
                     {"value": "dependencies", "label": "Dependencies (Topological)"}
                 ]
             },
+            {
+                "name": "showExpectedProgress",
+                "type": "BOOLEAN",
+                "label": "Show expected progress",
+                "description": "Display marker showing where progress should be based on current date",
+                "defaultValue": false
+            },
 
             {
                 "type": "SEPARATOR",
@@ -202,7 +209,7 @@
                 "type": "INT",
                 "label": "Bar Corner Radius",
                 "description": "Roundness of bar corners",
-                "defaultValue": 3,
+                "defaultValue": 10,
                 "minI": 0,
                 "maxI": 15
             },
@@ -230,13 +237,6 @@
                 "label": "Behavior"
             },
             {
-                "name": "readonly",
-                "type": "BOOLEAN",
-                "label": "Read-only",
-                "description": "Disable all editing",
-                "defaultValue": true
-            },
-            {
                 "name": "popupOn",
                 "type": "SELECT",
                 "label": "Show task details on",
@@ -256,7 +256,7 @@
                 "name": "highlightWeekends",
                 "type": "BOOLEAN",
                 "label": "Highlight weekends",
-                "defaultValue": true
+                "defaultValue": false
             },
 
             {
