@@ -220,7 +220,7 @@
                 "description": "Width of time columns",
                 "defaultValue": 45,
                 "minI": 25,
-                "maxI": 100
+                "maxI": 500
             },
             {
                 "name": "padding",

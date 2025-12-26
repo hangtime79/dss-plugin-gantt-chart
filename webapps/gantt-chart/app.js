@@ -694,7 +694,7 @@
                     adjustHeaderLabels();
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
-                    ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
+                    ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                 });
             }
         };
@@ -849,21 +849,24 @@
         console.log('Sticky header initialized');
     }
 
-    // ===== EDGE-TO-EDGE CONTENT VIA ZOOM (Issue #21) =====
+    // ===== MINIMUM COLUMN WIDTH FOR EDGE-TO-EDGE CONTENT (Issue #21) =====
 
-    // Guard to prevent infinite zoom adjustment loops
-    let zoomAdjustmentInProgress = false;
+    // Minimum column width needed to fill viewport (calculated after render)
+    let minColumnWidthForViewport = 0;
+
+    // Guard to prevent re-render loop
+    let edgeToEdgeInProgress = false;
 
     /**
-     * Ensure SVG content fills the viewport width by adjusting zoom (column width).
-     * Fixes sticky header jank that occurs when content is narrower than viewport.
+     * Calculate and enforce minimum column width to fill viewport.
+     * Fixes sticky header jank that occurs when SVG is narrower than container.
      *
-     * Issue #21: When SVG doesn't fill container, browser paint/composite behavior
-     * during scroll transform causes visual jank. Solution: zoom in to fill width.
+     * Issue #21: When SVG doesn't fill container, browser paint/composite
+     * behavior during scroll transform causes visual jank.
      */
     function ensureEdgeToEdgeContent() {
         if (!ganttInstance) return;
-        if (zoomAdjustmentInProgress) return;
+        if (edgeToEdgeInProgress) return;
 
         const container = document.getElementById('gantt-container');
         const svg = document.getElementById('gantt-svg');
@@ -872,51 +875,46 @@
 
         const containerWidth = container.offsetWidth;
         const svgWidth = parseFloat(svg.getAttribute('width')) || 0;
+        const currentColWidth = ganttInstance.options.column_width || 45;
 
-        // If SVG already fills or exceeds container, no adjustment needed
+        if (svgWidth <= 0 || containerWidth <= 0) return;
+
+        // If SVG already fills viewport, just record current as minimum
         if (svgWidth >= containerWidth) {
-            console.log('Edge-to-edge: SVG fills viewport', { svgWidth, containerWidth });
+            minColumnWidthForViewport = currentColWidth;
+            console.log('Edge-to-edge: SVG fills viewport, min =', currentColWidth);
             return;
         }
 
-        // Calculate zoom factor needed to fill container (with small buffer)
-        const zoomFactor = (containerWidth / svgWidth) * 1.02; // 2% buffer
-        const existingColumnWidth = ganttInstance.options.column_width || 45;
-        const newColumnWidth = Math.ceil(existingColumnWidth * zoomFactor);
+        // Calculate minimum column width needed to fill viewport
+        const neededColWidth = Math.ceil(currentColWidth * (containerWidth / svgWidth) * 1.02);
+        minColumnWidthForViewport = neededColWidth;
 
-        // Cap at MAX_ZOOM to prevent extreme zooming
-        const cappedColumnWidth = Math.min(newColumnWidth, MAX_ZOOM);
-
-        // Only adjust if change is significant (> 5px difference)
-        if (cappedColumnWidth - existingColumnWidth < 5) {
-            console.log('Edge-to-edge: Adjustment too small, skipping', {
-                current: existingColumnWidth,
-                calculated: cappedColumnWidth
-            });
-            return;
-        }
-
-        console.log('Edge-to-edge: Zooming to fill viewport', {
-            svgWidth,
+        console.log('Edge-to-edge: Calculated minimum column width', {
             containerWidth,
-            zoomFactor: zoomFactor.toFixed(2),
-            oldColumnWidth: existingColumnWidth,
-            newColumnWidth: cappedColumnWidth
+            svgWidth,
+            currentColWidth,
+            minColumnWidthForViewport,
+            allowRerender
         });
 
-        // Set guard and apply zoom
-        zoomAdjustmentInProgress = true;
-        currentColumnWidth = cappedColumnWidth;  // Update module-level zoom state
-        ganttInstance.options.column_width = cappedColumnWidth;
+        // Apply if current is below minimum
+        if (currentColWidth < minColumnWidthForViewport) {
+            console.log('Edge-to-edge: Applying minimum', minColumnWidthForViewport);
+            currentColumnWidth = minColumnWidthForViewport;
+            ganttInstance.options.column_width = minColumnWidthForViewport;
+            updateZoomIndicator();
 
-        // Trigger re-render via view mode change (resets SVG)
-        const currentMode = ganttInstance.options.view_mode;
-        ganttInstance.change_view_mode(currentMode);
-
-        // Clear guard after render completes
-        requestAnimationFrame(() => {
-            zoomAdjustmentInProgress = false;
-        });
+            // Re-render with new width (guard prevents recursion)
+            edgeToEdgeInProgress = true;
+            ganttInstance.change_view_mode(ganttInstance.options.view_mode);
+            // Clear guard after next frame (after re-render's callbacks complete)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    edgeToEdgeInProgress = false;
+                });
+            });
+        }
     }
 
     // ===== EXPECTED PROGRESS MARKERS =====
@@ -1348,8 +1346,11 @@
     function adjustZoom(delta) {
         if (!ganttInstance) return;
 
+        // Use the higher of MIN_ZOOM or minColumnWidthForViewport as floor
+        const effectiveMinZoom = Math.max(MIN_ZOOM, minColumnWidthForViewport);
+
         let newWidth = currentColumnWidth + delta;
-        if (newWidth < MIN_ZOOM) newWidth = MIN_ZOOM;
+        if (newWidth < effectiveMinZoom) newWidth = effectiveMinZoom;
         if (newWidth > MAX_ZOOM) newWidth = MAX_ZOOM;
 
         if (newWidth === currentColumnWidth) return;
@@ -1360,7 +1361,7 @@
         // Force refresh
         ganttInstance.change_view_mode(ganttInstance.options.view_mode);
         updateZoomIndicator();
-        console.log('Zoom adjusted to:', currentColumnWidth);
+        console.log('Zoom adjusted to:', currentColumnWidth, '(min:', effectiveMinZoom, ')');
     }
 
     function updateZoomIndicator() {
