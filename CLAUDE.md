@@ -128,21 +128,15 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Branch Exit - Awaiting artifact approval
+**Phase:** Ready for next milestone
 
-**Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
+**Current Branch:** `main`
 
-**Latest Commit:** `d82f5ee` - QA passed, ready for exit
+**Latest Release:** v0.7.1 (2025-12-27)
 
-**Artifacts Ready:**
-- ✅ `plan/releases/v0.7.1-release-notes.md`
-- ✅ `plan/post-mortems/v0.7.1-post-mortem.md`
-- ✅ `CHANGELOG.md` updated
+**Next Step:** Open branch for v0.7.2 (#52, #53)
 
-**Next Step:** User approval, then commit, tag v0.7.1, and create PR
-
-**Latest Release:** v0.7.0 (2025-12-26)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
+**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.1
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -153,11 +147,12 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 | Milestone | Issues | Theme |
 |-----------|--------|-------|
-| ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish: Expected progress indicator, quick wins~~ ✅ |
-| **v0.7.1** | #21 | Sticky Header: Dedicated fix for narrow content jank |
-| **v0.8.0** | #31, #34, #47 | Theming: Dark mode, grid lines, pill box labels |
-| **v0.9.0** | #32, #35, #12, #14, #41 | i18n + Headers: Language, date formats, header improvements |
-| **v0.10.0** | #24, #25, #36, #44 | Export + UX: Print, global params, task details interaction |
+| ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish~~ ✅ |
+| ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
+| **v0.7.2** | #52, #53 | Bug Fixes: Progress markers, zoom stops |
+| **v0.8.0** | #12, #14, #35, #41, #50 | Headers & Date Formats |
+| **v0.9.0** | #31, #34, #47, #49 | Theming: Dark mode, grid lines, colors |
+| **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
-**Next milestone:** v0.7.1
+**Next milestone:** v0.7.2
