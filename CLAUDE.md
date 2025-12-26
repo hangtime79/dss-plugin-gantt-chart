@@ -52,6 +52,9 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **SVG transform centering** — Use `transform-box: fill-box` when scaling SVG elements. Default `transform-origin` is relative to viewport, not element bounding box.
 - **Dataiku body.html is a fragment** — Never add `<!DOCTYPE html>` to body.html. It's injected into Dataiku's iframe wrapper, not a standalone document. DOCTYPE triggers Quirks Mode warning.
 - **Frappe Gantt `.big` label class** — When task names don't fit inside bars, library positions them outside and adds `.big` class. Our white text CSS made these invisible on white background. External labels need dark text override.
+- **Frappe Gantt task properties become CSS classes** — Library creates `.highlight-{id}` selectors. Task IDs with periods (e.g., `54.8`) create invalid CSS (`.highlight-54.8`). Use hex-encoding for CSS-unsafe chars.
+- **Frappe Gantt Month view diff() bug** — Library's `diff()` function used `o%30/30` for fractional month, which is meaningless. Patched to `(n.getDate()-1)/30` for proper day-of-month position.
+- **DOM data-id location** — `data-id` attribute is on `.bar-wrapper`, not `.bar-group`. Use `wrapper.getAttribute('data-id')` directly, not `.closest('.bar-group')`.
 
 ---
 
@@ -125,7 +128,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Implementation - v0.7.0 QA Round 2
+**Phase:** Branch Exit - v0.7.0 ready for merge
 
 **Current Branch:** `feature/v0.7.0-expected-progress-and-polish`
 **Intervention File:** `plan/interventions/v0.7.0-intervention.md`
