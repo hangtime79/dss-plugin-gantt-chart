@@ -228,6 +228,49 @@ Either:
 
 ---
 
+## Bug #6: Month View Bar Positioning Off By One Month
+
+**Discovered:** v0.7.0 QA (2025-12-26)
+**Severity:** HIGH (incorrect visualization)
+**Upstream Issue:** Not yet reported
+
+### Symptom
+In Month view, task bars are positioned approximately one month late. A task from Oct 1 - Dec 31 appears to span Nov - Jan instead.
+
+Additionally:
+- Hover highlight on header shows wrong months (Nov/Dec/Jan instead of Oct/Nov/Dec)
+- Any calculations based on bar position (like expected progress markers) are wrong
+
+### Evidence
+Same task "Validate model performance" (Oct 1 - Dec 31):
+- **Week view (CORRECT):** barX: 4245.56, barWidth: 591.43
+- **Month view (WRONG):** barX: 2330.1, barWidth: 138 (offset ~1 month late)
+
+### Root Cause
+TBD - Likely in `compute_x()` or month diff calculation:
+```javascript
+compute_x(){
+  const{column_width:t}=this.gantt.config,
+  e=this.task._start,
+  i=this.gantt.gantt_start;
+  let r=d.diff(e,i,this.gantt.config.unit)/this.gantt.config.step*t;
+  this.x=r
+}
+```
+
+Possible causes:
+1. `d.diff()` month calculation off-by-one
+2. `gantt_start` boundary calculation wrong for Month view
+3. Step/unit configuration mismatch
+
+### Our Patch
+TBD - Under investigation
+
+### Workaround
+Week view works correctly. Use Week view for accurate positioning until patched.
+
+---
+
 ## Reporting Upstream
 
 ### Before Reporting
