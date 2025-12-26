@@ -128,9 +128,32 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Spec ready - awaiting SDE implementation
+**Phase:** QA Round 8 - awaiting user feedback
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
+
+**Latest Commit:** `b5f919a` - v8 with fixed guard timing
+
+**Active Intervention:** `plan/interventions/v0.7.1-intervention.md` ← READ THIS FIRST
+
+**What's Working:**
+- ✅ Smooth scrolling in all view modes (main fix confirmed)
+- ✅ View mode transitions work (no infinite loops)
+- ✅ Edge-to-edge content fills viewport
+- ✅ Zoom floor enforced in adjustZoom()
+
+**What's Being Tested (v8):**
+- Year view auto-zooms to fill viewport
+- Month ↔ Year transitions
+- Zoom indicator updates correctly
+
+**Known Limitations (Accepted):**
+- High zoom carries over between view modes (not auto-resetting)
+- Label bleeding at extreme zoom (separate issue)
+
+**Next Steps:**
+- If QA passes: Run `cli-docs/cli-protocols/branch-exit-protocol.md`
+- If QA fails: Check intervention file for debugging tips
 
 **Latest Release:** v0.7.0 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
