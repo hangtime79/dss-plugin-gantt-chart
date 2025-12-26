@@ -277,9 +277,10 @@ class TaskTransformer:
         }
 
         # Add expected progress (where task should be based on today's date)
+        # Prefix with _ to hide from frappe-gantt (it uses task properties for CSS classes)
         expected_progress = self._calculate_expected_progress(start_date, end_date)
         if expected_progress is not None:
-            task['expected_progress'] = expected_progress
+            task['_expected_progress'] = expected_progress
 
         # Add progress if column specified
         if self.config.progress_column:

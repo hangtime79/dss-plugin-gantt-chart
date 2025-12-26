@@ -847,28 +847,42 @@
     function addExpectedProgressMarkers() {
         // Check if feature is enabled
         if (!webAppConfig.showExpectedProgress) {
+            console.log('Expected progress markers: feature disabled');
             return;
         }
 
         if (!currentTasks || currentTasks.length === 0) {
+            console.log('Expected progress markers: no tasks');
             return;
         }
+
+        console.log('Adding expected progress markers for', currentTasks.length, 'tasks');
+        console.log('Tasks with _expected_progress:', currentTasks.filter(t => t._expected_progress !== undefined).length);
 
         // Remove existing markers first (handles re-render/view change)
         document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
 
         // Get all bar wrappers
         const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+        console.log('Found bar wrappers:', barWrappers.length);
 
+        let markersAdded = 0;
         barWrappers.forEach((wrapper) => {
             // Find matching task by data-id attribute
             const barGroup = wrapper.closest('.bar-group');
             const taskId = barGroup?.getAttribute('data-id');
-            if (!taskId) return;
+            if (!taskId) {
+                console.log('No taskId for wrapper');
+                return;
+            }
 
             const task = currentTasks.find(t => t.id === taskId);
-            if (!task || task.expected_progress === undefined || task.expected_progress === null) {
+            if (!task) {
+                console.log('Task not found for id:', taskId);
                 return;
+            }
+            if (task._expected_progress === undefined || task._expected_progress === null) {
+                return;  // Expected - task not in progress
             }
 
             // Get the bar element
@@ -884,7 +898,7 @@
             if (barWidth <= 0) return;
 
             // Calculate marker position
-            const markerX = barX + (task.expected_progress / 100) * barWidth;
+            const markerX = barX + (task._expected_progress / 100) * barWidth;
 
             // Create SVG line for marker
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -909,10 +923,11 @@
             if (barGroup) {
                 barGroup.appendChild(marker);
                 barGroup.appendChild(triangle);
+                markersAdded++;
             }
         });
 
-        console.log('Expected progress markers added');
+        console.log('Expected progress markers added:', markersAdded);
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
