@@ -253,11 +253,17 @@ class TaskTransformer:
             return None
 
         # Extract task ID (generate if null)
+        # Store both CSS-safe ID (for internal use) and display ID (for tooltips)
         raw_id = row[self.config.id_column]
         if pd.isna(raw_id) or str(raw_id).strip() == '':
             task_id = f"task_{row_idx}"
+            display_id = task_id  # Generated IDs are already display-friendly
         else:
             task_id = self._normalize_id(raw_id)
+            # Keep original value for display (handles floats, strings, etc.)
+            display_id = str(raw_id).strip() if not isinstance(raw_id, float) else (
+                str(int(raw_id)) if raw_id.is_integer() else str(raw_id)
+            )
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
@@ -265,13 +271,14 @@ class TaskTransformer:
             val = row[self.config.name_column]
             if not pd.isna(val) and str(val).strip() != '':
                 task_name = str(val).strip()
-        
+
         if not task_name:
-            task_name = task_id
+            task_name = display_id  # Use display ID for name, not CSS-safe ID
 
         # Build task object
         task = {
             'id': task_id,
+            '_display_id': display_id,  # Original ID for tooltip display
             'name': task_name,
             'start': start_date,
             'end': end_date
@@ -290,10 +297,17 @@ class TaskTransformer:
                 task['progress'] = progress
 
         # Add dependencies if column specified
+        # Store both CSS-safe IDs (for internal use) and display values (for tooltips)
         if self.config.dependencies_column:
             raw_value = row[self.config.dependencies_column]
             deps = self._extract_dependencies(raw_value)
             task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
+
+            # Store original dependency string for display
+            if not pd.isna(raw_value) and str(raw_value).strip():
+                task['_display_dependencies'] = str(raw_value).strip()
+            else:
+                task['_display_dependencies'] = ''
 
         # Add color class based on color column OR progress-based default
         if self.config.color_column and color_mapping:
