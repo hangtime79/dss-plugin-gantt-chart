@@ -128,9 +128,9 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - ready for next task
+**Phase:** Spec ready - awaiting SDE implementation
 
-**Current Branch:** `main`
+**Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
 **Latest Release:** v0.7.0 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
@@ -151,4 +151,4 @@ Simple fixes with plenty of context don't need intervention tracking.
 | **v0.10.0** | #24, #25, #36, #44 | Export + UX: Print, global params, task details interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
-**Next milestone:** v0.7.0
+**Next milestone:** v0.7.1

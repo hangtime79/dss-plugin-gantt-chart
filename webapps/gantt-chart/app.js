@@ -694,6 +694,7 @@
                     adjustHeaderLabels();
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
+                    ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
                 });
             }
         };
@@ -735,6 +736,7 @@
                 adjustHeaderLabels();
                 setupStickyHeader();
                 addExpectedProgressMarkers();
+                ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
 
                 // Restore view state if we have saved state from config update
                 if (window._ganttRestoreState) {
@@ -845,6 +847,76 @@
         stickyScrollHandler();
 
         console.log('Sticky header initialized');
+    }
+
+    // ===== EDGE-TO-EDGE CONTENT VIA ZOOM (Issue #21) =====
+
+    // Guard to prevent infinite zoom adjustment loops
+    let zoomAdjustmentInProgress = false;
+
+    /**
+     * Ensure SVG content fills the viewport width by adjusting zoom (column width).
+     * Fixes sticky header jank that occurs when content is narrower than viewport.
+     *
+     * Issue #21: When SVG doesn't fill container, browser paint/composite behavior
+     * during scroll transform causes visual jank. Solution: zoom in to fill width.
+     */
+    function ensureEdgeToEdgeContent() {
+        if (!ganttInstance) return;
+        if (zoomAdjustmentInProgress) return;
+
+        const container = document.getElementById('gantt-container');
+        const svg = document.getElementById('gantt-svg');
+
+        if (!container || !svg) return;
+
+        const containerWidth = container.offsetWidth;
+        const svgWidth = parseFloat(svg.getAttribute('width')) || 0;
+
+        // If SVG already fills or exceeds container, no adjustment needed
+        if (svgWidth >= containerWidth) {
+            console.log('Edge-to-edge: SVG fills viewport', { svgWidth, containerWidth });
+            return;
+        }
+
+        // Calculate zoom factor needed to fill container (with small buffer)
+        const zoomFactor = (containerWidth / svgWidth) * 1.02; // 2% buffer
+        const existingColumnWidth = ganttInstance.options.column_width || 45;
+        const newColumnWidth = Math.ceil(existingColumnWidth * zoomFactor);
+
+        // Cap at MAX_ZOOM to prevent extreme zooming
+        const cappedColumnWidth = Math.min(newColumnWidth, MAX_ZOOM);
+
+        // Only adjust if change is significant (> 5px difference)
+        if (cappedColumnWidth - existingColumnWidth < 5) {
+            console.log('Edge-to-edge: Adjustment too small, skipping', {
+                current: existingColumnWidth,
+                calculated: cappedColumnWidth
+            });
+            return;
+        }
+
+        console.log('Edge-to-edge: Zooming to fill viewport', {
+            svgWidth,
+            containerWidth,
+            zoomFactor: zoomFactor.toFixed(2),
+            oldColumnWidth: existingColumnWidth,
+            newColumnWidth: cappedColumnWidth
+        });
+
+        // Set guard and apply zoom
+        zoomAdjustmentInProgress = true;
+        currentColumnWidth = cappedColumnWidth;  // Update module-level zoom state
+        ganttInstance.options.column_width = cappedColumnWidth;
+
+        // Trigger re-render via view mode change (resets SVG)
+        const currentMode = ganttInstance.options.view_mode;
+        ganttInstance.change_view_mode(currentMode);
+
+        // Clear guard after render completes
+        requestAnimationFrame(() => {
+            zoomAdjustmentInProgress = false;
+        });
     }
 
     // ===== EXPECTED PROGRESS MARKERS =====
