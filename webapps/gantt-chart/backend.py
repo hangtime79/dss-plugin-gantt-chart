@@ -51,12 +51,13 @@ def get_tasks():
             }), 400
 
         # Read dataset
+        max_tasks = int(config.get('maxTasks', 1000))
         logger.info(f"Reading dataset: {dataset_name}")
         try:
             dataset = dataiku.Dataset(dataset_name)
-            # TODO: Potential scalability issue. Loading the entire dataframe into memory can cause OOM errors for large datasets.
-            # Consider using get_dataframe(limit=N) or implementing pagination/sampling if max_tasks is intended to be a hard limit on input rows.
             df = dataset.get_dataframe()
+            # Track if we'll hit the display limit (0 = unlimited)
+            row_limit_hit = max_tasks > 0 and len(df) > max_tasks
         except Exception as e:
             logger.error(f"Failed to read dataset: {e}")
             return json.dumps({
@@ -146,9 +147,15 @@ def get_tasks():
                 }
             }), 400
 
+        # Add row limit indicator to metadata
+        if row_limit_hit:
+            result['metadata']['rowLimitHit'] = True
+            result['metadata']['rowLimit'] = max_tasks
+
         logger.info(
             f"Transformed {result['metadata']['displayedRows']} tasks "
             f"({result['metadata']['skippedRows']} skipped)"
+            f"{' [LIMIT HIT]' if row_limit_hit else ''}"
         )
         return json.dumps(result)
 
