@@ -128,13 +128,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Ready for next milestone
+**Phase:** Spec Ready - Awaiting SDE Implementation
 
-**Current Branch:** `main`
+**Current Branch:** `bugfix/v0.7.2-markers-and-zoom`
 
 **Latest Release:** v0.7.1 (2025-12-27)
 
-**Next Step:** Open branch for v0.7.2 (#52, #53)
+**Active Spec:** `plan/specs/bugfix-v0.7.2-spec.md`
+
+**Issues:**
+- #52: Expected progress markers misaligned at Hour/Day views
+- #53: Add zoom preset buttons (25%, 50%, 75%, 100%)
+
+**Next Step:** SDE implements spec, then User QA
 
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.1
 
