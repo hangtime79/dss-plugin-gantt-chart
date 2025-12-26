@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-12-26
+
+### Added
+- Expected progress indicator showing where task completion should be based on current date (#33)
+
+### Fixed
+- Float/decimal task IDs no longer cause CSS selector errors (#38)
+- Month view task bars now align with correct month columns (frappe-gantt library bug)
+
+### Changed
+- Bar corner radius default increased from 3px to 10px (#45)
+- Weekend highlighting now OFF by default (#42)
+- Removed user-facing "Read-only" toggle (editing already disabled) (#43)
+
 ## [0.6.1] - 2025-12-26
 
 ### Added
