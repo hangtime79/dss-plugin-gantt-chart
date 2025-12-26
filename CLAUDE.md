@@ -128,13 +128,12 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Branch Exit - v0.7.0 ready for merge
+**Phase:** Idle - ready for next task
 
-**Current Branch:** `feature/v0.7.0-expected-progress-and-polish`
-**Intervention File:** `plan/interventions/v0.7.0-intervention.md`
+**Current Branch:** `main`
 
-**Latest Release:** v0.6.1 (2025-12-26)
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.6.1
+**Latest Release:** v0.7.0 (2025-12-26)
+**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -145,7 +144,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 | Milestone | Issues | Theme |
 |-----------|--------|-------|
-| **v0.7.0** | #33, #45, #43, #42, #38, #37 | Analytics + Polish: Expected progress indicator, quick wins |
+| ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish: Expected progress indicator, quick wins~~ ✅ |
 | **v0.7.1** | #21 | Sticky Header: Dedicated fix for narrow content jank |
 | **v0.8.0** | #31, #34, #47 | Theming: Dark mode, grid lines, pill box labels |
 | **v0.9.0** | #32, #35, #12, #14, #41 | i18n + Headers: Language, date formats, header improvements |
