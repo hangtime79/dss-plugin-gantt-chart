@@ -128,30 +128,28 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** QA Round 12 - awaiting user feedback
+**Phase:** ✅ QA PASSED - Ready for Branch Exit
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
-**Latest Commit:** `d75716a` - v12 with message persistence fix
+**Latest Commit:** `be2872b` - v12 QA passed
 
-**Active Intervention:** `plan/interventions/v0.7.1-intervention.md` ← READ THIS FIRST
+**Active Intervention:** `plan/interventions/v0.7.1-intervention.md`
 
-**What's New in v12:**
-- Fixed: Zoom limit message now inserted BEFORE container (survives render)
-- Created #54: Intermittent zoom carryover (low priority)
+**What's Complete:**
+- ✅ Per-view independent zoom tracking
+- ✅ Edge-to-edge content fills viewport (fixes #21 sticky header jank)
+- ✅ View floor prevents zoom below minimum
+- ✅ User feedback on zoom limits
+- ✅ Config panel spinner feedback
+- ✅ Smooth scrolling
 
-**What's Being Tested (v12):**
-- Per-view zoom preservation across view switches
-- Config panel spinner feedback (message should now persist)
-- Feedback messages on limits
+**Issues Created for Future Releases:**
+- #52: Markers misaligned at lower granularities
+- #53: Zoom stops at 25/50/75/100%
+- #54: Intermittent zoom carryover (low priority)
 
-**Known Limitations (Accepted):**
-- Label bleeding at extreme zoom (separate issue)
-- Performance at low granularities (Hour) is slow
-
-**Next Steps:**
-- If QA passes: Run `cli-docs/cli-protocols/branch-exit-protocol.md`
-- If QA fails: Check intervention file for debugging tips
+**Next Step:** Run `cli-docs/cli-protocols/branch-exit-protocol.md`
 
 **Latest Release:** v0.7.0 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
