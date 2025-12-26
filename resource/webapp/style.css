@@ -51,6 +51,31 @@
     --header-height: 44px;
 }
 
+/* ===== DARK THEME (#31) ===== */
+.dark-theme {
+    --color-primary: #ecf0f1;
+    --color-secondary: #bdc3c7;
+    --color-accent: #3498db;
+    --color-accent-hover: #5dade2;
+    --color-background: #1a1a2e;
+    --color-surface: #16213e;
+    --color-border: #2c3e50;
+
+    --color-success: #27ae60;
+    --color-warning: #f39c12;
+    --color-error: #e74c3c;
+
+    --text-main: #ecf0f1;
+    --text-muted: #95a5a6;
+    --text-inverted: #1a1a2e;
+
+    --chart-grid-line: #2c3e50;
+    --chart-today-line: #e74c3c;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
 /* ===== RESET & BASE ===== */
 html,
 body {
@@ -458,6 +483,85 @@ body {
     fill: #ffffff !important;
 }
 
+/* ===== PASTEL PALETTE (#49) ===== */
+.bar-pastel-blue .bar { fill: #a8d8ea !important; }
+.bar-pastel-blue .bar-label { fill: #2d3436 !important; }
+.bar-pastel-green .bar { fill: #a8e6cf !important; }
+.bar-pastel-green .bar-label { fill: #2d3436 !important; }
+.bar-pastel-orange .bar { fill: #ffd3b6 !important; }
+.bar-pastel-orange .bar-label { fill: #2d3436 !important; }
+.bar-pastel-purple .bar { fill: #d4a5e8 !important; }
+.bar-pastel-purple .bar-label { fill: #2d3436 !important; }
+.bar-pastel-red .bar { fill: #ffaaa5 !important; }
+.bar-pastel-red .bar-label { fill: #2d3436 !important; }
+.bar-pastel-teal .bar { fill: #88d8b0 !important; }
+.bar-pastel-teal .bar-label { fill: #2d3436 !important; }
+.bar-pastel-pink .bar { fill: #ffb6b9 !important; }
+.bar-pastel-pink .bar-label { fill: #2d3436 !important; }
+.bar-pastel-indigo .bar { fill: #b8b5ff !important; }
+.bar-pastel-indigo .bar-label { fill: #2d3436 !important; }
+.bar-pastel-cyan .bar { fill: #b5e2fa !important; }
+.bar-pastel-cyan .bar-label { fill: #2d3436 !important; }
+.bar-pastel-amber .bar { fill: #fff3b0 !important; }
+.bar-pastel-amber .bar-label { fill: #2d3436 !important; }
+.bar-pastel-lime .bar { fill: #dcedc1 !important; }
+.bar-pastel-lime .bar-label { fill: #2d3436 !important; }
+.bar-pastel-gray .bar { fill: #d5d5d5 !important; }
+.bar-pastel-gray .bar-label { fill: #2d3436 !important; }
+
+/* ===== DARK PALETTE (#49) ===== */
+.bar-dark-blue .bar { fill: #1a5276 !important; }
+.bar-dark-blue .bar-label { fill: #ffffff !important; }
+.bar-dark-green .bar { fill: #196f3d !important; }
+.bar-dark-green .bar-label { fill: #ffffff !important; }
+.bar-dark-orange .bar { fill: #a04000 !important; }
+.bar-dark-orange .bar-label { fill: #ffffff !important; }
+.bar-dark-purple .bar { fill: #6c3483 !important; }
+.bar-dark-purple .bar-label { fill: #ffffff !important; }
+.bar-dark-red .bar { fill: #922b21 !important; }
+.bar-dark-red .bar-label { fill: #ffffff !important; }
+.bar-dark-teal .bar { fill: #0e6655 !important; }
+.bar-dark-teal .bar-label { fill: #ffffff !important; }
+.bar-dark-pink .bar { fill: #943126 !important; }
+.bar-dark-pink .bar-label { fill: #ffffff !important; }
+.bar-dark-indigo .bar { fill: #283747 !important; }
+.bar-dark-indigo .bar-label { fill: #ffffff !important; }
+.bar-dark-cyan .bar { fill: #1b4f72 !important; }
+.bar-dark-cyan .bar-label { fill: #ffffff !important; }
+.bar-dark-amber .bar { fill: #9a7d0a !important; }
+.bar-dark-amber .bar-label { fill: #ffffff !important; }
+.bar-dark-lime .bar { fill: #4a5320 !important; }
+.bar-dark-lime .bar-label { fill: #ffffff !important; }
+.bar-dark-gray .bar { fill: #424949 !important; }
+.bar-dark-gray .bar-label { fill: #ffffff !important; }
+
+/* ===== DATAIKU PALETTE (#49) ===== */
+/* Based on DSS qualitative color palette */
+.bar-dku-1 .bar { fill: #2678B1 !important; }
+.bar-dku-1 .bar-label { fill: #ffffff !important; }
+.bar-dku-2 .bar { fill: #FF7F0E !important; }
+.bar-dku-2 .bar-label { fill: #ffffff !important; }
+.bar-dku-3 .bar { fill: #2CA02C !important; }
+.bar-dku-3 .bar-label { fill: #ffffff !important; }
+.bar-dku-4 .bar { fill: #D62728 !important; }
+.bar-dku-4 .bar-label { fill: #ffffff !important; }
+.bar-dku-5 .bar { fill: #9467BD !important; }
+.bar-dku-5 .bar-label { fill: #ffffff !important; }
+.bar-dku-6 .bar { fill: #8C564B !important; }
+.bar-dku-6 .bar-label { fill: #ffffff !important; }
+.bar-dku-7 .bar { fill: #E377C2 !important; }
+.bar-dku-7 .bar-label { fill: #2d3436 !important; }
+.bar-dku-8 .bar { fill: #7F7F7F !important; }
+.bar-dku-8 .bar-label { fill: #ffffff !important; }
+.bar-dku-9 .bar { fill: #BCBD22 !important; }
+.bar-dku-9 .bar-label { fill: #2d3436 !important; }
+.bar-dku-10 .bar { fill: #17BECF !important; }
+.bar-dku-10 .bar-label { fill: #2d3436 !important; }
+.bar-dku-11 .bar { fill: #AEC7E8 !important; }
+.bar-dku-11 .bar-label { fill: #2d3436 !important; }
+.bar-dku-12 .bar { fill: #FFBB78 !important; }
+.bar-dku-12 .bar-label { fill: #2d3436 !important; }
+
 /* ===== DEFAULT BAR (No Color Column) ===== */
 /* When no color column is selected, bars use grayscale with black text */
 /* Combined class names (no spaces) because Frappe Gantt uses classList.add() */
@@ -660,6 +764,30 @@ body {
     fill: #333333 !important;
 }
 
+/* ===== PILL BOX LABELS (#47) ===== */
+/**
+ * Pill background rectangles are inserted via JS (addPillBackgrounds).
+ * SVG text elements don't support CSS background/padding, so we add
+ * rect elements behind each label for contrast.
+ */
+.bar-label-pill {
+    fill: rgba(255, 255, 255, 0.85);
+    rx: 3;
+    ry: 3;
+}
+
+/* Internal labels (inside bar) - semi-transparent white pill */
+.bar-wrapper:not(.has-big-label) .bar-label-pill {
+    fill: rgba(255, 255, 255, 0.85);
+}
+
+/* External labels (.big) - more opaque for visibility on white background */
+.bar-wrapper.has-big-label .bar-label-pill {
+    fill: rgba(255, 255, 255, 0.95);
+    stroke: rgba(0, 0, 0, 0.1);
+    stroke-width: 1;
+}
+
 /* Ensure header text is visible */
 .gantt .grid-header text {
     fill: var(--text-muted) !important;
@@ -850,6 +978,126 @@ body {
         display: none;
         /* Hide title on small mobile to save space */
     }
+}
+
+/* ===== DARK MODE OVERRIDES (#31) ===== */
+/* Specific element overrides for dark theme */
+
+.dark-theme .gantt .grid-header {
+    background-color: var(--color-surface);
+}
+
+.dark-theme .gantt .grid-row:nth-child(even) {
+    fill: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark-theme .control-bar {
+    background-color: var(--color-surface);
+    border-bottom-color: var(--color-border);
+}
+
+.dark-theme .btn {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--text-main);
+}
+
+.dark-theme .btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-border);
+}
+
+.dark-theme .btn-group {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+}
+
+.dark-theme .btn-group .zoom-indicator {
+    border-color: var(--color-border);
+    background: var(--color-background);
+    color: var(--text-main);
+}
+
+.dark-theme .select-input {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--text-main);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2395a5a6' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.762L10.825 4z'/%3E%3C/svg%3E");
+}
+
+.dark-theme #gantt-container {
+    background-color: var(--color-surface);
+}
+
+/* Pill labels in dark mode */
+.dark-theme .bar-label-pill {
+    fill: rgba(0, 0, 0, 0.6);
+}
+
+/* Popup in dark mode */
+.dark-theme .gantt-popup {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+.dark-theme .popup-title {
+    color: var(--text-main);
+    border-bottom-color: var(--color-border);
+}
+
+.dark-theme .popup-dates {
+    color: var(--text-muted);
+}
+
+.dark-theme .popup-custom-fields {
+    border-top-color: var(--color-border);
+}
+
+.dark-theme .field-value {
+    color: var(--text-main);
+}
+
+/* Loading skeleton in dark mode */
+.dark-theme .loading-overlay {
+    background: var(--color-surface);
+}
+
+.dark-theme .skeleton-header,
+.dark-theme .skeleton-row {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Metadata banner in dark mode */
+.dark-theme .metadata-banner {
+    background: var(--color-surface);
+    color: var(--text-main);
+}
+
+/* Error container in dark mode */
+.dark-theme .error-container {
+    color: var(--text-muted);
+}
+
+.dark-theme .error-title {
+    color: var(--text-main);
+}
+
+/* Grid header separators in dark mode */
+.dark-theme .header-separator {
+    background-color: var(--color-border) !important;
+}
+
+/* ===== VISUAL STACKING ORDER (#57) ===== */
+/**
+ * SVG elements don't support z-index - rendering order is determined by DOM order.
+ * JS function ensureStackingOrder() reorders elements after render.
+ * These CSS rules document intent and handle HTML overlay elements.
+ */
+
+/* Today line highlight - should be above bars */
+.gantt .today-highlight,
+.gantt .current-highlight {
+    pointer-events: none;
 }
 
 /* ===== EXPECTED PROGRESS MARKERS ===== */
