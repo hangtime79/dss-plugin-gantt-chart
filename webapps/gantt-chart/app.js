@@ -900,6 +900,17 @@
             // Calculate marker position
             const markerX = barX + (task._expected_progress / 100) * barWidth;
 
+            // Debug: log positioning details
+            console.log('Expected progress marker:', {
+                taskName: task.name,
+                expectedProgress: task._expected_progress,
+                barX: barX,
+                barWidth: barWidth,
+                markerX: markerX,
+                start: task.start,
+                end: task.end
+            });
+
             // Create SVG line for marker
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             marker.setAttribute('class', 'expected-progress-marker');
