@@ -128,27 +128,27 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** QA Round 8 - awaiting user feedback
+**Phase:** QA Round 10 - awaiting user feedback
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
-**Latest Commit:** `b5f919a` - v8 with fixed guard timing
+**Latest Commit:** `bf3aecd` - v10 with per-view zoom
 
 **Active Intervention:** `plan/interventions/v0.7.1-intervention.md` ← READ THIS FIRST
 
-**What's Working:**
-- ✅ Smooth scrolling in all view modes (main fix confirmed)
-- ✅ View mode transitions work (no infinite loops)
-- ✅ Edge-to-edge content fills viewport
-- ✅ Zoom floor enforced in adjustZoom()
+**What's New in v10:**
+- Per-view zoom tracking (each view has independent column width)
+- Per-view floor calculation (containerWidth / columnCount)
+- User feedback messages when zoom limits reached
+- 75px = 100% baseline, 25px = absolute floor
 
-**What's Being Tested (v8):**
-- Year view auto-zooms to fill viewport
-- Month ↔ Year transitions
-- Zoom indicator updates correctly
+**What's Being Tested (v10):**
+- Per-view zoom preservation across view switches
+- Zoom floor enforcement per view
+- Feedback messages on limits
+- Config panel below-floor handling
 
 **Known Limitations (Accepted):**
-- High zoom carries over between view modes (not auto-resetting)
 - Label bleeding at extreme zoom (separate issue)
 
 **Next Steps:**

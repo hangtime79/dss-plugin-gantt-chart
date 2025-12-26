@@ -922,6 +922,9 @@
      * Formula: viewFloor = MAX(containerWidth / dates.length, ABSOLUTE_FLOOR)
      * Render at: MAX(currentColumnWidth, viewFloor)
      *
+     * Also detects when SVG was rendered with wrong column width (e.g., after
+     * view switch where previous view's width was used).
+     *
      * Issue #21: When SVG doesn't fill container, browser paint/composite
      * behavior during scroll transform causes visual jank.
      */
@@ -930,10 +933,12 @@
         if (edgeToEdgeInProgress) return;
 
         const container = document.getElementById('gantt-container');
-        if (!container) return;
+        const svg = document.getElementById('gantt-svg');
+        if (!container || !svg) return;
 
         const containerWidth = container.offsetWidth;
         const columnCount = ganttInstance.dates ? ganttInstance.dates.length : 0;
+        const svgWidth = parseFloat(svg.getAttribute('width')) || 0;
 
         if (columnCount <= 0 || containerWidth <= 0) return;
 
@@ -943,24 +948,42 @@
         // Store the floor for this view mode (used by adjustZoom)
         minColumnWidthByViewMode[currentViewMode] = viewFloor;
 
-        // Get current column width for this view
-        const currentColWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
+        // Get stored column width for this view
+        const storedWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
 
-        // Formula: render at MAX(current, viewFloor)
-        const neededWidth = Math.max(currentColWidth, viewFloor);
+        // Calculate what was actually rendered (SVG width / columns)
+        const renderedWidth = svgWidth > 0 ? Math.round(svgWidth / columnCount) : storedWidth;
+
+        // Formula: render at MAX(stored, viewFloor)
+        const neededWidth = Math.max(storedWidth, viewFloor);
 
         console.log('Edge-to-edge:', {
             viewMode: currentViewMode,
             containerWidth,
             columnCount,
+            svgWidth,
             viewFloor,
-            currentColWidth,
+            storedWidth,
+            renderedWidth,
             neededWidth
         });
 
-        // Apply if current is below what's needed
-        if (currentColWidth < neededWidth) {
-            console.log('Edge-to-edge: Adjusting to', neededWidth);
+        // Re-render if:
+        // 1. Stored width is below floor (need to bump up for edge-to-edge)
+        // 2. OR rendered width doesn't match needed (wrong width used, e.g. after view switch)
+        const needsRerender = storedWidth < neededWidth || Math.abs(renderedWidth - neededWidth) > 2;
+
+        if (needsRerender) {
+            console.log('Edge-to-edge: Re-rendering at', neededWidth, '(was', renderedWidth, ')');
+
+            // If stored width was below floor, show feedback to user
+            if (storedWidth < viewFloor) {
+                showZoomLimitMessage(
+                    currentViewMode + ' view requires minimum ' + viewFloor +
+                    'px column width to fill viewport.'
+                );
+            }
+
             columnWidthByViewMode[currentViewMode] = neededWidth;
             ganttInstance.options.column_width = neededWidth;
             updateZoomIndicator();
@@ -974,6 +997,9 @@
                     edgeToEdgeInProgress = false;
                 });
             });
+        } else {
+            // Just update indicator to reflect current state
+            updateZoomIndicator();
         }
     }
 
