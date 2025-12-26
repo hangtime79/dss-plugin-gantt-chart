@@ -52,6 +52,9 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **SVG transform centering** — Use `transform-box: fill-box` when scaling SVG elements. Default `transform-origin` is relative to viewport, not element bounding box.
 - **Dataiku body.html is a fragment** — Never add `<!DOCTYPE html>` to body.html. It's injected into Dataiku's iframe wrapper, not a standalone document. DOCTYPE triggers Quirks Mode warning.
 - **Frappe Gantt `.big` label class** — When task names don't fit inside bars, library positions them outside and adds `.big` class. Our white text CSS made these invisible on white background. External labels need dark text override.
+- **Frappe Gantt task properties become CSS classes** — Library creates `.highlight-{id}` selectors. Task IDs with periods (e.g., `54.8`) create invalid CSS (`.highlight-54.8`). Use hex-encoding for CSS-unsafe chars.
+- **Frappe Gantt Month view diff() bug** — Library's `diff()` function used `o%30/30` for fractional month, which is meaningless. Patched to `(n.getDate()-1)/30` for proper day-of-month position.
+- **DOM data-id location** — `data-id` attribute is on `.bar-wrapper`, not `.bar-group`. Use `wrapper.getAttribute('data-id')` directly, not `.closest('.bar-group')`.
 
 ---
 
@@ -125,7 +128,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Idle - Ready for new work
+**Phase:** Branch Exit - v0.7.0 ready for merge
+
+**Current Branch:** `feature/v0.7.0-expected-progress-and-polish`
+**Intervention File:** `plan/interventions/v0.7.0-intervention.md`
 
 **Latest Release:** v0.6.1 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.6.1
@@ -139,7 +145,8 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 | Milestone | Issues | Theme |
 |-----------|--------|-------|
-| **v0.7.0** | #33, #21, #45, #43, #42, #38, #37 | Analytics + Polish: Expected progress, sticky header, quick wins |
+| **v0.7.0** | #33, #45, #43, #42, #38, #37 | Analytics + Polish: Expected progress indicator, quick wins |
+| **v0.7.1** | #21 | Sticky Header: Dedicated fix for narrow content jank |
 | **v0.8.0** | #31, #34, #47 | Theming: Dark mode, grid lines, pill box labels |
 | **v0.9.0** | #32, #35, #12, #14, #41 | i18n + Headers: Language, date formats, header improvements |
 | **v0.10.0** | #24, #25, #36, #44 | Export + UX: Print, global params, task details interaction |

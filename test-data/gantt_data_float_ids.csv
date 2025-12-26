@@ -1,0 +1,309 @@
+ID,Task Name,Start Date,End Date,Dependency,Progress,Status,Owner,Workstream Name
+1.9,Define cloud migration strategy,2024-01-15,2024-02-28,,100,complete,Sarah Johnson,Cloud Migration Strategy
+2.75,Conduct stakeholder interviews,2024-01-15,2024-02-15,1.9,100,complete,Michael Chen,Cloud Migration Strategy
+3.39,Assess current infrastructure,2024-03-01,2024-04-15,2.75,100,complete,Sarah Johnson,Cloud Migration Strategy
+4.35,Design target architecture,2024-04-16,2024-06-30,3.39,100,complete,Michael Chen,Cloud Migration Strategy
+5.95,Develop migration roadmap,2024-07-01,2024-08-15,4.35,100,complete,Sarah Johnson,Cloud Migration Strategy
+6.14,Obtain executive approval,2024-08-16,2024-09-30,5.95,100,complete,Emily Rodriguez,Cloud Migration Strategy
+7.30,Identify security requirements,2024-01-10,2024-02-28,,100,complete,David Kumar,Security Assessment
+8.93,Perform vulnerability assessment,2024-03-01,2024-04-30,7.30,100,complete,Rachel Thompson,Security Assessment
+9.3,Review compliance standards,2024-03-15,2024-05-15,7.30,100,complete,David Kumar,Security Assessment
+10.40,Create security framework,2024-05-01,2024-06-30,8.93,100,complete,Rachel Thompson,Security Assessment
+11.91,Develop remediation plan,2024-07-01,2024-08-31,10.40,100,complete,David Kumar,Security Assessment
+12.40,Assess current network capacity,2024-02-01,2024-03-31,,100,complete,Alex Martinez,Network Infrastructure Upgrade
+13.12,Design new network topology,2024-04-01,2024-06-15,12.40,100,complete,Chris Anderson,Network Infrastructure Upgrade
+14.87,Procure network hardware,2024-06-16,2024-08-31,13.12,100,complete,Alex Martinez,Network Infrastructure Upgrade
+15.34,Install core switches,2024-09-01,2024-10-31,14.87,100,complete,Chris Anderson,Network Infrastructure Upgrade
+16.79,Configure routing protocols,2024-11-01,2024-12-15,15.34,100,complete,Alex Martinez,Network Infrastructure Upgrade
+17.38,Perform load testing,2024-12-16,2024-12-31,16.79,100,complete,Chris Anderson,Network Infrastructure Upgrade
+18.41,Cutover to new network,2025-01-02,2025-01-15,17.38,100,complete,Alex Martinez,Network Infrastructure Upgrade
+19.24,Evaluate identity solutions,2024-03-01,2024-04-30,,100,complete,Maria Garcia,Identity Management System
+20.69,Select IAM platform,2024-05-01,2024-06-15,19.24,100,complete,Robert Taylor,Identity Management System
+21.70,Design identity architecture,2024-06-16,2024-08-31,20.69,100,complete,Maria Garcia,Identity Management System
+22.79,Configure SSO integration,2024-09-01,2024-11-30,21.70,100,complete,Robert Taylor,Identity Management System
+23.55,Implement MFA,2024-12-01,2025-01-31,22.79,100,complete,Maria Garcia,Identity Management System
+24.42,Deploy identity system,2025-02-01,2025-02-28,23.55,100,complete,Robert Taylor,Identity Management System
+25.93,Define vendor requirements,2024-01-20,2024-03-15,,100,complete,Jennifer Lee,Vendor Selection Process
+26.82,Issue RFP,2024-03-16,2024-04-30,25.93,100,complete,Kevin Brown,Vendor Selection Process
+27.70,Evaluate vendor proposals,2024-05-01,2024-06-30,26.82,100,complete,Jennifer Lee,Vendor Selection Process
+28.87,Conduct vendor demonstrations,2024-07-01,2024-08-15,27.70,100,complete,Kevin Brown,Vendor Selection Process
+29.55,Negotiate contracts,2024-08-16,2024-09-30,28.87,100,complete,Amanda White,Vendor Selection Process
+30.39,Finalize vendor selection,2024-10-01,2024-10-31,29.55,100,complete,Jennifer Lee,Vendor Selection Process
+31.87,Assess legacy data sources,2024-10-01,2024-11-30,,85,in-progress,Daniel Kim,Data Platform Modernization
+32.86,Design data lake architecture,2024-12-01,2025-02-28,31.87,75,in-progress,Jessica Moore,Data Platform Modernization
+33.84,Implement data ingestion pipelines,2025-03-01,2025-05-31,32.86,60,in-progress,Daniel Kim,Data Platform Modernization
+34.19,Build data governance framework,2025-04-01,2025-06-30,32.86,45,in-progress,Jessica Moore,Data Platform Modernization
+35.97,Deploy real-time streaming,2025-06-01,2025-08-31,33.84,30,in-progress,Daniel Kim,Data Platform Modernization
+36.72,Implement data quality monitoring,2025-07-01,2025-09-30,34.19,20,in-progress,Jessica Moore,Data Platform Modernization
+37.46,Migrate historical data,2025-09-01,2025-11-30,35.97,0,not started,Daniel Kim,Data Platform Modernization
+38.70,Conduct user research,2024-11-01,2024-12-31,,100,complete,Brian O'Connor,Customer Portal Redesign
+39.36,Create wireframes and mockups,2025-01-01,2025-02-28,38.70,100,complete,Lauren Davis,Customer Portal Redesign
+40.81,Develop design system,2025-03-01,2025-04-30,39.36,90,in-progress,Brian O'Connor,Customer Portal Redesign
+41.18,Build frontend components,2025-04-15,2025-07-31,40.81,70,in-progress,Thomas Wilson,Customer Portal Redesign
+42.6,Integrate with backend APIs,2025-06-01,2025-08-31,41.18,55,in-progress,Nicole Patel,Customer Portal Redesign
+43.50,Conduct usability testing,2025-08-01,2025-09-30,42.6,40,in-progress,Lauren Davis,Customer Portal Redesign
+44.7,Optimize performance,2025-09-15,2025-11-15,43.50,25,in-progress,Thomas Wilson,Customer Portal Redesign
+45.4,Launch beta version,2025-11-01,2025-11-30,44.7,0,not started,Brian O'Connor,Customer Portal Redesign
+46.55,Define mobile app requirements,2025-01-15,2025-03-15,,100,complete,Sarah Johnson,Mobile App Development
+47.66,Design app architecture,2025-03-16,2025-05-31,46.55,80,in-progress,Michael Chen,Mobile App Development
+48.58,Develop iOS application,2025-05-01,2025-08-31,47.66,65,in-progress,Emily Rodriguez,Mobile App Development
+49.34,Develop Android application,2025-05-01,2025-08-31,47.66,60,in-progress,Lisa Wong,Mobile App Development
+50.54,Implement push notifications,2025-07-01,2025-09-30,48.58,45,in-progress,Emily Rodriguez,Mobile App Development
+51.4,Build offline mode,2025-08-01,2025-10-31,49.34,30,in-progress,Lisa Wong,Mobile App Development
+52.8,Conduct beta testing,2025-10-01,2025-11-30,50.54,15,in-progress,Sarah Johnson,Mobile App Development
+53.37,Submit to app stores,2025-11-15,2025-12-31,52.8,0,not started,Michael Chen,Mobile App Development
+54.8,Identify AI use cases,2025-02-01,2025-03-31,,100,complete,James Patterson,AI/ML Implementation
+55.67,Prepare training datasets,2025-04-01,2025-06-30,54.8,90,in-progress,Lisa Wong,AI/ML Implementation
+56.51,Build ML model pipeline,2025-06-01,2025-08-31,55.67,70,in-progress,David Kumar,AI/ML Implementation
+57.47,Train initial models,2025-08-01,2025-10-31,56.51,50,in-progress,James Patterson,AI/ML Implementation
+58.31,Validate model performance,2025-10-01,2025-12-31,57.47,35,in-progress,Lisa Wong,AI/ML Implementation
+59.84,Deploy to production,2026-01-01,2026-02-28,58.31,0,not started,David Kumar,AI/ML Implementation
+60.2,Monitor and optimize,2026-02-15,2026-04-30,59.84,0,not started,James Patterson,AI/ML Implementation
+61.36,Define analytics requirements,2025-03-01,2025-04-30,,85,in-progress,Rachel Thompson,Analytics & BI Platform
+62.33,Select BI tools,2025-05-01,2025-06-30,61.36,70,in-progress,Alex Martinez,Analytics & BI Platform
+63.70,Design data warehouse,2025-06-15,2025-08-31,62.33,60,in-progress,Rachel Thompson,Analytics & BI Platform
+64.95,Build ETL processes,2025-08-01,2025-10-31,63.70,45,in-progress,Chris Anderson,Analytics & BI Platform
+65.23,Create executive dashboards,2025-10-01,2025-12-31,64.95,30,in-progress,Alex Martinez,Analytics & BI Platform
+66.66,Develop self-service reports,2025-11-01,2026-01-31,65.23,20,in-progress,Rachel Thompson,Analytics & BI Platform
+67.73,Train business users,2026-01-15,2026-03-15,66.66,0,not started,Chris Anderson,Analytics & BI Platform
+68.42,Assess current CI/CD processes,2025-04-01,2025-05-31,,75,in-progress,Maria Garcia,DevOps Automation
+69.76,Select DevOps toolchain,2025-06-01,2025-07-31,68.42,65,in-progress,Robert Taylor,DevOps Automation
+70.71,Configure Jenkins pipelines,2025-07-15,2025-09-30,69.76,50,in-progress,Maria Garcia,DevOps Automation
+71.71,Implement infrastructure as code,2025-09-01,2025-11-30,70.71,40,in-progress,Robert Taylor,DevOps Automation
+72.9,Set up container orchestration,2025-11-01,2026-01-31,71.71,25,in-progress,Maria Garcia,DevOps Automation
+73.43,Automate testing framework,2026-01-01,2026-03-31,72.9,10,in-progress,Robert Taylor,DevOps Automation
+74.13,Deploy monitoring solution,2026-03-01,2026-05-31,73.43,0,not started,Maria Garcia,DevOps Automation
+75.72,Define API standards,2025-05-01,2025-06-30,,80,in-progress,Jennifer Lee,API Integration Layer
+76.53,Design API gateway architecture,2025-07-01,2025-08-31,75.72,70,in-progress,Kevin Brown,API Integration Layer
+77.80,Implement authentication,2025-08-15,2025-10-31,76.53,55,in-progress,Jennifer Lee,API Integration Layer
+78.3,Build rate limiting,2025-10-01,2025-12-31,77.80,40,in-progress,Kevin Brown,API Integration Layer
+79.91,Create API documentation,2025-12-01,2026-02-28,78.3,30,in-progress,Amanda White,API Integration Layer
+80.35,Develop SDK libraries,2026-02-01,2026-04-30,79.91,15,in-progress,Jennifer Lee,API Integration Layer
+81.27,Test API performance,2026-04-01,2026-06-30,80.35,0,not started,Kevin Brown,API Integration Layer
+82.85,Audit legacy CRM system,2025-06-01,2025-07-31,,90,in-progress,Daniel Kim,Legacy CRM Migration
+83.75,Map data schema,2025-08-01,2025-09-30,82.85,75,in-progress,Jessica Moore,Legacy CRM Migration
+84.51,Extract customer data,2025-10-01,2025-11-30,83.75,60,in-progress,Daniel Kim,Legacy CRM Migration
+85.99,Transform and cleanse data,2025-11-15,2026-01-31,84.51,50,in-progress,Jessica Moore,Legacy CRM Migration
+86.57,Load into new CRM,2026-01-15,2026-03-31,85.99,35,in-progress,Brian O'Connor,Legacy CRM Migration
+87.88,Validate data integrity,2026-03-15,2026-05-15,86.57,20,in-progress,Daniel Kim,Legacy CRM Migration
+88.4,Train sales team,2026-05-01,2026-06-30,87.88,0,not started,Lauren Davis,Legacy CRM Migration
+89.24,Decommission legacy system,2026-06-15,2026-07-31,88.4,0,not started,Jessica Moore,Legacy CRM Migration
+90.24,Evaluate marketing platforms,2025-07-01,2025-08-31,,65,in-progress,Thomas Wilson,Digital Marketing Platform
+91.98,Select marketing automation tool,2025-09-01,2025-10-31,90.24,55,in-progress,Nicole Patel,Digital Marketing Platform
+92.99,Configure email campaigns,2025-11-01,2026-01-31,91.98,40,in-progress,Thomas Wilson,Digital Marketing Platform
+93.99,Integrate with CRM,2026-01-15,2026-03-31,92.99,30,in-progress,Brian O'Connor,Digital Marketing Platform
+94.98,Build landing page templates,2026-03-01,2026-05-31,93.99,15,in-progress,Nicole Patel,Digital Marketing Platform
+95.94,Set up analytics tracking,2026-05-15,2026-07-31,94.98,0,not started,Thomas Wilson,Digital Marketing Platform
+96.51,Launch first campaign,2026-07-15,2026-08-31,95.94,0,not started,Nicole Patel,Digital Marketing Platform
+97.11,Define e-commerce requirements,2025-08-01,2025-09-30,,70,in-progress,Sarah Johnson,E-commerce Platform
+98.5,Select platform vendor,2025-10-01,2025-11-30,97.11,60,in-progress,Michael Chen,E-commerce Platform
+99.90,Design product catalog,2025-12-01,2026-02-28,98.5,50,in-progress,Emily Rodriguez,E-commerce Platform
+100.8,Configure payment gateway,2026-02-01,2026-04-30,99.90,35,in-progress,Lisa Wong,E-commerce Platform
+101.15,Implement shopping cart,2026-04-01,2026-06-30,100.8,25,in-progress,Sarah Johnson,E-commerce Platform
+102.56,Build order management,2026-06-01,2026-08-31,101.15,10,in-progress,Michael Chen,E-commerce Platform
+103.18,Integrate shipping providers,2026-08-15,2026-10-31,102.56,0,not started,Emily Rodriguez,E-commerce Platform
+104.84,Launch online store,2026-10-15,2026-11-30,103.18,0,not started,Lisa Wong,E-commerce Platform
+105.34,Inventory existing systems,2024-05-01,2024-06-30,,100,complete,James Patterson,Legacy System Decommissioning
+106.90,Identify decommission candidates,2024-07-01,2024-08-31,105.34,100,complete,David Kumar,Legacy System Decommissioning
+107.92,Assess data retention needs,2024-09-01,2024-10-31,106.90,100,complete,James Patterson,Legacy System Decommissioning
+108.21,Create migration plan,2024-11-01,2024-12-31,107.92,100,complete,Rachel Thompson,Legacy System Decommissioning
+109.98,Archive critical data,2025-01-01,2025-02-28,108.21,100,complete,David Kumar,Legacy System Decommissioning
+110.20,Sunset System A,2025-03-01,2025-03-31,109.98,100,complete,James Patterson,Legacy System Decommissioning
+111.69,Sunset System B,2025-04-01,2025-04-30,109.98,100,complete,Rachel Thompson,Legacy System Decommissioning
+112.7,Define collaboration needs,2025-09-01,2025-10-31,,55,in-progress,Alex Martinez,Enterprise Collaboration Suite
+113.30,Evaluate collaboration tools,2025-11-01,2025-12-31,112.7,45,in-progress,Chris Anderson,Enterprise Collaboration Suite
+114.5,Deploy Microsoft Teams,2026-01-01,2026-03-31,113.30,30,in-progress,Alex Martinez,Enterprise Collaboration Suite
+115.2,Configure SharePoint,2026-03-01,2026-05-31,114.5,20,in-progress,Chris Anderson,Enterprise Collaboration Suite
+116.69,Migrate from legacy tools,2026-05-15,2026-08-15,115.2,10,in-progress,Maria Garcia,Enterprise Collaboration Suite
+117.71,Train employees,2026-08-01,2026-10-31,116.69,0,not started,Alex Martinez,Enterprise Collaboration Suite
+118.24,Assess backup infrastructure,2024-08-01,2024-09-30,,100,complete,Robert Taylor,Disaster Recovery Solution
+119.27,Design DR architecture,2024-10-01,2024-12-31,118.24,100,complete,Maria Garcia,Disaster Recovery Solution
+120.60,Implement backup automation,2025-01-01,2025-03-31,119.27,100,complete,Robert Taylor,Disaster Recovery Solution
+121.76,Configure replication,2025-04-01,2025-06-30,120.60,100,complete,Maria Garcia,Disaster Recovery Solution
+122.90,Test failover procedures,2025-07-01,2025-08-31,121.76,100,complete,Robert Taylor,Disaster Recovery Solution
+123.56,Document recovery processes,2025-09-01,2025-09-30,122.90,100,complete,Maria Garcia,Disaster Recovery Solution
+124.25,Define quality metrics,2025-10-01,2025-11-30,,50,in-progress,Jennifer Lee,Data Quality Initiative
+125.47,Implement validation rules,2025-12-01,2026-02-28,124.25,40,in-progress,Kevin Brown,Data Quality Initiative
+126.57,Build data profiling tools,2026-02-01,2026-04-30,125.47,30,in-progress,Jennifer Lee,Data Quality Initiative
+127.96,Create cleansing workflows,2026-04-15,2026-07-15,126.57,20,in-progress,Kevin Brown,Data Quality Initiative
+128.9,Deploy quality dashboards,2026-07-01,2026-09-30,127.96,5,in-progress,Amanda White,Data Quality Initiative
+129.3,Establish governance committee,2026-09-15,2026-11-30,128.9,0,not started,Jennifer Lee,Data Quality Initiative
+130.55,Survey employee needs,2024-09-01,2024-10-31,,100,complete,Amanda White,Digital Workplace Transformation
+131.95,Select collaboration platforms,2024-11-01,2024-12-31,130.55,100,complete,Daniel Kim,Digital Workplace Transformation
+132.91,Deploy video conferencing,2025-01-01,2025-02-28,131.95,100,complete,Amanda White,Digital Workplace Transformation
+133.12,Implement digital signage,2025-03-01,2025-04-30,132.91,100,complete,Daniel Kim,Digital Workplace Transformation
+134.79,Upgrade office Wi-Fi,2025-05-01,2025-06-30,133.12,100,complete,Jessica Moore,Digital Workplace Transformation
+135.12,Launch internal portal,2025-07-01,2025-08-31,134.79,100,complete,Amanda White,Digital Workplace Transformation
+136.23,Assess compliance requirements,2025-11-01,2025-12-31,,45,in-progress,Brian O'Connor,Regulatory Compliance Platform
+137.19,Design compliance framework,2026-01-01,2026-03-31,136.23,35,in-progress,Lauren Davis,Regulatory Compliance Platform
+138.94,Implement audit trails,2026-03-15,2026-06-15,137.19,25,in-progress,Brian O'Connor,Regulatory Compliance Platform
+139.1,Build reporting tools,2026-06-01,2026-09-30,138.94,15,in-progress,Lauren Davis,Regulatory Compliance Platform
+140.43,Conduct compliance testing,2026-09-15,2026-12-15,139.1,0,not started,Thomas Wilson,Regulatory Compliance Platform
+141.67,Assess server infrastructure,2024-06-01,2024-07-31,,100,complete,Thomas Wilson,Data Center Consolidation
+142.52,Design consolidated architecture,2024-08-01,2024-10-31,141.67,100,complete,Nicole Patel,Data Center Consolidation
+143.82,Migrate workloads - Phase 1,2024-11-01,2025-01-31,142.52,100,complete,Thomas Wilson,Data Center Consolidation
+144.71,Migrate workloads - Phase 2,2025-02-01,2025-04-30,143.82,100,complete,Nicole Patel,Data Center Consolidation
+145.73,Decommission old data center,2025-05-01,2025-06-30,144.71,100,complete,Thomas Wilson,Data Center Consolidation
+146.52,Optimize resource utilization,2025-07-01,2025-08-31,145.73,100,complete,Nicole Patel,Data Center Consolidation
+147.70,Define automation scope,2026-01-01,2026-02-28,,40,in-progress,Sarah Johnson,Robotic Process Automation
+148.81,Identify automation candidates,2026-03-01,2026-04-30,147.70,30,in-progress,Michael Chen,Robotic Process Automation
+149.1,Build RPA framework,2026-05-01,2026-07-31,148.81,20,in-progress,Emily Rodriguez,Robotic Process Automation
+150.50,Develop first bots,2026-07-15,2026-10-15,149.1,10,in-progress,Sarah Johnson,Robotic Process Automation
+151.89,Test bot performance,2026-10-01,2026-12-31,150.50,0,not started,Michael Chen,Robotic Process Automation
+152.31,Research customer journey,2025-12-01,2026-01-31,,35,in-progress,Lisa Wong,Customer Experience Platform
+153.97,Map touchpoints,2026-02-01,2026-03-31,152.31,25,in-progress,James Patterson,Customer Experience Platform
+154.72,Select CX platform,2026-04-01,2026-06-30,153.97,15,in-progress,Lisa Wong,Customer Experience Platform
+155.98,Implement feedback system,2026-06-15,2026-09-15,154.72,10,in-progress,James Patterson,Customer Experience Platform
+156.70,Build analytics dashboard,2026-09-01,2026-11-30,155.98,0,not started,David Kumar,Customer Experience Platform
+157.33,Launch customer portal,2026-11-15,2026-12-31,156.70,0,not started,Lisa Wong,Customer Experience Platform
+158.64,Define sustainability goals,2024-07-01,2024-08-31,,100,complete,Rachel Thompson,Sustainability Tracking System
+159.60,Select carbon tracking tool,2024-09-01,2024-10-31,158.64,100,complete,Alex Martinez,Sustainability Tracking System
+160.91,Integrate with systems,2024-11-01,2025-01-31,159.60,100,complete,Rachel Thompson,Sustainability Tracking System
+161.30,Build reporting dashboard,2025-02-01,2025-04-30,160.91,100,complete,Alex Martinez,Sustainability Tracking System
+162.10,Conduct baseline assessment,2025-05-01,2025-06-30,161.30,100,complete,Chris Anderson,Sustainability Tracking System
+163.44,Publish sustainability report,2025-07-01,2025-07-31,162.10,100,complete,Rachel Thompson,Sustainability Tracking System
+164.99,Assess supply chain visibility,2026-02-01,2026-03-31,,30,in-progress,Chris Anderson,Supply Chain Digital Twin
+165.97,Design digital twin model,2026-04-01,2026-06-30,164.99,20,in-progress,Maria Garcia,Supply Chain Digital Twin
+166.81,Integrate IoT sensors,2026-06-15,2026-09-15,165.97,10,in-progress,Chris Anderson,Supply Chain Digital Twin
+167.63,Build simulation engine,2026-09-01,2026-12-31,166.81,5,in-progress,Maria Garcia,Supply Chain Digital Twin
+168.58,Validate twin accuracy,2027-01-01,2027-03-31,167.63,0,not started,Robert Taylor,Supply Chain Digital Twin
+169.41,Deploy optimization algorithms,2027-03-15,2027-06-30,168.58,0,not started,Chris Anderson,Supply Chain Digital Twin
+170.88,Evaluate chatbot platforms,2026-03-01,2026-04-30,,25,in-progress,Robert Taylor,Conversational AI Platform
+171.8,Design conversation flows,2026-05-01,2026-07-31,170.88,15,in-progress,Jennifer Lee,Conversational AI Platform
+172.99,Train NLP models,2026-07-15,2026-10-15,171.8,10,in-progress,Robert Taylor,Conversational AI Platform
+173.6,Integrate with channels,2026-10-01,2026-12-31,172.99,5,in-progress,Jennifer Lee,Conversational AI Platform
+174.53,Test chatbot accuracy,2027-01-01,2027-03-31,173.6,0,not started,Kevin Brown,Conversational AI Platform
+175.13,Launch customer support bot,2027-03-15,2027-04-30,174.53,0,not started,Robert Taylor,Conversational AI Platform
+176.87,Define KPIs and metrics,2024-10-01,2024-11-30,,100,complete,Kevin Brown,Performance Management System
+177.28,Select performance tool,2024-12-01,2025-01-31,176.87,100,complete,Amanda White,Performance Management System
+178.18,Configure goal tracking,2025-02-01,2025-03-31,177.28,100,complete,Kevin Brown,Performance Management System
+179.79,Build feedback module,2025-04-01,2025-05-31,178.18,100,complete,Amanda White,Performance Management System
+180.27,Integrate with HR systems,2025-06-01,2025-07-31,179.79,100,complete,Daniel Kim,Performance Management System
+181.91,Train managers,2025-08-01,2025-09-30,180.27,100,complete,Kevin Brown,Performance Management System
+182.90,Launch performance cycles,2025-10-01,2025-10-31,181.91,100,complete,Amanda White,Performance Management System
+183.84,Assess training needs,2026-04-01,2026-05-31,,20,in-progress,Jessica Moore,Learning Management System
+184.82,Select LMS platform,2026-06-01,2026-07-31,183.84,15,in-progress,Brian O'Connor,Learning Management System
+185.31,Develop course content,2026-08-01,2026-11-30,184.82,10,in-progress,Jessica Moore,Learning Management System
+186.32,Configure certification paths,2026-11-15,2027-02-28,185.31,5,in-progress,Brian O'Connor,Learning Management System
+187.77,Integrate with HR,2027-02-15,2027-05-15,186.32,0,not started,Lauren Davis,Learning Management System
+188.74,Launch learning portal,2027-05-01,2027-06-30,187.77,0,not started,Jessica Moore,Learning Management System
+189.87,Survey office space needs,2024-11-01,2024-12-31,,100,complete,Lauren Davis,Smart Office Implementation
+190.91,Design IoT architecture,2025-01-01,2025-02-28,189.87,100,complete,Thomas Wilson,Smart Office Implementation
+191.57,Install smart sensors,2025-03-01,2025-04-30,190.91,100,complete,Lauren Davis,Smart Office Implementation
+192.2,Deploy building automation,2025-05-01,2025-06-30,191.57,100,complete,Thomas Wilson,Smart Office Implementation
+193.76,Configure occupancy tracking,2025-07-01,2025-08-31,192.2,100,complete,Nicole Patel,Smart Office Implementation
+194.99,Launch desk booking system,2025-09-01,2025-09-30,193.76,100,complete,Lauren Davis,Smart Office Implementation
+195.38,Identify edge use cases,2026-05-01,2026-06-30,,15,in-progress,Nicole Patel,Edge Computing Platform
+196.45,Design edge architecture,2026-07-01,2026-09-30,195.38,10,in-progress,Sarah Johnson,Edge Computing Platform
+197.43,Deploy edge nodes,2026-09-15,2026-12-31,196.45,5,in-progress,Nicole Patel,Edge Computing Platform
+198.62,Implement data sync,2027-01-01,2027-04-30,197.43,0,not started,Sarah Johnson,Edge Computing Platform
+199.8,Test edge performance,2027-04-15,2027-07-31,198.62,0,not started,Michael Chen,Edge Computing Platform
+200.44,Scale edge deployment,2027-07-15,2027-10-31,199.8,0,not started,Nicole Patel,Edge Computing Platform
+201.28,Define blockchain requirements,2026-06-01,2026-07-31,,10,in-progress,Michael Chen,Blockchain Integration
+202.95,Evaluate blockchain platforms,2026-08-01,2026-10-31,201.28,5,in-progress,Emily Rodriguez,Blockchain Integration
+203.92,Design smart contracts,2026-11-01,2027-02-28,202.95,0,not started,Michael Chen,Blockchain Integration
+204.2,Build integration layer,2027-03-01,2027-06-30,203.92,0,not started,Emily Rodriguez,Blockchain Integration
+205.65,Test transaction processing,2027-06-15,2027-09-30,204.2,0,not started,Lisa Wong,Blockchain Integration
+206.29,Deploy to production,2027-09-15,2027-11-30,205.65,0,not started,Michael Chen,Blockchain Integration
+207.54,Assess predictive needs,2026-07-01,2026-08-31,,10,in-progress,Emily Rodriguez,Predictive Maintenance System
+208.42,Select ML platform,2026-09-01,2026-11-30,207.54,5,in-progress,Lisa Wong,Predictive Maintenance System
+209.44,Collect sensor data,2026-11-15,2027-02-28,208.42,0,not started,Emily Rodriguez,Predictive Maintenance System
+210.10,Train prediction models,2027-03-01,2027-06-30,209.44,0,not started,Lisa Wong,Predictive Maintenance System
+211.11,Build alert system,2027-06-15,2027-09-30,210.10,0,not started,James Patterson,Predictive Maintenance System
+212.16,Integrate with CMMS,2027-09-15,2027-12-31,211.11,0,not started,Emily Rodriguez,Predictive Maintenance System
+213.96,Inventory legacy applications,2025-02-01,2025-03-31,,100,complete,James Patterson,Application Portfolio Rationalization
+214.55,Assess business value,2025-04-01,2025-05-31,213.96,100,complete,David Kumar,Application Portfolio Rationalization
+215.1,Categorize applications,2025-06-01,2025-07-31,214.55,100,complete,James Patterson,Application Portfolio Rationalization
+216.32,Create modernization roadmap,2025-08-01,2025-09-30,215.1,100,complete,David Kumar,Application Portfolio Rationalization
+217.27,Retire redundant apps,2025-10-01,2025-11-30,216.32,100,complete,Rachel Thompson,Application Portfolio Rationalization
+218.22,Consolidate similar apps,2025-12-01,2026-01-31,217.27,100,complete,James Patterson,Application Portfolio Rationalization
+219.23,Define AR/VR use cases,2026-08-01,2026-09-30,,5,in-progress,Rachel Thompson,AR/VR Experience Center
+220.57,Design immersive experiences,2026-10-01,2026-12-31,219.23,0,not started,Alex Martinez,AR/VR Experience Center
+221.85,Procure VR equipment,2027-01-01,2027-03-31,220.57,0,not started,Rachel Thompson,AR/VR Experience Center
+222.21,Develop VR applications,2027-03-15,2027-07-31,221.85,0,not started,Alex Martinez,AR/VR Experience Center
+223.99,Build AR mobile app,2027-07-15,2027-11-15,222.21,0,not started,Chris Anderson,AR/VR Experience Center
+224.3,Launch experience center,2027-11-01,2027-12-31,223.99,0,not started,Rachel Thompson,AR/VR Experience Center
+225.72,Define voice strategy,2026-09-01,2026-10-31,,5,in-progress,Alex Martinez,Voice Technology Integration
+226.63,Select voice platform,2026-11-01,2027-01-31,225.72,0,not started,Chris Anderson,Voice Technology Integration
+227.97,Design voice commands,2027-02-01,2027-04-30,226.63,0,not started,Alex Martinez,Voice Technology Integration
+228.87,Integrate with apps,2027-05-01,2027-08-31,227.97,0,not started,Chris Anderson,Voice Technology Integration
+229.2,Test voice accuracy,2027-08-15,2027-10-31,228.87,0,not started,Maria Garcia,Voice Technology Integration
+230.35,Launch voice features,2027-10-15,2027-11-30,229.2,0,not started,Alex Martinez,Voice Technology Integration
+231.88,Research quantum algorithms,2026-10-01,2026-12-31,,0,not started,Chris Anderson,Quantum Computing Research
+232.6,Partner with quantum vendor,2027-01-01,2027-03-31,231.88,0,not started,Maria Garcia,Quantum Computing Research
+233.95,Identify quantum use cases,2027-04-01,2027-06-30,232.6,0,not started,Chris Anderson,Quantum Computing Research
+234.75,Develop quantum prototypes,2027-07-01,2027-11-30,233.95,0,not started,Maria Garcia,Quantum Computing Research
+235.55,Test quantum performance,2027-11-15,2028-02-28,234.75,0,not started,Robert Taylor,Quantum Computing Research
+236.32,Define IoT strategy,2026-11-01,2026-12-31,,0,not started,Maria Garcia,IoT Platform Implementation
+237.28,Select IoT platform,2027-01-01,2027-03-31,236.32,0,not started,Robert Taylor,IoT Platform Implementation
+238.19,Deploy IoT gateways,2027-04-01,2027-07-31,237.28,0,not started,Maria Garcia,IoT Platform Implementation
+239.78,Connect devices,2027-07-15,2027-11-15,238.19,0,not started,Robert Taylor,IoT Platform Implementation
+240.16,Build analytics pipeline,2027-11-01,2028-02-29,239.78,0,not started,Jennifer Lee,IoT Platform Implementation
+241.83,Launch IoT dashboard,2028-02-15,2028-04-30,240.16,0,not started,Maria Garcia,IoT Platform Implementation
+242.35,Assess knowledge management needs,2025-03-01,2025-04-30,,100,complete,Robert Taylor,Knowledge Management System
+243.50,Select KM platform,2025-05-01,2025-06-30,242.35,100,complete,Jennifer Lee,Knowledge Management System
+244.73,Design taxonomy structure,2025-07-01,2025-08-31,243.50,100,complete,Robert Taylor,Knowledge Management System
+245.81,Migrate existing content,2025-09-01,2025-11-30,244.73,100,complete,Jennifer Lee,Knowledge Management System
+246.33,Implement search functionality,2025-12-01,2026-01-31,245.81,100,complete,Kevin Brown,Knowledge Management System
+247.21,Deploy knowledge portal,2026-02-01,2026-02-28,246.33,100,complete,Robert Taylor,Knowledge Management System
+248.99,Define innovation framework,2026-12-01,2027-01-31,,0,not started,Jennifer Lee,Innovation Lab Platform
+249.52,Set up collaboration tools,2027-02-01,2027-04-30,248.99,0,not started,Kevin Brown,Innovation Lab Platform
+250.49,Build idea management system,2027-05-01,2027-08-31,249.52,0,not started,Jennifer Lee,Innovation Lab Platform
+251.56,Create evaluation process,2027-08-15,2027-11-15,250.49,0,not started,Kevin Brown,Innovation Lab Platform
+252.51,Launch pilot projects,2027-11-01,2028-02-29,251.56,0,not started,Amanda White,Innovation Lab Platform
+253.8,Assess microservices readiness,2026-01-01,2026-02-28,,60,in-progress,Kevin Brown,Microservices Architecture
+254.55,Design service boundaries,2026-03-01,2026-05-31,253.8,50,in-progress,Amanda White,Microservices Architecture
+255.28,Implement API contracts,2026-05-15,2026-08-15,254.55,35,in-progress,Kevin Brown,Microservices Architecture
+256.36,Deploy service mesh,2026-08-01,2026-11-30,255.28,25,in-progress,Amanda White,Microservices Architecture
+257.42,Migrate monolith - Phase 1,2026-11-15,2027-03-15,256.36,15,in-progress,Daniel Kim,Microservices Architecture
+258.83,Migrate monolith - Phase 2,2027-03-01,2027-07-31,257.42,0,not started,Kevin Brown,Microservices Architecture
+259.16,Optimize service performance,2027-07-15,2027-10-31,258.83,0,not started,Amanda White,Microservices Architecture
+260.41,Survey workforce needs,2025-04-01,2025-05-31,,100,complete,Amanda White,Remote Work Infrastructure
+261.59,Upgrade VPN capacity,2025-06-01,2025-07-31,260.41,100,complete,Daniel Kim,Remote Work Infrastructure
+262.40,Deploy virtual desktops,2025-08-01,2025-10-31,261.59,100,complete,Amanda White,Remote Work Infrastructure
+263.32,Implement collaboration tools,2025-11-01,2026-01-31,262.40,100,complete,Daniel Kim,Remote Work Infrastructure
+264.16,Configure secure access,2026-02-01,2026-04-30,263.32,100,complete,Jessica Moore,Remote Work Infrastructure
+265.27,Launch remote work portal,2026-05-01,2026-05-31,264.16,100,complete,Amanda White,Remote Work Infrastructure
+266.27,Assess data privacy requirements,2027-01-01,2027-02-28,,0,not started,Jessica Moore,Privacy Management Platform
+267.28,Design consent management,2027-03-01,2027-05-31,266.27,0,not started,Brian O'Connor,Privacy Management Platform
+268.70,Implement data mapping,2027-06-01,2027-09-30,267.28,0,not started,Jessica Moore,Privacy Management Platform
+269.28,Build privacy dashboards,2027-09-15,2027-12-31,268.70,0,not started,Brian O'Connor,Privacy Management Platform
+270.43,Automate privacy requests,2028-01-01,2028-04-30,269.28,0,not started,Lauren Davis,Privacy Management Platform
+271.32,Conduct privacy audits,2028-04-15,2028-06-30,270.43,0,not started,Jessica Moore,Privacy Management Platform
+272.47,Define video analytics scope,2027-02-01,2027-03-31,,0,not started,Brian O'Connor,Video Analytics Platform
+273.48,Select analytics platform,2027-04-01,2027-06-30,272.47,0,not started,Lauren Davis,Video Analytics Platform
+274.39,Integrate camera feeds,2027-07-01,2027-10-31,273.48,0,not started,Brian O'Connor,Video Analytics Platform
+275.93,Train object detection models,2027-10-15,2028-02-15,274.39,0,not started,Lauren Davis,Video Analytics Platform
+276.40,Deploy real-time alerts,2028-02-01,2028-05-31,275.93,0,not started,Thomas Wilson,Video Analytics Platform
+277.14,Build analytics dashboard,2028-05-15,2028-08-31,276.40,0,not started,Brian O'Connor,Video Analytics Platform
+278.4,Define social media strategy,2027-03-01,2027-04-30,,0,not started,Lauren Davis,Social Media Command Center
+279.64,Select monitoring tools,2027-05-01,2027-07-31,278.4,0,not started,Thomas Wilson,Social Media Command Center
+280.74,Configure sentiment analysis,2027-07-15,2027-10-15,279.64,0,not started,Lauren Davis,Social Media Command Center
+281.29,Build response workflows,2027-10-01,2028-01-31,280.74,0,not started,Thomas Wilson,Social Media Command Center
+282.45,Train community managers,2028-01-15,2028-03-31,281.29,0,not started,Nicole Patel,Social Media Command Center
+283.35,Launch command center,2028-03-15,2028-04-30,282.45,0,not started,Lauren Davis,Social Media Command Center
+284.7,Assess warehouse automation needs,2027-04-01,2027-05-31,,0,not started,Thomas Wilson,Warehouse Management System
+285.90,Select WMS platform,2027-06-01,2027-08-31,284.7,0,not started,Nicole Patel,Warehouse Management System
+286.18,Design warehouse layout,2027-08-15,2027-11-15,285.90,0,not started,Thomas Wilson,Warehouse Management System
+287.43,Deploy automated storage,2027-11-01,2028-03-31,286.18,0,not started,Nicole Patel,Warehouse Management System
+288.27,Implement barcode scanning,2028-03-15,2028-06-30,287.43,0,not started,Sarah Johnson,Warehouse Management System
+289.5,Integrate with ERP,2028-06-15,2028-09-30,288.27,0,not started,Thomas Wilson,Warehouse Management System
+290.72,Optimize picking routes,2028-09-15,2028-11-30,289.5,0,not started,Nicole Patel,Warehouse Management System
+291.34,Define partner requirements,2027-05-01,2027-06-30,,0,not started,Nicole Patel,Partner Portal Development
+292.53,Design portal architecture,2027-07-01,2027-09-30,291.34,0,not started,Sarah Johnson,Partner Portal Development
+293.61,Build authentication system,2027-09-15,2027-12-15,292.53,0,not started,Nicole Patel,Partner Portal Development
+294.39,Develop resource library,2027-12-01,2028-03-31,293.61,0,not started,Sarah Johnson,Partner Portal Development
+295.63,Implement deal registration,2028-03-15,2028-07-15,294.39,0,not started,Michael Chen,Partner Portal Development
+296.46,Launch partner portal,2028-07-01,2028-08-31,295.63,0,not started,Nicole Patel,Partner Portal Development
+297.16,Survey customer preferences,2027-06-01,2027-07-31,,0,not started,Sarah Johnson,Personalization Engine
+298.18,Select recommendation platform,2027-08-01,2027-10-31,297.16,0,not started,Michael Chen,Personalization Engine
+299.66,Build customer profiles,2027-10-15,2028-02-15,298.18,0,not started,Sarah Johnson,Personalization Engine
+300.20,Train recommendation models,2028-02-01,2028-06-30,299.66,0,not started,Michael Chen,Personalization Engine
+301.1,Integrate with web platform,2028-06-15,2028-10-15,300.20,0,not started,Emily Rodriguez,Personalization Engine
+302.63,A/B test recommendations,2028-10-01,2028-12-31,301.1,0,not started,Sarah Johnson,Personalization Engine
+303.74,Define financial systems landscape,2027-07-01,2027-08-31,,0,not started,Michael Chen,Financial Systems Integration
+304.85,Map integration points,2027-09-01,2027-11-30,303.74,0,not started,Emily Rodriguez,Financial Systems Integration
+305.37,Build API connectors,2027-11-15,2028-03-15,304.85,0,not started,Michael Chen,Financial Systems Integration
+306.16,Implement reconciliation,2028-03-01,2028-07-31,305.37,0,not started,Emily Rodriguez,Financial Systems Integration
+307.68,Test end-to-end flows,2028-07-15,2028-10-15,306.16,0,not started,Lisa Wong,Financial Systems Integration
+308.35,Deploy to production,2028-10-01,2028-11-30,307.68,0,not started,Michael Chen,Financial Systems Integration

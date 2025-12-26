@@ -7,8 +7,10 @@ Handles all edge cases and coordinates date parsing, color mapping, and dependen
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime, date
 import pandas as pd
 import logging
+import re
 
 from ganttchart.date_parser import parse_date_to_iso, validate_date_range
 from ganttchart.color_mapper import create_color_mapping, get_task_color_class
@@ -251,11 +253,17 @@ class TaskTransformer:
             return None
 
         # Extract task ID (generate if null)
+        # Store both CSS-safe ID (for internal use) and display ID (for tooltips)
         raw_id = row[self.config.id_column]
         if pd.isna(raw_id) or str(raw_id).strip() == '':
             task_id = f"task_{row_idx}"
+            display_id = task_id  # Generated IDs are already display-friendly
         else:
             task_id = self._normalize_id(raw_id)
+            # Keep original value for display (handles floats, strings, etc.)
+            display_id = str(raw_id).strip() if not isinstance(raw_id, float) else (
+                str(int(raw_id)) if raw_id.is_integer() else str(raw_id)
+            )
 
         # Extract task name (use ID if column not configured or value missing)
         task_name = None
@@ -263,17 +271,24 @@ class TaskTransformer:
             val = row[self.config.name_column]
             if not pd.isna(val) and str(val).strip() != '':
                 task_name = str(val).strip()
-        
+
         if not task_name:
-            task_name = task_id
+            task_name = display_id  # Use display ID for name, not CSS-safe ID
 
         # Build task object
         task = {
             'id': task_id,
+            '_display_id': display_id,  # Original ID for tooltip display
             'name': task_name,
             'start': start_date,
             'end': end_date
         }
+
+        # Add expected progress (where task should be based on today's date)
+        # Prefix with _ to hide from frappe-gantt (it uses task properties for CSS classes)
+        expected_progress = self._calculate_expected_progress(start_date, end_date)
+        if expected_progress is not None:
+            task['_expected_progress'] = expected_progress
 
         # Add progress if column specified
         if self.config.progress_column:
@@ -282,10 +297,17 @@ class TaskTransformer:
                 task['progress'] = progress
 
         # Add dependencies if column specified
+        # Store both CSS-safe IDs (for internal use) and display values (for tooltips)
         if self.config.dependencies_column:
             raw_value = row[self.config.dependencies_column]
             deps = self._extract_dependencies(raw_value)
             task['dependencies'] = [d.strip() for d in deps.split(',') if d.strip()] if deps else []
+
+            # Store original dependency string for display
+            if not pd.isna(raw_value) and str(raw_value).strip():
+                task['_display_dependencies'] = str(raw_value).strip()
+            else:
+                task['_display_dependencies'] = ''
 
         # Add color class based on color column OR progress-based default
         if self.config.color_column and color_mapping:
@@ -401,18 +423,24 @@ class TaskTransformer:
 
     def _normalize_id(self, value: Any) -> str:
         """
-        Normalize an ID value to a consistent string format.
+        Normalize an ID value to a consistent, CSS-safe string format.
         Used for both task IDs and dependency IDs to ensure they match.
 
         Handles all data types: int, float, str, Decimal, etc.
         Converts whole-number floats (61.0) to int representation ("61")
         to match how Pandas reads columns differently based on NaN presence.
 
+        Also handles string representations of floats (e.g., "1.0" -> "1")
+        which can occur when dependency strings contain float-formatted IDs.
+
+        IMPORTANT: All IDs are made CSS-safe because frappe-gantt uses them
+        in selectors like `.highlight-{id}`. Non-safe characters are hex-encoded.
+
         Args:
             value: ID value from DataFrame
 
         Returns:
-            Normalized string representation
+            Normalized, CSS-safe string representation
         """
         if pd.isna(value):
             return ''
@@ -427,11 +455,57 @@ class TaskTransformer:
             if value.is_integer():
                 return str(int(value))
             else:
-                # Preserve actual decimal values (e.g., 3.14)
-                return str(value).strip()
+                # Non-integer float (e.g., 54.8) - make CSS-safe
+                return self._make_css_safe(str(value).strip())
 
-        # For all other types (int, str, Decimal, etc.), convert directly
-        return str(value).strip()
+        # For strings, also check if they look like whole-number floats
+        # This handles "1.0" -> "1" for dependency strings like "1.0, 2.0"
+        if isinstance(value, str):
+            stripped = value.strip()
+            try:
+                float_val = float(stripped)
+                if float_val.is_integer():
+                    return str(int(float_val))
+                else:
+                    # Non-integer float string - make CSS-safe
+                    return self._make_css_safe(stripped)
+            except (ValueError, TypeError):
+                pass
+            # General string - make CSS-safe
+            return self._make_css_safe(stripped)
+
+        # For all other types (int, Decimal, etc.), convert directly
+        return self._make_css_safe(str(value).strip())
+
+    def _make_css_safe(self, value: str) -> str:
+        """
+        Make a string safe for use in CSS class names and selectors.
+
+        Frappe-gantt uses task IDs in CSS selectors like `.highlight-{id}`.
+        Invalid characters cause querySelector to throw DOMException.
+
+        Uses hex-encoding for non-safe characters to ensure:
+        - Deterministic: same input always produces same output
+        - Collision-free: different inputs produce different outputs
+        - Reversible: can decode back to original if needed
+
+        Examples:
+            "54.8" -> "54_x2e_8"   (period encoded as hex 2e)
+            "task 1" -> "task_x20_1" (space encoded as hex 20)
+            "item#5" -> "item_x23_5" (hash encoded as hex 23)
+
+        Args:
+            value: String to sanitize
+
+        Returns:
+            CSS-safe string with non-alphanumeric chars hex-encoded
+        """
+        def encode_char(match: re.Match) -> str:
+            return f'_x{ord(match.group(0)):02x}_'
+
+        # Keep alphanumerics, underscores, and hyphens (CSS-safe)
+        # Encode everything else as _xHH_ where HH is the hex code
+        return re.sub(r'[^a-zA-Z0-9_-]', encode_char, value)
 
     def _extract_dependencies(self, value: Any) -> str:
         """
@@ -448,23 +522,71 @@ class TaskTransformer:
         if pd.isna(value):
             return ''
 
-        # Normalize the value using the same logic as task IDs
-        value_str = self._normalize_id(value)
+        # Convert to string first (handles numeric single values)
+        value_str = str(value).strip()
 
-        # Check if empty after normalization
+        # Check if empty
         if not value_str:
             return ''
 
-        # Split by comma, strip whitespace
-        # This handles both "50" and "50,51,52" formats
+        # Split by comma, normalize each part
+        # This handles both "50" and "50,51,52" and "1.0, 2.0" formats
         if ',' in value_str:
-            # Multiple dependencies - each is already normalized by _normalize_id
-            deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
+            # Multiple dependencies - normalize each individual one
+            deps_list = []
+            for d in value_str.split(','):
+                d = d.strip()
+                if d:
+                    # Normalize each dependency ID (handles '1.0' -> '1')
+                    deps_list.append(self._normalize_id(d))
             return ','.join(deps_list) if deps_list else ''
         else:
-            # Single dependency
-            return value_str
+            # Single dependency - normalize it
+            return self._normalize_id(value_str)
 
     def _increment_skip_reason(self, reason: str) -> None:
         """Increment skip reason counter."""
         self.stats['skip_reasons'][reason] = self.stats['skip_reasons'].get(reason, 0) + 1
+
+    def _calculate_expected_progress(self, start_date: str, end_date: str) -> Optional[float]:
+        """
+        Calculate expected progress based on current date.
+
+        Expected progress shows where a task's progress *should* be if work
+        proceeded linearly from start to end date.
+
+        Args:
+            start_date: Task start date in YYYY-MM-DD format
+            end_date: Task end date in YYYY-MM-DD format
+
+        Returns:
+            Expected progress percentage (0-100), or None if:
+            - Task hasn't started yet (today < start_date)
+            - Task is past its end date (today > end_date)
+            - Dates are invalid
+        """
+        try:
+            today = date.today()
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+            # Task not started yet - no expected progress marker
+            if today < start:
+                return None
+
+            # Task already past end date - no expected progress marker
+            if today > end:
+                return None
+
+            # Calculate expected progress
+            total_duration = (end - start).days
+            if total_duration <= 0:
+                # Same day task - if today is that day, 100% expected
+                return 100.0
+
+            elapsed = (today - start).days
+            expected = (elapsed / total_duration) * 100
+            return min(100.0, max(0.0, expected))
+
+        except (ValueError, TypeError):
+            return None

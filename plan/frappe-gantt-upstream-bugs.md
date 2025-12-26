@@ -228,6 +228,64 @@ Either:
 
 ---
 
+## Bug #6: Month View Bar Positioning Off By One Month
+
+**Discovered:** v0.7.0 QA (2025-12-26)
+**Severity:** HIGH (incorrect visualization)
+**Upstream Issue:** Not yet reported
+
+### Symptom
+In Month view, task bars are positioned approximately one month late. A task from Oct 1 - Dec 31 appears to span Nov - Jan instead.
+
+Additionally:
+- Hover highlight on header shows wrong months (Nov/Dec/Jan instead of Oct/Nov/Dec)
+- Any calculations based on bar position (like expected progress markers) are wrong
+
+### Evidence
+Same task "Validate model performance" (Oct 1 - Dec 31):
+- **Week view (CORRECT):** barX: 4245.56, barWidth: 591.43
+- **Month view (WRONG):** barX: 2330.1, barWidth: 138 (offset ~1 month late)
+
+### Root Cause
+In `diff()` function (minified as `d.diff`), the fractional month calculation uses total days modulo 30 instead of day-of-month:
+
+```javascript
+// BUGGY: o = total days difference, o%30 is meaningless
+return _+=o%30/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
+
+// Variables: n = end date, t = start date, o = total days, g = year diff, _ = month diff
+```
+
+When calculating month difference for Oct 1 → Dec 31:
+- `o` (total days) = 91
+- `o % 30` = 1 (meaningless - depends on total span, not position)
+- Fractional: 1/30 ≈ 0.033
+
+The bug: `o % 30` gives a random fractional based on total days modulo 30, NOT the day-of-month position within the month.
+
+### Our Patch
+Changed fractional calculation to use actual day-of-month:
+```javascript
+// BEFORE (buggy):
+return _+=o%30/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
+
+// AFTER (fixed):
+return _+=(n.getDate()-1)/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
+```
+
+Now for Oct 1:
+- `n.getDate()` = 1
+- Fractional: (1-1)/30 = 0 (start of month)
+
+For Oct 15:
+- `n.getDate()` = 15
+- Fractional: (15-1)/30 ≈ 0.467 (middle of month)
+
+### Upstream Fix Suggestion
+Replace `o%30/30` with `(n.getDate()-1)/30` in the `diff()` function to get proper day-of-month positioning within the fractional month calculation.
+
+---
+
 ## Reporting Upstream
 
 ### Before Reporting
@@ -273,6 +331,7 @@ When updating Frappe Gantt, these patches must be reapplied:
 | `frappe-gantt.umd.js` | view_mode_select listener | Remove `!0` argument |
 | `frappe-gantt.umd.js` | get_closest_date | Return `[e, i]` instead of format+reparse |
 | `frappe-gantt.umd.js` | set_scroll_position | Change `behavior:"smooth"` to `"instant"` |
+| `frappe-gantt.umd.js` | diff() function | Change `o%30/30` to `(n.getDate()-1)/30` for month fractional |
 | `frappe-gantt.es.js` | ~line 1077 | Remove `!0` from change_view_mode call |
 | `frappe-gantt.es.js` | ~line 1321-1324 | set_dimensions always sets pixel width |
 | `frappe-gantt.es.js` | ~line 1401-1404 | Return `[e, i]` instead of format+reparse |
