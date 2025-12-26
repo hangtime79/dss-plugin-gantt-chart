@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2025-12-27
+
+### Fixed
+- Sticky header jank when chart content narrower than viewport (#21)
+  - Content now automatically zooms to fill viewport width
+  - Per-view independent zoom tracking preserves settings across view switches
+
+### Added
+- Zoom limit feedback banner when minimum zoom reached
+- Config panel spinner during configuration changes
+
 ## [0.7.0] - 2025-12-26
 
 ### Added

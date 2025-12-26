@@ -562,6 +562,59 @@ body {
     }
 }
 
+/* ===== ZOOM LIMIT BANNER ===== */
+.zoom-limit-banner {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+    padding: 10px 14px;
+    margin: 8px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--font-size-sm);
+    animation: fadeIn 0.2s ease-in-out;
+    z-index: 100;
+}
+
+.zoom-limit-banner i {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.zoom-limit-banner span {
+    flex: 1;
+}
+
+.zoom-limit-banner .dismiss-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #856404;
+    padding: 0 4px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.zoom-limit-banner .dismiss-btn:hover {
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
 .gantt .grid-header {
     background-color: var(--color-surface);
