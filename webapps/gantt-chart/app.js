@@ -63,14 +63,39 @@
     let currentTasks = [];           // Store tasks for expected progress markers
 
     // Zoom State
-    let currentColumnWidth = 45;
     const ZOOM_STEP = 5;
-    const MIN_ZOOM = 15;
+    const ABSOLUTE_FLOOR = 25;      // Never render columns below this width
+    const COLUMN_WIDTH_BASELINE = 75; // 100% zoom reference point
 
     // ===== VIEW MODE PERSISTENCE =====
 
     // Valid view modes for validation (frappe-gantt modes)
     const VALID_VIEW_MODES = ['Hour', 'Quarter Day', 'Half Day', 'Day', 'Week', 'Month', 'Year'];
+
+    // Per-view zoom state: user's preferred column width for each view mode
+    let columnWidthByViewMode = {
+        'Hour': COLUMN_WIDTH_BASELINE,
+        'Quarter Day': COLUMN_WIDTH_BASELINE,
+        'Half Day': COLUMN_WIDTH_BASELINE,
+        'Day': COLUMN_WIDTH_BASELINE,
+        'Week': COLUMN_WIDTH_BASELINE,
+        'Month': COLUMN_WIDTH_BASELINE,
+        'Year': COLUMN_WIDTH_BASELINE
+    };
+
+    // Per-view floor: minimum column width to fill viewport (calculated after render)
+    let minColumnWidthByViewMode = {
+        'Hour': ABSOLUTE_FLOOR,
+        'Quarter Day': ABSOLUTE_FLOOR,
+        'Half Day': ABSOLUTE_FLOOR,
+        'Day': ABSOLUTE_FLOOR,
+        'Week': ABSOLUTE_FLOOR,
+        'Month': ABSOLUTE_FLOOR,
+        'Year': ABSOLUTE_FLOOR
+    };
+
+    // Track current view mode for zoom operations
+    let currentViewMode = 'Week';
 
     /**
      * Simple hash function for localStorage key generation.
@@ -553,28 +578,54 @@
      * Build Gantt configuration from webapp config.
      *
      * Smartly handles Zoom persistence:
-     * - If user changes 'columnWidth' in the panel, we reset to that value.
-     * - If user changes OTHER settings, we preserve our local 'currentColumnWidth'.
+     * - If user changes 'columnWidth' in the panel, reset ALL views to that value.
+     * - If user changes OTHER settings, preserve per-view zoom state.
+     * - Shows feedback if configured value is below current view's floor.
      */
     function buildGanttConfig(webAppConfig) {
         // Load persisted view mode (localStorage, per-chart)
         const persistedViewMode = loadPersistedViewMode(webAppConfig.dataset);
         const effectiveViewMode = persistedViewMode || webAppConfig.viewMode || 'Week';
 
+        // Update currentViewMode to match
+        currentViewMode = effectiveViewMode;
+
         // Detect if columnWidth setting changed in the panel
-        const configWidth = parseInt(webAppConfig.columnWidth) || 45;
+        const configWidth = parseInt(webAppConfig.columnWidth) || COLUMN_WIDTH_BASELINE;
 
         if (lastConfiguredColumnWidth === null) {
-            // First load
+            // First load - initialize all views to config value
             lastConfiguredColumnWidth = configWidth;
-            currentColumnWidth = configWidth;
+            for (const mode in columnWidthByViewMode) {
+                columnWidthByViewMode[mode] = configWidth;
+            }
         } else if (configWidth !== lastConfiguredColumnWidth) {
-            // User explicitly changed setting -> Reset local zoom
-            console.log('User changed Column Width setting. Resetting zoom.');
-            lastConfiguredColumnWidth = configWidth;
-            currentColumnWidth = configWidth;
+            // User explicitly changed setting in panel
+            console.log('User changed Column Width setting to', configWidth);
+
+            // Check if new value is below current view's floor
+            const viewFloor = minColumnWidthByViewMode[currentViewMode] || ABSOLUTE_FLOOR;
+
+            if (configWidth < viewFloor) {
+                // Show feedback - value too low for current view
+                showZoomLimitMessage(
+                    currentViewMode + ' view requires minimum ' + viewFloor +
+                    'px column width. Set to ' + (viewFloor + 1) + ' or higher to change.'
+                );
+                // Don't update - keep existing zoom (don't set lastConfiguredColumnWidth)
+            } else {
+                // Valid value - reset all views to new value
+                lastConfiguredColumnWidth = configWidth;
+                for (const mode in columnWidthByViewMode) {
+                    columnWidthByViewMode[mode] = configWidth;
+                }
+                updateZoomIndicator();
+            }
         }
-        // Else: configWidth is same, preserve 'currentColumnWidth' (manual zoom)
+        // Else: configWidth is same, preserve per-view zoom state
+
+        // Get current view's column width
+        const currentWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
 
         const ganttConfig = {
             // View settings
@@ -584,7 +635,7 @@
             // Appearance
             bar_height: parseInt(webAppConfig.barHeight) || 35,
             bar_corner_radius: parseInt(webAppConfig.barCornerRadius) || 3,
-            column_width: currentColumnWidth, // Use our smart local width
+            column_width: currentWidth, // Use this view's width
             padding: parseInt(webAppConfig.padding) || 18,
 
             // Behavior (editing always disabled - no write-back in Dataiku)
@@ -604,7 +655,7 @@
             };
         }
 
-        console.log('Built ganttConfig (Zoom Preserved):', JSON.stringify(ganttConfig, null, 2));
+        console.log('Built ganttConfig:', JSON.stringify(ganttConfig, null, 2));
         return ganttConfig;
     }
 
@@ -676,6 +727,16 @@
                 const viewModeName = typeof mode === 'string' ? mode : mode.name;
                 console.log('View changed:', viewModeName);
 
+                // Track view mode change for per-view zoom
+                const previousViewMode = currentViewMode;
+                if (viewModeName !== currentViewMode) {
+                    // Switching to a different view - load that view's zoom
+                    currentViewMode = viewModeName;
+                    const newZoom = columnWidthByViewMode[viewModeName] || COLUMN_WIDTH_BASELINE;
+                    ganttInstance.options.column_width = newZoom;
+                    console.log('View switch:', previousViewMode, '->', viewModeName, 'zoom:', newZoom);
+                }
+
                 // Update our custom dropdown to match
                 const viewModeSelect = document.getElementById('view-mode-select');
                 if (viewModeSelect && viewModeSelect.value !== viewModeName) {
@@ -694,6 +755,7 @@
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
+                    updateZoomIndicator();  // Update indicator for new view's zoom
                 });
             }
         };
@@ -848,17 +910,17 @@
         console.log('Sticky header initialized');
     }
 
-    // ===== MINIMUM COLUMN WIDTH FOR EDGE-TO-EDGE CONTENT (Issue #21) =====
-
-    // Minimum column width needed to fill viewport (calculated after render)
-    let minColumnWidthForViewport = 0;
+    // ===== EDGE-TO-EDGE CONTENT (Issue #21) =====
 
     // Guard to prevent re-render loop
     let edgeToEdgeInProgress = false;
 
     /**
      * Calculate and enforce minimum column width to fill viewport.
-     * Fixes sticky header jank that occurs when SVG is narrower than container.
+     * Each view mode has its own floor based on column count.
+     *
+     * Formula: viewFloor = MAX(containerWidth / dates.length, ABSOLUTE_FLOOR)
+     * Render at: MAX(currentColumnWidth, viewFloor)
      *
      * Issue #21: When SVG doesn't fill container, browser paint/composite
      * behavior during scroll transform causes visual jank.
@@ -868,46 +930,45 @@
         if (edgeToEdgeInProgress) return;
 
         const container = document.getElementById('gantt-container');
-        const svg = document.getElementById('gantt-svg');
-
-        if (!container || !svg) return;
+        if (!container) return;
 
         const containerWidth = container.offsetWidth;
-        const svgWidth = parseFloat(svg.getAttribute('width')) || 0;
-        const currentColWidth = ganttInstance.options.column_width || 45;
+        const columnCount = ganttInstance.dates ? ganttInstance.dates.length : 0;
 
-        if (svgWidth <= 0 || containerWidth <= 0) return;
+        if (columnCount <= 0 || containerWidth <= 0) return;
 
-        // If SVG already fills viewport, just record current as minimum
-        if (svgWidth >= containerWidth) {
-            minColumnWidthForViewport = currentColWidth;
-            console.log('Edge-to-edge: SVG fills viewport, min =', currentColWidth);
-            return;
-        }
+        // Calculate this view's floor: minimum to fill viewport or absolute floor
+        const viewFloor = Math.max(Math.ceil(containerWidth / columnCount), ABSOLUTE_FLOOR);
 
-        // Calculate minimum column width needed to fill viewport
-        const neededColWidth = Math.ceil(currentColWidth * (containerWidth / svgWidth) * 1.02);
-        minColumnWidthForViewport = neededColWidth;
+        // Store the floor for this view mode (used by adjustZoom)
+        minColumnWidthByViewMode[currentViewMode] = viewFloor;
 
-        console.log('Edge-to-edge: Calculated minimum column width', {
+        // Get current column width for this view
+        const currentColWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
+
+        // Formula: render at MAX(current, viewFloor)
+        const neededWidth = Math.max(currentColWidth, viewFloor);
+
+        console.log('Edge-to-edge:', {
+            viewMode: currentViewMode,
             containerWidth,
-            svgWidth,
+            columnCount,
+            viewFloor,
             currentColWidth,
-            minColumnWidthForViewport,
-            allowRerender
+            neededWidth
         });
 
-        // Apply if current is below minimum
-        if (currentColWidth < minColumnWidthForViewport) {
-            console.log('Edge-to-edge: Applying minimum', minColumnWidthForViewport);
-            currentColumnWidth = minColumnWidthForViewport;
-            ganttInstance.options.column_width = minColumnWidthForViewport;
+        // Apply if current is below what's needed
+        if (currentColWidth < neededWidth) {
+            console.log('Edge-to-edge: Adjusting to', neededWidth);
+            columnWidthByViewMode[currentViewMode] = neededWidth;
+            ganttInstance.options.column_width = neededWidth;
             updateZoomIndicator();
 
             // Re-render with new width (guard prevents recursion)
             edgeToEdgeInProgress = true;
-            ganttInstance.change_view_mode(ganttInstance.options.view_mode);
-            // Clear guard after next frame (after re-render's callbacks complete)
+            ganttInstance.change_view_mode(currentViewMode);
+            // Clear guard after 2 frames (covers callback cycle)
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     edgeToEdgeInProgress = false;
@@ -1345,28 +1406,73 @@
     function adjustZoom(delta) {
         if (!ganttInstance) return;
 
-        let newWidth = currentColumnWidth + delta;
-        if (newWidth < MIN_ZOOM) newWidth = MIN_ZOOM;
-        // No upper cap - allow zoom to match auto-zoom levels
+        // Get this view's floor
+        const viewFloor = minColumnWidthByViewMode[currentViewMode] || ABSOLUTE_FLOOR;
+        const currentWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
 
-        if (newWidth === currentColumnWidth) return;
+        // Trying to zoom out when already at floor?
+        if (delta < 0 && currentWidth <= viewFloor) {
+            showZoomLimitMessage('Maximum zoom out reached for ' + currentViewMode + ' view');
+            return;
+        }
 
-        currentColumnWidth = newWidth;
-        ganttInstance.options.column_width = currentColumnWidth;
+        let newWidth = currentWidth + delta;
+
+        // Enforce view's floor
+        if (newWidth < viewFloor) {
+            newWidth = viewFloor;
+            showZoomLimitMessage('Maximum zoom out reached for ' + currentViewMode + ' view');
+        }
+
+        if (newWidth === currentWidth) return;
+
+        columnWidthByViewMode[currentViewMode] = newWidth;
+        ganttInstance.options.column_width = newWidth;
 
         // Force refresh
-        ganttInstance.change_view_mode(ganttInstance.options.view_mode);
+        ganttInstance.change_view_mode(currentViewMode);
         updateZoomIndicator();
-        console.log('Zoom adjusted to:', currentColumnWidth);
+        console.log('Zoom adjusted to:', newWidth, 'for', currentViewMode);
     }
 
     function updateZoomIndicator() {
         const indicator = document.getElementById('zoom-level-indicator');
         if (indicator) {
-            // Base is 45px (100%)
-            const pct = Math.round((currentColumnWidth / 45) * 100);
+            // Base is 75px (100%)
+            const currentWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
+            const pct = Math.round((currentWidth / COLUMN_WIDTH_BASELINE) * 100);
             indicator.textContent = `${pct}%`;
         }
+    }
+
+    /**
+     * Show a temporary message when zoom limits are reached.
+     * Auto-dismisses after 5 seconds.
+     */
+    function showZoomLimitMessage(message) {
+        // Remove any existing zoom message
+        const existing = document.getElementById('zoom-limit-message');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'zoom-limit-message';
+        banner.className = 'info-banner zoom-limit-banner';
+        banner.innerHTML = `
+            <i class="icon-info-sign"></i>
+            <span>${message}</span>
+            <button class="dismiss-btn" onclick="this.parentElement.remove()">&times;</button>
+        `;
+
+        // Insert at top of gantt-container
+        const container = document.getElementById('gantt-container');
+        if (container) {
+            container.insertBefore(banner, container.firstChild);
+        }
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (banner.parentElement) banner.remove();
+        }, 5000);
     }
 
     function updateControlsState(config) {
@@ -1378,8 +1484,10 @@
             }
         }
         if (config.column_width) {
-            currentColumnWidth = config.column_width;
+            // Update current view's column width
+            columnWidthByViewMode[currentViewMode] = config.column_width;
         }
+        updateZoomIndicator();
     }
 
     console.log('Gantt Chart webapp initialized');
