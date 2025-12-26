@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-12-27
+
+### Added
+- Vertical separators between header columns for clearer visual demarcation (#50)
+- Configurable date format for task popups: ISO, US, European, Long, Short (#35)
+- Decade grouping in Year view upper headers (2020s, 2030s, etc.) (#14)
+
+### Changed
+- Header height reduced by ~30% for more compact layout (#41)
+- Year context now visible in upper headers across all view modes (#12)
+  - Responsive abbreviation (Dec 2025) at narrow column widths
+
 ## [0.7.2] - 2025-12-27
 
 ### Fixed
