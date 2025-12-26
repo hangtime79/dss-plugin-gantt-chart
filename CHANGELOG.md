@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2025-12-27
+
+### Fixed
+- Expected progress markers now align perfectly with Today line at all view granularities (#52)
+
+### Changed
+- Zoom uses 5px increments but must pass through stops at 25%, 50%, 75%, 100%, 150%, 200% (#53)
+- No maximum zoom limit - can zoom in indefinitely
+
 ## [0.7.1] - 2025-12-27
 
 ### Fixed
