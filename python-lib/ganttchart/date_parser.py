@@ -23,7 +23,7 @@ def parse_date_to_iso(value: any) -> Tuple[Optional[str], Optional[str]]:
     4. pandas Timestamp → convert via strftime
     5. Python datetime → convert via strftime
     6. Unix timestamp (int/float) → convert via datetime.fromtimestamp
-    7. String → try pd.to_datetime with infer_datetime_format
+    7. String → try pd.to_datetime (auto-infers format)
     8. Fallback → return (None, error message)
 
     Args:

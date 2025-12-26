@@ -139,7 +139,8 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 | Milestone | Issues | Theme |
 |-----------|--------|-------|
-| **v0.7.0** | #33, #21, #45, #43, #42, #38, #37 | Analytics + Polish: Expected progress, sticky header, quick wins |
+| **v0.7.0** | #33, #45, #43, #42, #38, #37 | Analytics + Polish: Expected progress indicator, quick wins |
+| **v0.7.1** | #21 | Sticky Header: Dedicated fix for narrow content jank |
 | **v0.8.0** | #31, #34, #47 | Theming: Dark mode, grid lines, pill box labels |
 | **v0.9.0** | #32, #35, #12, #14, #41 | i18n + Headers: Language, date formats, header improvements |
 | **v0.10.0** | #24, #25, #36, #44 | Export + UX: Print, global params, task details interaction |

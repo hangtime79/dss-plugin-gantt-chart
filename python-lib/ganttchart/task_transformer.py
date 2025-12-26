@@ -7,6 +7,7 @@ Handles all edge cases and coordinates date parsing, color mapping, and dependen
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime, date
 import pandas as pd
 import logging
 
@@ -275,6 +276,11 @@ class TaskTransformer:
             'end': end_date
         }
 
+        # Add expected progress (where task should be based on today's date)
+        expected_progress = self._calculate_expected_progress(start_date, end_date)
+        if expected_progress is not None:
+            task['expected_progress'] = expected_progress
+
         # Add progress if column specified
         if self.config.progress_column:
             progress = self._extract_progress(row[self.config.progress_column])
@@ -408,6 +414,9 @@ class TaskTransformer:
         Converts whole-number floats (61.0) to int representation ("61")
         to match how Pandas reads columns differently based on NaN presence.
 
+        Also handles string representations of floats (e.g., "1.0" -> "1")
+        which can occur when dependency strings contain float-formatted IDs.
+
         Args:
             value: ID value from DataFrame
 
@@ -430,7 +439,19 @@ class TaskTransformer:
                 # Preserve actual decimal values (e.g., 3.14)
                 return str(value).strip()
 
-        # For all other types (int, str, Decimal, etc.), convert directly
+        # For strings, also check if they look like whole-number floats
+        # This handles "1.0" -> "1" for dependency strings like "1.0, 2.0"
+        if isinstance(value, str):
+            stripped = value.strip()
+            try:
+                float_val = float(stripped)
+                if float_val.is_integer():
+                    return str(int(float_val))
+            except (ValueError, TypeError):
+                pass
+            return stripped
+
+        # For all other types (int, Decimal, etc.), convert directly
         return str(value).strip()
 
     def _extract_dependencies(self, value: Any) -> str:
@@ -448,23 +469,71 @@ class TaskTransformer:
         if pd.isna(value):
             return ''
 
-        # Normalize the value using the same logic as task IDs
-        value_str = self._normalize_id(value)
+        # Convert to string first (handles numeric single values)
+        value_str = str(value).strip()
 
-        # Check if empty after normalization
+        # Check if empty
         if not value_str:
             return ''
 
-        # Split by comma, strip whitespace
-        # This handles both "50" and "50,51,52" formats
+        # Split by comma, normalize each part
+        # This handles both "50" and "50,51,52" and "1.0, 2.0" formats
         if ',' in value_str:
-            # Multiple dependencies - each is already normalized by _normalize_id
-            deps_list = [d.strip() for d in value_str.split(',') if d.strip()]
+            # Multiple dependencies - normalize each individual one
+            deps_list = []
+            for d in value_str.split(','):
+                d = d.strip()
+                if d:
+                    # Normalize each dependency ID (handles '1.0' -> '1')
+                    deps_list.append(self._normalize_id(d))
             return ','.join(deps_list) if deps_list else ''
         else:
-            # Single dependency
-            return value_str
+            # Single dependency - normalize it
+            return self._normalize_id(value_str)
 
     def _increment_skip_reason(self, reason: str) -> None:
         """Increment skip reason counter."""
         self.stats['skip_reasons'][reason] = self.stats['skip_reasons'].get(reason, 0) + 1
+
+    def _calculate_expected_progress(self, start_date: str, end_date: str) -> Optional[float]:
+        """
+        Calculate expected progress based on current date.
+
+        Expected progress shows where a task's progress *should* be if work
+        proceeded linearly from start to end date.
+
+        Args:
+            start_date: Task start date in YYYY-MM-DD format
+            end_date: Task end date in YYYY-MM-DD format
+
+        Returns:
+            Expected progress percentage (0-100), or None if:
+            - Task hasn't started yet (today < start_date)
+            - Task is past its end date (today > end_date)
+            - Dates are invalid
+        """
+        try:
+            today = date.today()
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+            # Task not started yet - no expected progress marker
+            if today < start:
+                return None
+
+            # Task already past end date - no expected progress marker
+            if today > end:
+                return None
+
+            # Calculate expected progress
+            total_duration = (end - start).days
+            if total_duration <= 0:
+                # Same day task - if today is that day, 100% expected
+                return 100.0
+
+            elapsed = (today - start).days
+            expected = (elapsed / total_duration) * 100
+            return min(100.0, max(0.0, expected))
+
+        except (ValueError, TypeError):
+            return None
