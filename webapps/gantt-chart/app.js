@@ -521,7 +521,7 @@
                     return;
                 }
 
-                if (tasksResponse.metadata && tasksResponse.metadata.skippedRows > 0) {
+                if (tasksResponse.metadata && (tasksResponse.metadata.skippedRows > 0 || tasksResponse.metadata.rowLimitHit)) {
                     displayMetadata(tasksResponse.metadata);
                 }
 
@@ -1058,8 +1058,14 @@
         let html = `
             <span class="close-btn" onclick="this.parentElement.remove()">×</span>
             <strong>Notice:</strong><br>
-            Showing ${metadata.displayedRows} of ${metadata.totalRows} tasks
         `;
+
+        // Show row limit message if limit was hit
+        if (metadata.rowLimitHit) {
+            html += `Showing first ${metadata.rowLimit} tasks (dataset limit reached). Increase Max Tasks to see more.`;
+        } else {
+            html += `Showing ${metadata.displayedRows} of ${metadata.totalRows} tasks`;
+        }
 
         if (metadata.skippedRows > 0) {
             html += ` (${metadata.skippedRows} skipped)`;
