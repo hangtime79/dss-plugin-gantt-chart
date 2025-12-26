@@ -868,9 +868,8 @@
 
         let markersAdded = 0;
         barWrappers.forEach((wrapper) => {
-            // Find matching task by data-id attribute
-            const barGroup = wrapper.closest('.bar-group');
-            const taskId = barGroup?.getAttribute('data-id');
+            // Get task ID from bar-wrapper's data-id attribute
+            const taskId = wrapper.getAttribute('data-id');
             if (!taskId) {
                 console.log('No taskId for wrapper');
                 return;
@@ -885,9 +884,10 @@
                 return;  // Expected - task not in progress
             }
 
-            // Get the bar element
+            // Get the bar-group (child of bar-wrapper) and bar element
+            const barGroup = wrapper.querySelector('.bar-group');
             const bar = wrapper.querySelector('.bar');
-            if (!bar) return;
+            if (!bar || !barGroup) return;
 
             // Get bar dimensions
             const barWidth = parseFloat(bar.getAttribute('width')) || 0;
@@ -920,11 +920,9 @@
             triangle.setAttribute('fill', '#e74c3c');
 
             // Insert markers into the bar group
-            if (barGroup) {
-                barGroup.appendChild(marker);
-                barGroup.appendChild(triangle);
-                markersAdded++;
-            }
+            barGroup.appendChild(marker);
+            barGroup.appendChild(triangle);
+            markersAdded++;
         });
 
         console.log('Expected progress markers added:', markersAdded);
@@ -1086,14 +1084,12 @@
             html += `<div class="popup-progress">Progress: ${task.progress}%</div>`;
         }
 
-        // Dependencies (if any)
-        if (task.dependencies) {
-            const depsList = Array.isArray(task.dependencies)
-                ? task.dependencies.join(', ')
-                : task.dependencies;
-            if (depsList) {
-                html += `<div class="popup-deps">Depends on: ${escapeHtml(depsList)}</div>`;
-            }
+        // Dependencies (if any) - use display version for human-readable values
+        const displayDeps = task._display_dependencies || (
+            Array.isArray(task.dependencies) ? task.dependencies.join(', ') : task.dependencies
+        );
+        if (displayDeps) {
+            html += `<div class="popup-deps">Depends on: ${escapeHtml(displayDeps)}</div>`;
         }
 
         // Custom fields (user-selected tooltip columns)
