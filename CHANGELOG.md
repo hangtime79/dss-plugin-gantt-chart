@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-12-26
+
+### Added
+- Row limit banner when dataset exceeds `maxTasks` setting (#18)
+
+### Fixed
+- Task labels now visible when positioned outside bars (dark text on white background) (#40)
+
+### Changed
+- GitHub Actions workflow limited to main branch only (reduces queue congestion)
+
+## [0.6.0] - 2025-12-26
+
+### Fixed
+- Unit tests now run without requiring DSS integration test configuration (#29)
+
 ## [0.5.1] - 2025-12-26
 
 ### Fixed

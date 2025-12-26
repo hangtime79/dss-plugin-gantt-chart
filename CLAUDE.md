@@ -51,6 +51,7 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Frappe Gantt custom_class whitespace** — `custom_class` must be a single class name without spaces. Frappe uses `classList.add()` which throws DOMException on whitespace.
 - **SVG transform centering** — Use `transform-box: fill-box` when scaling SVG elements. Default `transform-origin` is relative to viewport, not element bounding box.
 - **Dataiku body.html is a fragment** — Never add `<!DOCTYPE html>` to body.html. It's injected into Dataiku's iframe wrapper, not a standalone document. DOCTYPE triggers Quirks Mode warning.
+- **Frappe Gantt `.big` label class** — When task names don't fit inside bars, library positions them outside and adds `.big` class. Our white text CSS made these invisible on white background. External labels need dark text override.
 
 ---
 

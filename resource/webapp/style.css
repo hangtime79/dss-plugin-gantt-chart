@@ -602,6 +602,11 @@ body {
     font-family: var(--font-stack) !important;
 }
 
+/* External labels (positioned outside bars when name doesn't fit) need dark text */
+.gantt .bar-label.big {
+    fill: #333333 !important;
+}
+
 /* Ensure header text is visible */
 .gantt .grid-header text {
     fill: var(--text-muted) !important;
