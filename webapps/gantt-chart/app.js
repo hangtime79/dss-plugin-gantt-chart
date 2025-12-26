@@ -60,6 +60,7 @@
     let configDebounceTimer = null;  // Debounce timer for config updates
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
+    let currentTasks = [];           // Store tasks for expected progress markers
 
     // Zoom State
     let currentColumnWidth = 45;
@@ -587,8 +588,8 @@
             column_width: currentColumnWidth, // Use our smart local width
             padding: parseInt(webAppConfig.padding) || 18,
 
-            // Behavior
-            readonly: webAppConfig.readonly !== false,
+            // Behavior (editing always disabled - no write-back in Dataiku)
+            readonly: true,
             popup_on: webAppConfig.popupOn || 'click',
             today_button: webAppConfig.todayButton !== false,
             scroll_to: webAppConfig.scrollTo || 'today',
@@ -613,6 +614,9 @@
     function renderGantt(tasks, config) {
         console.log(`Rendering Gantt with ${tasks.length} tasks`);
         // console.log('Gantt config:', JSON.stringify(config, null, 2));
+
+        // Store tasks for expected progress markers
+        currentTasks = tasks;
 
         const container = document.getElementById('gantt-container');
 
@@ -639,8 +643,8 @@
             column_width: config.column_width ?? 45,
             padding: config.padding ?? 18,
 
-            // Behavior
-            readonly: config.readonly !== false,
+            // Behavior (editing always disabled - no write-back in Dataiku)
+            readonly: true,
             popup_on: config.popup_on || 'click',
             today_button: false,
             scroll_to: config.scroll_to || 'today',
@@ -689,6 +693,7 @@
                     updateSvgDimensions();
                     adjustHeaderLabels();
                     setupStickyHeader();  // Re-setup after view change recreates DOM
+                    addExpectedProgressMarkers();  // Re-add markers after DOM recreated
                 });
             }
         };
@@ -709,6 +714,16 @@
             ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
             console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
 
+            // Debug: Log gantt instance date boundaries
+            console.log('Gantt date debug:', {
+                gantt_start: ganttInstance.gantt_start,
+                gantt_end: ganttInstance.gantt_end,
+                config_unit: ganttInstance.config?.unit,
+                config_step: ganttInstance.config?.step,
+                column_width: ganttInstance.config?.column_width,
+                view_mode: ganttInstance.options?.view_mode
+            });
+
             // Sync controls
             updateControlsState(ganttOptions);
 
@@ -719,6 +734,7 @@
                 updateSvgDimensions();
                 adjustHeaderLabels();
                 setupStickyHeader();
+                addExpectedProgressMarkers();
 
                 // Restore view state if we have saved state from config update
                 if (window._ganttRestoreState) {
@@ -829,6 +845,108 @@
         stickyScrollHandler();
 
         console.log('Sticky header initialized');
+    }
+
+    // ===== EXPECTED PROGRESS MARKERS =====
+
+    /**
+     * Add expected progress markers to task bars.
+     * Shows where progress *should* be based on current date vs task dates.
+     * Only visible when showExpectedProgress is enabled in config.
+     */
+    function addExpectedProgressMarkers() {
+        // Check if feature is enabled
+        if (!webAppConfig.showExpectedProgress) {
+            console.log('Expected progress markers: feature disabled');
+            return;
+        }
+
+        if (!currentTasks || currentTasks.length === 0) {
+            console.log('Expected progress markers: no tasks');
+            return;
+        }
+
+        console.log('Adding expected progress markers for', currentTasks.length, 'tasks');
+        console.log('Tasks with _expected_progress:', currentTasks.filter(t => t._expected_progress !== undefined).length);
+
+        // Remove existing markers first (handles re-render/view change)
+        document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
+
+        // Get all bar wrappers
+        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+        console.log('Found bar wrappers:', barWrappers.length);
+
+        let markersAdded = 0;
+        barWrappers.forEach((wrapper) => {
+            // Get task ID from bar-wrapper's data-id attribute
+            const taskId = wrapper.getAttribute('data-id');
+            if (!taskId) {
+                console.log('No taskId for wrapper');
+                return;
+            }
+
+            const task = currentTasks.find(t => t.id === taskId);
+            if (!task) {
+                console.log('Task not found for id:', taskId);
+                return;
+            }
+            if (task._expected_progress === undefined || task._expected_progress === null) {
+                return;  // Expected - task not in progress
+            }
+
+            // Get the bar-group (child of bar-wrapper) and bar element
+            const barGroup = wrapper.querySelector('.bar-group');
+            const bar = wrapper.querySelector('.bar');
+            if (!bar || !barGroup) return;
+
+            // Get bar dimensions
+            const barWidth = parseFloat(bar.getAttribute('width')) || 0;
+            const barHeight = parseFloat(bar.getAttribute('height')) || 0;
+            const barX = parseFloat(bar.getAttribute('x')) || 0;
+            const barY = parseFloat(bar.getAttribute('y')) || 0;
+
+            if (barWidth <= 0) return;
+
+            // Calculate marker position
+            const markerX = barX + (task._expected_progress / 100) * barWidth;
+
+            // Debug: log positioning details
+            console.log('Expected progress marker:', {
+                taskName: task.name,
+                expectedProgress: task._expected_progress,
+                barX: barX,
+                barWidth: barWidth,
+                markerX: markerX,
+                start: task.start,
+                end: task.end
+            });
+
+            // Create SVG line for marker
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            marker.setAttribute('class', 'expected-progress-marker');
+            marker.setAttribute('x1', markerX);
+            marker.setAttribute('y1', barY);
+            marker.setAttribute('x2', markerX);
+            marker.setAttribute('y2', barY + barHeight);
+            marker.setAttribute('stroke', '#e74c3c');
+            marker.setAttribute('stroke-width', '2');
+            marker.setAttribute('stroke-dasharray', '3,2');
+
+            // Create small triangle indicator at top
+            const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            triangle.setAttribute('class', 'expected-progress-marker');
+            const triSize = 5;
+            const triPoints = `${markerX - triSize},${barY - triSize} ${markerX + triSize},${barY - triSize} ${markerX},${barY}`;
+            triangle.setAttribute('points', triPoints);
+            triangle.setAttribute('fill', '#e74c3c');
+
+            // Insert markers into the bar group
+            barGroup.appendChild(marker);
+            barGroup.appendChild(triangle);
+            markersAdded++;
+        });
+
+        console.log('Expected progress markers added:', markersAdded);
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
@@ -987,14 +1105,12 @@
             html += `<div class="popup-progress">Progress: ${task.progress}%</div>`;
         }
 
-        // Dependencies (if any)
-        if (task.dependencies) {
-            const depsList = Array.isArray(task.dependencies)
-                ? task.dependencies.join(', ')
-                : task.dependencies;
-            if (depsList) {
-                html += `<div class="popup-deps">Depends on: ${escapeHtml(depsList)}</div>`;
-            }
+        // Dependencies (if any) - use display version for human-readable values
+        const displayDeps = task._display_dependencies || (
+            Array.isArray(task.dependencies) ? task.dependencies.join(', ') : task.dependencies
+        );
+        if (displayDeps) {
+            html += `<div class="popup-deps">Depends on: ${escapeHtml(displayDeps)}</div>`;
         }
 
         // Custom fields (user-selected tooltip columns)

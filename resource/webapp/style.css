@@ -790,3 +790,28 @@ body {
         /* Hide title on small mobile to save space */
     }
 }
+
+/* ===== EXPECTED PROGRESS MARKERS ===== */
+
+/**
+ * Expected progress markers show where task progress *should* be
+ * based on the current date relative to task start/end dates.
+ * Helps visualize if tasks are ahead, on-track, or behind schedule.
+ */
+
+.expected-progress-marker {
+    pointer-events: none;
+    /* Ensure markers don't interfere with bar interactions */
+}
+
+/* SVG line marker styling (backup if inline styles fail) */
+line.expected-progress-marker {
+    stroke: #e74c3c;
+    stroke-width: 2;
+    stroke-dasharray: 3, 2;
+}
+
+/* SVG triangle indicator styling */
+polygon.expected-progress-marker {
+    fill: #e74c3c;
+}

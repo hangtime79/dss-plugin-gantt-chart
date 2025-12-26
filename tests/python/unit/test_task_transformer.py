@@ -456,7 +456,7 @@ class TestIDNormalization:
         assert transformer._normalize_id(-5.0) == '-5'
 
     def test_normalize_id_float_decimal(self):
-        """Test normalization of actual decimal floats."""
+        """Test normalization of actual decimal floats - made CSS-safe."""
         config = TaskTransformerConfig(
             id_column='id',
             name_column='name',
@@ -464,11 +464,11 @@ class TestIDNormalization:
             end_column='end'
         )
         transformer = TaskTransformer(config)
-        
-        # Actual decimals should be preserved
-        assert transformer._normalize_id(3.14) == '3.14'
-        assert transformer._normalize_id(0.5) == '0.5'
-        assert transformer._normalize_id(-1.75) == '-1.75'
+
+        # Actual decimals are hex-encoded to be CSS-safe (period → _x2e_)
+        assert transformer._normalize_id(3.14) == '3_x2e_14'
+        assert transformer._normalize_id(0.5) == '0_x2e_5'
+        assert transformer._normalize_id(-1.75) == '-1_x2e_75'
 
     def test_normalize_id_string(self):
         """Test normalization of string IDs."""
@@ -632,3 +632,223 @@ class TestIDNormalization:
         assert result['tasks'][1]['dependencies'] == ['task_a']
         assert result['tasks'][2]['id'] == 'task_c'
         assert result['tasks'][2]['dependencies'] == ['task_a', 'task_b']
+
+
+class TestCssSafe:
+    """Test CSS-safe ID encoding."""
+
+    def test_make_css_safe_period(self):
+        """Test that periods are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('54.8') == '54_x2e_8'
+        assert transformer._make_css_safe('3.14.15') == '3_x2e_14_x2e_15'
+
+    def test_make_css_safe_space(self):
+        """Test that spaces are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('task 1') == 'task_x20_1'
+        assert transformer._make_css_safe('my task') == 'my_x20_task'
+
+    def test_make_css_safe_special_chars(self):
+        """Test that various special characters are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('item#5') == 'item_x23_5'
+        assert transformer._make_css_safe('task[1]') == 'task_x5b_1_x5d_'
+        assert transformer._make_css_safe('a:b') == 'a_x3a_b'
+
+    def test_make_css_safe_preserves_safe_chars(self):
+        """Test that alphanumerics, underscores, and hyphens are preserved."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('task-1') == 'task-1'
+        assert transformer._make_css_safe('task_1') == 'task_1'
+        assert transformer._make_css_safe('Task123') == 'Task123'
+        assert transformer._make_css_safe('ABC-xyz_123') == 'ABC-xyz_123'
+
+    def test_make_css_safe_no_collision(self):
+        """Test that similar IDs don't collide after encoding."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        # These should produce different outputs
+        id1 = transformer._make_css_safe('54.8')
+        id2 = transformer._make_css_safe('54_8')
+
+        assert id1 != id2
+        assert id1 == '54_x2e_8'
+        assert id2 == '54_8'
+
+
+class TestExpectedProgress:
+    """Tests for expected progress calculation."""
+
+    def test_expected_progress_in_progress_task(self):
+        """Test expected progress for a task that spans today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=5)
+        end = today + timedelta(days=5)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Test Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert '_expected_progress' in task
+        # 5 days elapsed out of 10 total = 50%
+        assert 49 <= task['_expected_progress'] <= 51  # Allow small variance
+
+    def test_expected_progress_future_task(self):
+        """Test that future tasks have no expected progress marker."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today + timedelta(days=5)
+        end = today + timedelta(days=15)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Future Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert '_expected_progress' not in task
+
+    def test_expected_progress_past_task(self):
+        """Test that past tasks have no expected progress marker."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=20)
+        end = today - timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Past Task'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert '_expected_progress' not in task
+
+    def test_expected_progress_starts_today(self):
+        """Test expected progress when task starts today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        end = today + timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Starts Today'],
+            'start': [today.strftime('%Y-%m-%d')],
+            'end': [end.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert '_expected_progress' in task
+        # 0 days elapsed out of 10 = 0%
+        assert task['_expected_progress'] == 0.0
+
+    def test_expected_progress_ends_today(self):
+        """Test expected progress when task ends today."""
+        from datetime import date, timedelta
+
+        today = date.today()
+        start = today - timedelta(days=10)
+
+        df = pd.DataFrame({
+            'id': ['1'],
+            'name': ['Ends Today'],
+            'start': [start.strftime('%Y-%m-%d')],
+            'end': [today.strftime('%Y-%m-%d')]
+        })
+
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+        result = transformer.transform(df)
+
+        task = result['tasks'][0]
+        assert '_expected_progress' in task
+        # 10 days elapsed out of 10 = 100%
+        assert task['_expected_progress'] == 100.0
