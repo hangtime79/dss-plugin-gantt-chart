@@ -55,6 +55,7 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Frappe Gantt task properties become CSS classes** — Library creates `.highlight-{id}` selectors. Task IDs with periods (e.g., `54.8`) create invalid CSS (`.highlight-54.8`). Use hex-encoding for CSS-unsafe chars.
 - **Frappe Gantt Month view diff() bug** — Library's `diff()` function used `o%30/30` for fractional month, which is meaningless. Patched to `(n.getDate()-1)/30` for proper day-of-month position.
 - **DOM data-id location** — `data-id` attribute is on `.bar-wrapper`, not `.bar-group`. Use `wrapper.getAttribute('data-id')` directly, not `.closest('.bar-group')`.
+- **Grid header is HTML, not SVG** — `.grid-header` is an HTML `<div>` with absolutely-positioned text divs, NOT an SVG group. Header decorations (separators, etc.) must use HTML elements, not SVG lines.
 
 ---
 
@@ -130,18 +131,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 **Phase:** Branch Exit - Creating PR
 
-**Current Branch:** `bugfix/v0.7.2-markers-and-zoom`
+**Current Branch:** `feature/v0.8.0-headers-and-date-formats`
 
-**Latest Release:** v0.7.1 (2025-12-27)
+**Latest Release:** v0.7.2 (2025-12-27)
 
-**What's Complete:**
-- ✅ #52: Markers align with Today line
-- ✅ #53: Zoom passes through stops, no max limit
+**What's Complete (v0.8.0):**
+- ✅ #12: Year in upper headers across views
+- ✅ #14: Decade format in Year view (2020s, 2030s)
+- ✅ #35: Custom date format configuration
+- ✅ #41: Thinner header to save pixel space
+- ✅ #50: Vertical separators between header columns
 - ✅ QA Passed
 
 **Next Step:** Merge PR, then post-merge protocol
-
-**Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.1
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -155,9 +157,9 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish~~ ✅ |
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
 | ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
-| **v0.8.0** | #12, #14, #35, #41, #50 | Headers & Date Formats |
+| ~~**v0.8.0**~~ | ~~#12, #14, #35, #41, #50~~ | ~~Headers & Date Formats~~ ✅ |
 | **v0.9.0** | #31, #34, #47, #49 | Theming: Dark mode, grid lines, colors |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
-**Next milestone:** v0.8.0
+**Next milestone:** v0.9.0

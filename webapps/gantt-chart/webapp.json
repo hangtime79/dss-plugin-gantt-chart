@@ -234,6 +234,25 @@
 
             {
                 "type": "SEPARATOR",
+                "label": "Date Display"
+            },
+            {
+                "name": "dateFormat",
+                "type": "SELECT",
+                "label": "Date Format",
+                "description": "Format for dates shown in task popups",
+                "defaultValue": "ISO",
+                "selectChoices": [
+                    {"value": "ISO", "label": "ISO 8601 (2024-12-27)"},
+                    {"value": "US", "label": "US (12/27/2024)"},
+                    {"value": "EU", "label": "European (27/12/2024)"},
+                    {"value": "LONG", "label": "Long (December 27, 2024)"},
+                    {"value": "SHORT", "label": "Short (Dec 27)"}
+                ]
+            },
+
+            {
+                "type": "SEPARATOR",
                 "label": "Behavior"
             },
             {
