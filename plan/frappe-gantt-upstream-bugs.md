@@ -247,27 +247,42 @@ Same task "Validate model performance" (Oct 1 - Dec 31):
 - **Month view (WRONG):** barX: 2330.1, barWidth: 138 (offset ~1 month late)
 
 ### Root Cause
-TBD - Likely in `compute_x()` or month diff calculation:
+In `diff()` function (minified as `d.diff`), the fractional month calculation uses total days modulo 30 instead of day-of-month:
+
 ```javascript
-compute_x(){
-  const{column_width:t}=this.gantt.config,
-  e=this.task._start,
-  i=this.gantt.gantt_start;
-  let r=d.diff(e,i,this.gantt.config.unit)/this.gantt.config.step*t;
-  this.x=r
-}
+// BUGGY: o = total days difference, o%30 is meaningless
+return _+=o%30/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
+
+// Variables: n = end date, t = start date, o = total days, g = year diff, _ = month diff
 ```
 
-Possible causes:
-1. `d.diff()` month calculation off-by-one
-2. `gantt_start` boundary calculation wrong for Month view
-3. Step/unit configuration mismatch
+When calculating month difference for Oct 1 → Dec 31:
+- `o` (total days) = 91
+- `o % 30` = 1 (meaningless - depends on total span, not position)
+- Fractional: 1/30 ≈ 0.033
+
+The bug: `o % 30` gives a random fractional based on total days modulo 30, NOT the day-of-month position within the month.
 
 ### Our Patch
-TBD - Under investigation
+Changed fractional calculation to use actual day-of-month:
+```javascript
+// BEFORE (buggy):
+return _+=o%30/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
 
-### Workaround
-Week view works correctly. Use Week view for accurate positioning until patched.
+// AFTER (fixed):
+return _+=(n.getDate()-1)/30,h=g*12+_,n.getDate()<t.getDate()&&h--,
+```
+
+Now for Oct 1:
+- `n.getDate()` = 1
+- Fractional: (1-1)/30 = 0 (start of month)
+
+For Oct 15:
+- `n.getDate()` = 15
+- Fractional: (15-1)/30 ≈ 0.467 (middle of month)
+
+### Upstream Fix Suggestion
+Replace `o%30/30` with `(n.getDate()-1)/30` in the `diff()` function to get proper day-of-month positioning within the fractional month calculation.
 
 ---
 
@@ -316,6 +331,7 @@ When updating Frappe Gantt, these patches must be reapplied:
 | `frappe-gantt.umd.js` | view_mode_select listener | Remove `!0` argument |
 | `frappe-gantt.umd.js` | get_closest_date | Return `[e, i]` instead of format+reparse |
 | `frappe-gantt.umd.js` | set_scroll_position | Change `behavior:"smooth"` to `"instant"` |
+| `frappe-gantt.umd.js` | diff() function | Change `o%30/30` to `(n.getDate()-1)/30` for month fractional |
 | `frappe-gantt.es.js` | ~line 1077 | Remove `!0` from change_view_mode call |
 | `frappe-gantt.es.js` | ~line 1321-1324 | set_dimensions always sets pixel width |
 | `frappe-gantt.es.js` | ~line 1401-1404 | Return `[e, i]` instead of format+reparse |
