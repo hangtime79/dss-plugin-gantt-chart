@@ -63,9 +63,13 @@
     let currentTasks = [];           // Store tasks for expected progress markers
 
     // Zoom State
-    const ZOOM_STEP = 5;
+    const ZOOM_STEP = 5;            // Increment size in pixels
     const ABSOLUTE_FLOOR = 25;      // Never render columns below this width
     const COLUMN_WIDTH_BASELINE = 75; // 100% zoom reference point
+
+    // Zoom stops that MUST be passed through (column widths in pixels)
+    // 25% = 19px, 50% = 38px, 75% = 56px, 100% = 75px, 150% = 113px, 200% = 150px
+    const ZOOM_STOPS = [19, 38, 56, 75, 113, 150];
 
     // ===== VIEW MODE PERSISTENCE =====
 
@@ -1046,8 +1050,9 @@
                 console.log('Task not found for id:', taskId);
                 return;
             }
+            // Check if task spans today (use Python's _expected_progress as indicator)
             if (task._expected_progress === undefined || task._expected_progress === null) {
-                return;  // Expected - task not in progress
+                return;  // Task not in progress - no marker needed
             }
 
             // Get the bar-group (child of bar-wrapper) and bar element
@@ -1056,26 +1061,18 @@
             if (!bar || !barGroup) return;
 
             // Get bar dimensions
-            const barWidth = parseFloat(bar.getAttribute('width')) || 0;
             const barHeight = parseFloat(bar.getAttribute('height')) || 0;
-            const barX = parseFloat(bar.getAttribute('x')) || 0;
             const barY = parseFloat(bar.getAttribute('y')) || 0;
 
-            if (barWidth <= 0) return;
+            // Use the Today line's X position - guarantees alignment with library's date math
+            const todayLine = document.querySelector('.current-highlight');
+            if (!todayLine) {
+                return;  // No today line visible
+            }
 
-            // Calculate marker position
-            const markerX = barX + (task._expected_progress / 100) * barWidth;
-
-            // Debug: log positioning details
-            console.log('Expected progress marker:', {
-                taskName: task.name,
-                expectedProgress: task._expected_progress,
-                barX: barX,
-                barWidth: barWidth,
-                markerX: markerX,
-                start: task.start,
-                end: task.end
-            });
+            // Get the today line's X position from its 'left' style
+            const todayX = parseFloat(todayLine.style.left) || 0;
+            const markerX = todayX;
 
             // Create SVG line for marker
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1432,22 +1429,43 @@
     function adjustZoom(delta) {
         if (!ganttInstance) return;
 
-        // Get this view's floor
+        // Get this view's floor and current width
         const viewFloor = minColumnWidthByViewMode[currentViewMode] || ABSOLUTE_FLOOR;
         const currentWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
 
-        // Trying to zoom out when already at floor?
-        if (delta < 0 && currentWidth <= viewFloor) {
-            showZoomLimitMessage('Maximum zoom out reached for ' + currentViewMode + ' view');
-            return;
-        }
+        let newWidth;
 
-        let newWidth = currentWidth + delta;
+        if (delta > 0) {
+            // ZOOMING IN
+            // Check if there's a stop between current and current + step that we must hit
+            const nextStop = ZOOM_STOPS.find(stop => stop > currentWidth && stop <= currentWidth + ZOOM_STEP);
+            if (nextStop) {
+                // Must land on this stop
+                newWidth = nextStop;
+            } else {
+                // Normal increment
+                newWidth = currentWidth + ZOOM_STEP;
+            }
+        } else {
+            // ZOOMING OUT
+            // Check if there's a stop between current - step and current that we must hit
+            const prevStop = [...ZOOM_STOPS].reverse().find(stop => stop < currentWidth && stop >= currentWidth - ZOOM_STEP);
+            if (prevStop) {
+                // Must land on this stop
+                newWidth = prevStop;
+            } else {
+                // Normal decrement
+                newWidth = currentWidth - ZOOM_STEP;
+            }
 
-        // Enforce view's floor
-        if (newWidth < viewFloor) {
-            newWidth = viewFloor;
-            showZoomLimitMessage('Maximum zoom out reached for ' + currentViewMode + ' view');
+            // Enforce view's floor
+            if (newWidth < viewFloor) {
+                if (currentWidth <= viewFloor) {
+                    showZoomLimitMessage('Maximum zoom out reached for ' + currentViewMode + ' view');
+                    return;
+                }
+                newWidth = viewFloor;
+            }
         }
 
         if (newWidth === currentWidth) return;
@@ -1458,7 +1476,7 @@
         // Force refresh
         ganttInstance.change_view_mode(currentViewMode);
         updateZoomIndicator();
-        console.log('Zoom adjusted to:', newWidth, 'for', currentViewMode);
+        console.log('Zoom to:', newWidth, '(' + Math.round((newWidth / COLUMN_WIDTH_BASELINE) * 100) + '%) for', currentViewMode);
     }
 
     function updateZoomIndicator() {
