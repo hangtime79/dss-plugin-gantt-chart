@@ -128,13 +128,18 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Ready for next milestone
+**Phase:** Branch Exit - Creating PR
 
-**Current Branch:** `main`
+**Current Branch:** `bugfix/v0.7.2-markers-and-zoom`
 
 **Latest Release:** v0.7.1 (2025-12-27)
 
-**Next Step:** Open branch for v0.7.2 (#52, #53)
+**What's Complete:**
+- ✅ #52: Markers align with Today line
+- ✅ #53: Zoom passes through stops, no max limit
+- ✅ QA Passed
+
+**Next Step:** Merge PR, then post-merge protocol
 
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.1
 
@@ -149,10 +154,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 |-----------|--------|-------|
 | ~~**v0.7.0**~~ | ~~#33, #45, #43, #42, #38, #37~~ | ~~Analytics + Polish~~ ✅ |
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
-| **v0.7.2** | #52, #53 | Bug Fixes: Progress markers, zoom stops |
+| ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
 | **v0.8.0** | #12, #14, #35, #41, #50 | Headers & Date Formats |
 | **v0.9.0** | #31, #34, #47, #49 | Theming: Dark mode, grid lines, colors |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
-**Next milestone:** v0.7.2
+**Next milestone:** v0.8.0
