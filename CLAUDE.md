@@ -128,25 +128,22 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** QA Round 11 - awaiting user feedback
+**Phase:** QA Round 12 - awaiting user feedback
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
-**Latest Commit:** `f5abe16` - v11 with view switch fix
+**Latest Commit:** `d75716a` - v12 with message persistence fix
 
 **Active Intervention:** `plan/interventions/v0.7.1-intervention.md` ← READ THIS FIRST
 
-**What's New in v11:**
-- Fixed: Detect wrong column width after view switch (compares rendered SVG to desired)
-- Fixed: Show feedback message when config panel value bumped by edge-to-edge
-- Created #52: Markers askew at lower grains
-- Created #53: Zoom stops feature request
+**What's New in v12:**
+- Fixed: Zoom limit message now inserted BEFORE container (survives render)
+- Created #54: Intermittent zoom carryover (low priority)
 
-**What's Being Tested (v11):**
+**What's Being Tested (v12):**
 - Per-view zoom preservation across view switches
-- Zoom floor enforcement per view
+- Config panel spinner feedback (message should now persist)
 - Feedback messages on limits
-- Config panel below-floor handling
 
 **Known Limitations (Accepted):**
 - Label bleeding at extreme zoom (separate issue)
