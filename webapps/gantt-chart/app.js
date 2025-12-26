@@ -1474,6 +1474,9 @@
     /**
      * Show a temporary message when zoom limits are reached.
      * Auto-dismisses after 5 seconds.
+     *
+     * Note: Inserted BEFORE gantt-container (not inside) so it survives
+     * container.innerHTML = '' during render.
      */
     function showZoomLimitMessage(message) {
         // Remove any existing zoom message
@@ -1489,10 +1492,10 @@
             <button class="dismiss-btn" onclick="this.parentElement.remove()">&times;</button>
         `;
 
-        // Insert at top of gantt-container
+        // Insert BEFORE gantt-container (not inside) so render doesn't clear it
         const container = document.getElementById('gantt-container');
-        if (container) {
-            container.insertBefore(banner, container.firstChild);
+        if (container && container.parentElement) {
+            container.parentElement.insertBefore(banner, container);
         }
 
         // Auto-dismiss after 5 seconds
