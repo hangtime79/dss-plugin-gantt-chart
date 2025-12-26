@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 import pandas as pd
 import logging
+import re
 
 from ganttchart.date_parser import parse_date_to_iso, validate_date_range
 from ganttchart.color_mapper import create_color_mapping, get_task_color_class
@@ -408,7 +409,7 @@ class TaskTransformer:
 
     def _normalize_id(self, value: Any) -> str:
         """
-        Normalize an ID value to a consistent string format.
+        Normalize an ID value to a consistent, CSS-safe string format.
         Used for both task IDs and dependency IDs to ensure they match.
 
         Handles all data types: int, float, str, Decimal, etc.
@@ -418,11 +419,14 @@ class TaskTransformer:
         Also handles string representations of floats (e.g., "1.0" -> "1")
         which can occur when dependency strings contain float-formatted IDs.
 
+        IMPORTANT: All IDs are made CSS-safe because frappe-gantt uses them
+        in selectors like `.highlight-{id}`. Non-safe characters are hex-encoded.
+
         Args:
             value: ID value from DataFrame
 
         Returns:
-            Normalized string representation
+            Normalized, CSS-safe string representation
         """
         if pd.isna(value):
             return ''
@@ -437,8 +441,8 @@ class TaskTransformer:
             if value.is_integer():
                 return str(int(value))
             else:
-                # Preserve actual decimal values (e.g., 3.14)
-                return str(value).strip()
+                # Non-integer float (e.g., 54.8) - make CSS-safe
+                return self._make_css_safe(str(value).strip())
 
         # For strings, also check if they look like whole-number floats
         # This handles "1.0" -> "1" for dependency strings like "1.0, 2.0"
@@ -448,12 +452,46 @@ class TaskTransformer:
                 float_val = float(stripped)
                 if float_val.is_integer():
                     return str(int(float_val))
+                else:
+                    # Non-integer float string - make CSS-safe
+                    return self._make_css_safe(stripped)
             except (ValueError, TypeError):
                 pass
-            return stripped
+            # General string - make CSS-safe
+            return self._make_css_safe(stripped)
 
         # For all other types (int, Decimal, etc.), convert directly
-        return str(value).strip()
+        return self._make_css_safe(str(value).strip())
+
+    def _make_css_safe(self, value: str) -> str:
+        """
+        Make a string safe for use in CSS class names and selectors.
+
+        Frappe-gantt uses task IDs in CSS selectors like `.highlight-{id}`.
+        Invalid characters cause querySelector to throw DOMException.
+
+        Uses hex-encoding for non-safe characters to ensure:
+        - Deterministic: same input always produces same output
+        - Collision-free: different inputs produce different outputs
+        - Reversible: can decode back to original if needed
+
+        Examples:
+            "54.8" -> "54_x2e_8"   (period encoded as hex 2e)
+            "task 1" -> "task_x20_1" (space encoded as hex 20)
+            "item#5" -> "item_x23_5" (hash encoded as hex 23)
+
+        Args:
+            value: String to sanitize
+
+        Returns:
+            CSS-safe string with non-alphanumeric chars hex-encoded
+        """
+        def encode_char(match: re.Match) -> str:
+            return f'_x{ord(match.group(0)):02x}_'
+
+        # Keep alphanumerics, underscores, and hyphens (CSS-safe)
+        # Encode everything else as _xHH_ where HH is the hex code
+        return re.sub(r'[^a-zA-Z0-9_-]', encode_char, value)
 
     def _extract_dependencies(self, value: Any) -> str:
         """

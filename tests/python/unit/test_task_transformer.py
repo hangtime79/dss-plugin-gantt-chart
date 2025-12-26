@@ -456,7 +456,7 @@ class TestIDNormalization:
         assert transformer._normalize_id(-5.0) == '-5'
 
     def test_normalize_id_float_decimal(self):
-        """Test normalization of actual decimal floats."""
+        """Test normalization of actual decimal floats - made CSS-safe."""
         config = TaskTransformerConfig(
             id_column='id',
             name_column='name',
@@ -464,11 +464,11 @@ class TestIDNormalization:
             end_column='end'
         )
         transformer = TaskTransformer(config)
-        
-        # Actual decimals should be preserved
-        assert transformer._normalize_id(3.14) == '3.14'
-        assert transformer._normalize_id(0.5) == '0.5'
-        assert transformer._normalize_id(-1.75) == '-1.75'
+
+        # Actual decimals are hex-encoded to be CSS-safe (period → _x2e_)
+        assert transformer._normalize_id(3.14) == '3_x2e_14'
+        assert transformer._normalize_id(0.5) == '0_x2e_5'
+        assert transformer._normalize_id(-1.75) == '-1_x2e_75'
 
     def test_normalize_id_string(self):
         """Test normalization of string IDs."""
@@ -632,6 +632,83 @@ class TestIDNormalization:
         assert result['tasks'][1]['dependencies'] == ['task_a']
         assert result['tasks'][2]['id'] == 'task_c'
         assert result['tasks'][2]['dependencies'] == ['task_a', 'task_b']
+
+
+class TestCssSafe:
+    """Test CSS-safe ID encoding."""
+
+    def test_make_css_safe_period(self):
+        """Test that periods are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('54.8') == '54_x2e_8'
+        assert transformer._make_css_safe('3.14.15') == '3_x2e_14_x2e_15'
+
+    def test_make_css_safe_space(self):
+        """Test that spaces are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('task 1') == 'task_x20_1'
+        assert transformer._make_css_safe('my task') == 'my_x20_task'
+
+    def test_make_css_safe_special_chars(self):
+        """Test that various special characters are hex-encoded."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('item#5') == 'item_x23_5'
+        assert transformer._make_css_safe('task[1]') == 'task_x5b_1_x5d_'
+        assert transformer._make_css_safe('a:b') == 'a_x3a_b'
+
+    def test_make_css_safe_preserves_safe_chars(self):
+        """Test that alphanumerics, underscores, and hyphens are preserved."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        assert transformer._make_css_safe('task-1') == 'task-1'
+        assert transformer._make_css_safe('task_1') == 'task_1'
+        assert transformer._make_css_safe('Task123') == 'Task123'
+        assert transformer._make_css_safe('ABC-xyz_123') == 'ABC-xyz_123'
+
+    def test_make_css_safe_no_collision(self):
+        """Test that similar IDs don't collide after encoding."""
+        config = TaskTransformerConfig(
+            id_column='id',
+            name_column='name',
+            start_column='start',
+            end_column='end'
+        )
+        transformer = TaskTransformer(config)
+
+        # These should produce different outputs
+        id1 = transformer._make_css_safe('54.8')
+        id2 = transformer._make_css_safe('54_8')
+
+        assert id1 != id2
+        assert id1 == '54_x2e_8'
+        assert id2 == '54_8'
 
 
 class TestExpectedProgress:
