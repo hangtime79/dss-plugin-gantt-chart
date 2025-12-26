@@ -128,28 +128,18 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** ✅ QA PASSED - Ready for Branch Exit
+**Phase:** Branch Exit - Awaiting artifact approval
 
 **Current Branch:** `bugfix/v0.7.1-sticky-header-narrow-content`
 
-**Latest Commit:** `be2872b` - v12 QA passed
+**Latest Commit:** `d82f5ee` - QA passed, ready for exit
 
-**Active Intervention:** `plan/interventions/v0.7.1-intervention.md`
+**Artifacts Ready:**
+- ✅ `plan/releases/v0.7.1-release-notes.md`
+- ✅ `plan/post-mortems/v0.7.1-post-mortem.md`
+- ✅ `CHANGELOG.md` updated
 
-**What's Complete:**
-- ✅ Per-view independent zoom tracking
-- ✅ Edge-to-edge content fills viewport (fixes #21 sticky header jank)
-- ✅ View floor prevents zoom below minimum
-- ✅ User feedback on zoom limits
-- ✅ Config panel spinner feedback
-- ✅ Smooth scrolling
-
-**Issues Created for Future Releases:**
-- #52: Markers misaligned at lower granularities
-- #53: Zoom stops at 25/50/75/100%
-- #54: Intermittent zoom carryover (low priority)
-
-**Next Step:** Run `cli-docs/cli-protocols/branch-exit-protocol.md`
+**Next Step:** User approval, then commit, tag v0.7.1, and create PR
 
 **Latest Release:** v0.7.0 (2025-12-26)
 **Release URL:** https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.7.0
