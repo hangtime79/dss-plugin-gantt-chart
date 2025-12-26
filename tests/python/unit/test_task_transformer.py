@@ -662,9 +662,9 @@ class TestExpectedProgress:
         result = transformer.transform(df)
 
         task = result['tasks'][0]
-        assert 'expected_progress' in task
+        assert '_expected_progress' in task
         # 5 days elapsed out of 10 total = 50%
-        assert 49 <= task['expected_progress'] <= 51  # Allow small variance
+        assert 49 <= task['_expected_progress'] <= 51  # Allow small variance
 
     def test_expected_progress_future_task(self):
         """Test that future tasks have no expected progress marker."""
@@ -691,7 +691,7 @@ class TestExpectedProgress:
         result = transformer.transform(df)
 
         task = result['tasks'][0]
-        assert 'expected_progress' not in task
+        assert '_expected_progress' not in task
 
     def test_expected_progress_past_task(self):
         """Test that past tasks have no expected progress marker."""
@@ -718,7 +718,7 @@ class TestExpectedProgress:
         result = transformer.transform(df)
 
         task = result['tasks'][0]
-        assert 'expected_progress' not in task
+        assert '_expected_progress' not in task
 
     def test_expected_progress_starts_today(self):
         """Test expected progress when task starts today."""
@@ -744,9 +744,9 @@ class TestExpectedProgress:
         result = transformer.transform(df)
 
         task = result['tasks'][0]
-        assert 'expected_progress' in task
+        assert '_expected_progress' in task
         # 0 days elapsed out of 10 = 0%
-        assert task['expected_progress'] == 0.0
+        assert task['_expected_progress'] == 0.0
 
     def test_expected_progress_ends_today(self):
         """Test expected progress when task ends today."""
@@ -772,6 +772,6 @@ class TestExpectedProgress:
         result = transformer.transform(df)
 
         task = result['tasks'][0]
-        assert 'expected_progress' in task
+        assert '_expected_progress' in task
         # 10 days elapsed out of 10 = 100%
-        assert task['expected_progress'] == 100.0
+        assert task['_expected_progress'] == 100.0
