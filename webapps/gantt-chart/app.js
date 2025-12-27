@@ -1346,7 +1346,7 @@
      */
     function addPillBackgrounds() {
         console.log('addPillBackgrounds: Starting...');
-        const svg = document.querySelector('.gantt svg');
+        const svg = document.getElementById('gantt-svg');
         if (!svg) {
             console.warn('addPillBackgrounds: No SVG found');
             return;
@@ -1436,7 +1436,7 @@
      * Called after render and view changes to maintain proper layering.
      */
     function ensureStackingOrder() {
-        const svg = document.querySelector('.gantt svg');
+        const svg = document.getElementById('gantt-svg');
         if (!svg) return;
 
         // Find the today highlight element (frappe-gantt uses 'today-highlight' class)
@@ -1491,7 +1491,7 @@
         document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
 
         // Get SVG and create/get markers layer at TOP of stacking order (#57)
-        const svg = document.querySelector('.gantt svg');
+        const svg = document.getElementById('gantt-svg');
         if (!svg) {
             console.warn('Expected progress markers: no SVG found');
             return;
