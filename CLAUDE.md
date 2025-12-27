@@ -140,16 +140,18 @@ Simple fixes with plenty of context don't need intervention tracking.
 **What's In Scope (v0.9.0):**
 | Issue | Status |
 |-------|--------|
-| #31: Dark Mode | QA Round 2 - fixed header, added dropdown, localStorage |
-| #34: Grid Lines | PASSED |
-| #47: Pill Labels | QA Round 2 - fixed visibility with explicit fill |
-| #49: Palettes | Deferred - awaiting other fixes |
-| #54: Zoom Bug | PASSED |
-| #57: Markers | QA Round 2 - increased size 3px/8px |
+| #34: Grid Lines | ✅ PASSED |
+| #47: Pill Labels | 🔄 QA Round 2 - fixed visibility with explicit fill |
+| #54: Zoom Bug | ✅ PASSED |
+| #57: Markers | 🔄 QA Round 2 - increased size 3px/8px |
+
+**Deferred:**
+- #31: Dark Mode → v0.9.1
+- #49: Palettes → v0.9.2
 
 **Intervention:** `plan/interventions/v0.9.0-intervention.md` (READ THIS FIRST)
 
-**Next Step:** User re-tests #57, #47, #31, #49
+**Next Step:** User re-tests #57, #47
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -164,7 +166,9 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
 | ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
 | ~~**v0.8.0**~~ | ~~#12, #14, #35, #41, #50~~ | ~~Headers & Date Formats~~ ✅ |
-| **v0.9.0** | #31, #34, #47, #49, #54, #57 | Theming & Visual Polish ← *current* |
+| **v0.9.0** | #34, #47, #54, #57 | Theming & Visual Polish ← *current* |
+| **v0.9.1** | #31 | Dark Mode |
+| **v0.9.2** | #49 | Color Palettes |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 

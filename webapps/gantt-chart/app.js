@@ -1345,13 +1345,20 @@
      * Called after render and view changes.
      */
     function addPillBackgrounds() {
+        console.log('addPillBackgrounds: Starting...');
         const svg = document.querySelector('.gantt svg');
-        if (!svg) return;
+        if (!svg) {
+            console.warn('addPillBackgrounds: No SVG found');
+            return;
+        }
 
         // Remove existing pills first (handles re-render)
-        svg.querySelectorAll('.bar-label-pill').forEach(p => p.remove());
+        const existingPills = svg.querySelectorAll('.bar-label-pill');
+        console.log('addPillBackgrounds: Removing', existingPills.length, 'existing pills');
+        existingPills.forEach(p => p.remove());
 
         const barWrappers = svg.querySelectorAll('.bar-wrapper');
+        console.log('addPillBackgrounds: Found', barWrappers.length, 'bar-wrappers');
 
         // Constants at top for easy tweaking (#47)
         const PADDING_X = 6;
@@ -1399,11 +1406,19 @@
             pill.setAttribute('opacity', '1');
 
             // Insert BEFORE label so pill renders underneath text
-            label.parentNode.insertBefore(pill, label);
-            pillsAdded++;
+            try {
+                label.parentNode.insertBefore(pill, label);
+                pillsAdded++;
+            } catch (e) {
+                console.warn('addPillBackgrounds: Failed to insert pill:', e);
+            }
         });
 
-        console.log('Pill backgrounds added:', pillsAdded, 'of', barWrappers.length, 'bars');
+        console.log('addPillBackgrounds: Created', pillsAdded, 'pills for', barWrappers.length, 'bars');
+
+        // Verify pills were actually added to DOM
+        const verifyPills = svg.querySelectorAll('.bar-label-pill');
+        console.log('addPillBackgrounds: Verification - found', verifyPills.length, 'pills in DOM');
     }
 
     // ===== VISUAL STACKING ORDER (#57) =====
@@ -1435,31 +1450,18 @@
         const barsLayer = barWrappers[0].parentElement;
         if (!barsLayer) return;
 
-        // Move today highlight after all bars (renders on top of bars)
+        // Move today highlight after all bars (renders on top of bars, but below markers)
         if (todayHighlight && barsLayer) {
-            // Append to same parent as bars, after all bars
             barsLayer.appendChild(todayHighlight);
             console.log('Stacking order: Moved today-highlight above bars');
         }
 
-        // Expected progress markers are added per-bar in addExpectedProgressMarkers()
-        // They're already inside bar groups, but we can move them to a top layer
-        const markers = svg.querySelectorAll('.expected-progress-marker');
-        if (markers.length > 0) {
-            // Create or get markers layer at end of SVG (topmost)
-            let markersLayer = svg.querySelector('.markers-layer');
-            if (!markersLayer) {
-                markersLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                markersLayer.setAttribute('class', 'markers-layer');
-                svg.appendChild(markersLayer);
-            }
-
-            // Move all markers to this top layer
-            markers.forEach(marker => {
-                // Clone position from current location
-                markersLayer.appendChild(marker);
-            });
-            console.log('Stacking order: Moved', markers.length, 'markers to top layer');
+        // Markers are now created directly in markers-layer by addExpectedProgressMarkers()
+        // Just ensure markers-layer is at end of SVG for proper z-order
+        const markersLayer = svg.querySelector('.markers-layer');
+        if (markersLayer) {
+            svg.appendChild(markersLayer);  // Move to end = topmost
+            console.log('Stacking order: Ensured markers-layer is topmost');
         }
     }
 
@@ -1487,6 +1489,21 @@
 
         // Remove existing markers first (handles re-render/view change)
         document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
+
+        // Get SVG and create/get markers layer at TOP of stacking order (#57)
+        const svg = document.querySelector('.gantt svg');
+        if (!svg) {
+            console.warn('Expected progress markers: no SVG found');
+            return;
+        }
+
+        // Create or reuse markers layer - appended to SVG so it renders on top of everything
+        let markersLayer = svg.querySelector('.markers-layer');
+        if (!markersLayer) {
+            markersLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            markersLayer.setAttribute('class', 'markers-layer');
+            svg.appendChild(markersLayer);
+        }
 
         // Get all bar wrappers
         const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
@@ -1549,9 +1566,9 @@
             triangle.setAttribute('points', triPoints);
             triangle.setAttribute('fill', '#e74c3c');
 
-            // Insert markers into the bar group
-            barGroup.appendChild(marker);
-            barGroup.appendChild(triangle);
+            // Insert markers into top-layer group (not bar group) for proper z-order (#57)
+            markersLayer.appendChild(marker);
+            markersLayer.appendChild(triangle);
             markersAdded++;
         });
 
