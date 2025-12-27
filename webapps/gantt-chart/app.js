@@ -409,6 +409,9 @@
             const yearMatch = original.match(/(\d{4})/);
             if (!yearMatch) return;
 
+            // Store original text for scroll handler matching
+            text.setAttribute('data-original-text', original);
+
             const year = parseInt(yearMatch[1]);
             const decade = Math.floor(year / 10) * 10;
 
@@ -421,6 +424,9 @@
                 text.textContent = '';
             }
         });
+
+        // Ensure scroll tracking works after we modified text
+        fixCurrentUpperScrollTracking();
 
         // Process lower-text: Show individual years with responsive abbreviation
         lowerTexts.forEach(text => {
@@ -450,6 +456,9 @@
         const upperTexts = document.querySelectorAll('.upper-text');
         if (!upperTexts.length) return;
 
+        // Always set up scroll tracking (fixes current-upper updates for all views)
+        fixCurrentUpperScrollTracking();
+
         // Year and Month views already handled by formatYearLabels/formatMonthLabels
         // Focus on Day, Week, Hour, Quarter Day, Half Day views
         if (viewMode === 'Year' || viewMode === 'Month') return;
@@ -477,6 +486,10 @@
             // Frappe Gantt typically shows "December" or "Dec" for upper headers
             const monthPattern = /^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
             if (monthPattern.test(content)) {
+                // Store original text for library scroll handler matching
+                // Library uses textContent matching to find current element on scroll
+                text.setAttribute('data-original-text', content);
+
                 // Try to infer year from gantt dates array
                 // Find dates that fall in this month
                 const monthMap = {
@@ -506,6 +519,66 @@
                 }
             }
         });
+    }
+
+    /**
+     * Fix the current-upper scroll tracking after we modify textContent.
+     * The library's scroll handler uses textContent matching, but we modify textContent.
+     * This adds our own scroll handler using position-based element finding.
+     */
+    function fixCurrentUpperScrollTracking() {
+        if (!ganttInstance) return;
+
+        const container = document.querySelector('.gantt-container');
+        if (!container) return;
+
+        // Only add once per container instance
+        if (container._currentUpperScrollFixed) return;
+        container._currentUpperScrollFixed = true;
+
+        container.addEventListener('scroll', () => {
+            if (!ganttInstance || !ganttInstance.config) return;
+
+            const scrollLeft = container.scrollLeft;
+            const upperTexts = document.querySelectorAll('.gantt-container .upper-text');
+            if (!upperTexts.length) return;
+
+            // Find the rightmost upper-text element that starts at or before scrollLeft
+            // This is the element that should be "current" (sticky in top-left)
+            let currentEl = null;
+            let currentElLeft = -Infinity;
+
+            upperTexts.forEach(el => {
+                // Skip empty/hidden elements
+                if (!el.textContent.trim()) return;
+
+                // Get element's left position
+                const elLeft = parseFloat(el.style.left) || el.offsetLeft || 0;
+
+                // Find the rightmost element that's still to the left of (or at) scroll position
+                if (elLeft <= scrollLeft && elLeft > currentElLeft) {
+                    currentElLeft = elLeft;
+                    currentEl = el;
+                }
+            });
+
+            // If no element found to the left, use the first visible one
+            if (!currentEl) {
+                currentEl = Array.from(upperTexts).find(el => el.textContent.trim());
+            }
+
+            if (currentEl) {
+                // Only update if changed
+                const existingCurrent = document.querySelector('.gantt-container .upper-text.current-upper');
+                if (existingCurrent !== currentEl) {
+                    upperTexts.forEach(el => el.classList.remove('current-upper'));
+                    currentEl.classList.add('current-upper');
+                    ganttInstance.$current = currentEl;
+                }
+            }
+        });
+
+        console.log('Current-upper scroll tracking fixed (position-based)');
     }
 
     /**
@@ -894,6 +967,7 @@
                     applyGridSettings();  // Re-apply grid settings (#34)
                     // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
+                    forceRightAlignedLabels();  // Force all labels to right of bars (#62)
                     addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                     ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
@@ -943,6 +1017,7 @@
                 applyGridSettings();  // Apply grid line visibility/opacity (#34)
                 // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                 addExpectedProgressMarkers();
+                forceRightAlignedLabels();  // Force all labels to right of bars (#62)
                 addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                 ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
@@ -1597,10 +1672,38 @@
         return luminance > 0.5;
     }
 
+    // ===== LABEL POSITIONING (#62) =====
+
+    /**
+     * Force all task labels to be right-aligned (positioned to the right of bars).
+     * Overrides frappe-gantt's adaptive logic that places labels inside or outside
+     * bars based on text width. All labels are positioned 45px from bar end.
+     * #62: Standardize Task Label Positioning
+     */
+    function forceRightAlignedLabels() {
+        const LABEL_OFFSET = 45; // 45px right of bar end
+
+        document.querySelectorAll('.gantt .bar-wrapper').forEach(wrapper => {
+            const bar = wrapper.querySelector('.bar');
+            const label = wrapper.querySelector('.bar-label');
+            if (!bar || !label) return;
+
+            const barX = parseFloat(bar.getAttribute('x')) || 0;
+            const barWidth = parseFloat(bar.getAttribute('width')) || 0;
+            const barEndX = barX + barWidth;
+
+            // Force right-aligned positioning
+            label.setAttribute('x', barEndX + LABEL_OFFSET);
+            label.classList.add('big');  // Ensures correct text color (external label styling)
+        });
+    }
+
+    // ===== COMPLETION INDICATORS (#63) =====
+
     /**
      * Add checkmark indicators to 100% complete tasks.
      * Uses _is_complete flag from Python backend for detection.
-     * Checkmark is centered in bar, label shifted right.
+     * Checkmark is centered in bar (horizontally and vertically).
      * Color adapts to bar background (black on light, white on dark).
      */
     function addCompletionIndicators() {
@@ -1637,7 +1740,7 @@
             const iconSize = 16;
             const scale = 1.5;
             const scaledSize = iconSize * scale;
-            const centerX = x + (scaledSize / 2);  // Left side of bar + half icon
+            const centerX = x + (width / 2) - (scaledSize / 2);  // True horizontal center (#63)
             const centerY = y + (height / 2) - (scaledSize / 2);
 
             // Create checkmark using SVG path (cross-browser compatible)
@@ -1653,11 +1756,7 @@
             checkGroup.appendChild(checkPath);
             wrapper.appendChild(checkGroup);
 
-            // Shift label to the right to make room for checkmark
-            if (label) {
-                const labelX = parseFloat(label.getAttribute('x')) || 0;
-                label.setAttribute('x', labelX + scaledSize + 4);  // Shift by icon size + padding
-            }
+            // Note: Label shifting removed - #62 forceRightAlignedLabels() handles all label positioning
 
             indicatorsAdded++;
         });
@@ -1769,18 +1868,8 @@
             progressBar.setAttribute('rx', 0);
             progressBar.setAttribute('ry', 0);
 
-            // Extend progress bar beyond task bar bounds to fill corner pixels
-            // The clipPath will clip it to the correct shape
-            const cornerRadius = parseFloat(taskBar.getAttribute('rx')) || 0;
-            const originalX = parseFloat(progressBar.getAttribute('x')) || 0;
-            const originalWidth = parseFloat(progressBar.getAttribute('width')) || 0;
-
-            if (cornerRadius > 0 && originalWidth > 0) {
-                // Extend left by corner radius
-                progressBar.setAttribute('x', originalX - cornerRadius);
-                // Extend width to cover both left extension and right corner
-                progressBar.setAttribute('width', originalWidth + cornerRadius * 2);
-            }
+            // #64: Width extension removed - it caused progress to appear overstated.
+            // The clipPath alone handles corner containment correctly.
         });
 
         console.log(`Created ${defs.children.length} clipPath definitions`);
