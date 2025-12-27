@@ -119,6 +119,11 @@ body {
     gap: var(--spacing-sm);
 }
 
+/* Extra spacing between view mode selectors and action buttons */
+.control-spacer {
+    width: calc(var(--spacing-sm) * 2);
+}
+
 .brand-title {
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-lg);
@@ -770,23 +775,26 @@ body {
  * SVG text elements don't support CSS background/padding, so we add
  * rect elements behind each label for contrast.
  */
-.bar-label-pill {
-    fill: rgba(255, 255, 255, 0.85);
-    rx: 3;
-    ry: 3;
-}
 
-/* Internal labels (inside bar) - semi-transparent white pill */
+/* Internal labels (inside bar) - semi-transparent white pill with outline */
 .bar-wrapper:not(.has-big-label) .bar-label-pill {
-    fill: rgba(255, 255, 255, 0.85);
-}
-
-/* External labels (.big) - more opaque for visibility on white background */
-.bar-wrapper.has-big-label .bar-label-pill {
-    fill: rgba(255, 255, 255, 0.95);
-    stroke: rgba(0, 0, 0, 0.1);
+    fill: rgba(255, 255, 255, 0.7);
+    stroke: rgba(0, 0, 0, 0.15);
     stroke-width: 1;
 }
+
+/* External labels (.big) - no pill needed on white background */
+.bar-wrapper.has-big-label .bar-label-pill {
+    fill: transparent;
+    stroke: none;
+}
+
+/* Force black text on internal pills (override color-based white) */
+.bar-wrapper:not(.has-big-label) .bar-label {
+    fill: #333333 !important;
+}
+
+/* External labels already have dark text from .bar-label.big rule */
 
 /* Ensure header text is visible */
 .gantt .grid-header text {
@@ -1030,8 +1038,25 @@ body {
 }
 
 /* Pill labels in dark mode */
-.dark-theme .bar-label-pill {
+.dark-theme .bar-wrapper:not(.has-big-label) .bar-label-pill {
     fill: rgba(0, 0, 0, 0.6);
+    stroke: rgba(255, 255, 255, 0.2);
+}
+
+/* External pills hidden in dark mode too */
+.dark-theme .bar-wrapper.has-big-label .bar-label-pill {
+    fill: transparent;
+    stroke: none;
+}
+
+/* External labels need white text in dark mode */
+.dark-theme .gantt .bar-label.big {
+    fill: #ffffff !important;
+}
+
+/* Internal labels on dark pill still need light text */
+.dark-theme .bar-wrapper:not(.has-big-label) .bar-label {
+    fill: #ffffff !important;
 }
 
 /* Popup in dark mode */
