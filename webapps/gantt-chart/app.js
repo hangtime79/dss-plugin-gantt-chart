@@ -891,7 +891,7 @@
                     addHeaderSeparators();  // Add column separators (#50)
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     applyGridSettings();  // Re-apply grid settings (#34)
-                    addPillBackgrounds();  // Re-add pill backgrounds (#47)
+                    // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
                     ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
@@ -939,7 +939,7 @@
                 addHeaderSeparators();  // Add column separators (#50)
                 setupStickyHeader();
                 applyGridSettings();  // Apply grid line visibility/opacity (#34)
-                addPillBackgrounds();  // Add pill backgrounds behind labels (#47)
+                // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                 addExpectedProgressMarkers();
                 ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
