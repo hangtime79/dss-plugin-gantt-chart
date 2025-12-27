@@ -193,7 +193,57 @@
 
             {
                 "type": "SEPARATOR",
+                "label": "Grid Lines"
+            },
+            {
+                "name": "showVerticalGridLines",
+                "type": "BOOLEAN",
+                "label": "Show vertical grid lines",
+                "defaultValue": true
+            },
+            {
+                "name": "showHorizontalGridLines",
+                "type": "BOOLEAN",
+                "label": "Show horizontal grid lines",
+                "defaultValue": true
+            },
+            {
+                "name": "gridLineOpacity",
+                "type": "INT",
+                "label": "Grid line opacity (%)",
+                "defaultValue": 100,
+                "minI": 0,
+                "maxI": 100
+            },
+
+            {
+                "type": "SEPARATOR",
                 "label": "Appearance"
+            },
+            {
+                "name": "theme",
+                "type": "SELECT",
+                "label": "Theme",
+                "description": "Color theme for the chart",
+                "defaultValue": "light",
+                "selectChoices": [
+                    {"value": "light", "label": "Light"},
+                    {"value": "dark", "label": "Dark"},
+                    {"value": "auto", "label": "Auto (System)"}
+                ]
+            },
+            {
+                "name": "colorPalette",
+                "type": "SELECT",
+                "label": "Color Palette",
+                "description": "Color scheme for task bars",
+                "defaultValue": "classic",
+                "selectChoices": [
+                    {"value": "classic", "label": "Classic (Vibrant)"},
+                    {"value": "pastel", "label": "Pastel (Soft)"},
+                    {"value": "dark", "label": "Dark Mode"},
+                    {"value": "dataiku", "label": "Dataiku"}
+                ]
             },
             {
                 "name": "barHeight",

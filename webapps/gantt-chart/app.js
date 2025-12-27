@@ -890,7 +890,10 @@
                     adjustHeaderLabels();
                     addHeaderSeparators();  // Add column separators (#50)
                     setupStickyHeader();  // Re-setup after view change recreates DOM
+                    applyGridSettings();  // Re-apply grid settings (#34)
+                    // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
+                    ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                     updateZoomIndicator();  // Update indicator for new view's zoom
                 });
@@ -928,13 +931,17 @@
 
             // Post-render adjustments
             requestAnimationFrame(() => {
+                initTheme();  // Apply theme before visual adjustments (#31)
                 enforceMinimumBarWidths();
                 fixProgressBarRadius();
                 updateSvgDimensions();
                 adjustHeaderLabels();
                 addHeaderSeparators();  // Add column separators (#50)
                 setupStickyHeader();
+                applyGridSettings();  // Apply grid line visibility/opacity (#34)
+                // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                 addExpectedProgressMarkers();
+                ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
 
                 // Restore view state if we have saved state from config update
@@ -1029,7 +1036,9 @@
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
-        header.style.backgroundColor = '#ffffff';
+        // Use theme-aware background color (#31)
+        const isDark = document.body.classList.contains('dark-theme');
+        header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
 
         // Force header to span full container width (fixes jank when content is narrow)
         header.style.minWidth = container.offsetWidth + 'px';
@@ -1052,6 +1061,8 @@
 
     // Guard to prevent re-render loop
     let edgeToEdgeInProgress = false;
+    // Track expected view mode for race condition detection (#54)
+    let edgeToEdgeExpectedViewMode = null;
 
     /**
      * Calculate and enforce minimum column width to fill viewport.
@@ -1065,10 +1076,16 @@
      *
      * Issue #21: When SVG doesn't fill container, browser paint/composite
      * behavior during scroll transform causes visual jank.
+     *
+     * Issue #54: Added view mode mismatch guard to prevent zoom carryover
+     * during rapid view switching.
      */
     function ensureEdgeToEdgeContent() {
         if (!ganttInstance) return;
         if (edgeToEdgeInProgress) return;
+
+        // Capture expected view mode at call time for race detection (#54)
+        edgeToEdgeExpectedViewMode = currentViewMode;
 
         const container = document.getElementById('gantt-container');
         const svg = document.getElementById('gantt-svg');
@@ -1112,6 +1129,15 @@
         const needsRerender = storedWidth < neededWidth || Math.abs(renderedWidth - neededWidth) > 2;
 
         if (needsRerender) {
+            // Guard: Check if view mode changed during calculations (#54)
+            // This prevents zoom carryover when user switches views rapidly
+            const actualViewMode = ganttInstance?.options?.view_mode;
+            if (actualViewMode !== edgeToEdgeExpectedViewMode) {
+                console.log('Edge-to-edge: View mode changed during calculation, aborting',
+                    '(expected:', edgeToEdgeExpectedViewMode, 'actual:', actualViewMode, ')');
+                return;
+            }
+
             console.log('Edge-to-edge: Re-rendering at', neededWidth, '(was', renderedWidth, ')');
 
             // If stored width was below floor, show feedback to user
@@ -1141,6 +1167,304 @@
         }
     }
 
+    // ===== DARK MODE SUPPORT (#31) =====
+
+    // Track system preference listener for cleanup
+    let systemThemeListener = null;
+    // Track current theme setting for sticky header updates
+    let currentThemeSetting = 'light';
+
+    /**
+     * Get localStorage key for theme persistence.
+     * Uses same hash function as view mode for consistency.
+     */
+    function getThemeStorageKey(datasetName) {
+        return `gantt-theme-${hashString(datasetName || 'default')}`;
+    }
+
+    /**
+     * Load persisted theme from localStorage.
+     */
+    function loadPersistedTheme(datasetName) {
+        try {
+            const key = getThemeStorageKey(datasetName);
+            const saved = localStorage.getItem(key);
+            return ['light', 'dark', 'auto'].includes(saved) ? saved : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Save theme to localStorage.
+     */
+    function saveTheme(datasetName, theme) {
+        try {
+            const key = getThemeStorageKey(datasetName);
+            localStorage.setItem(key, theme);
+            console.log('Theme saved:', theme);
+        } catch (e) {
+            console.warn('Failed to save theme:', e);
+        }
+    }
+
+    /**
+     * Initialize theme based on persisted setting or config.
+     * Called during initial render.
+     */
+    function initTheme() {
+        // Priority: localStorage > config > default
+        const persisted = loadPersistedTheme(webAppConfig?.dataset);
+        const themeSetting = persisted || webAppConfig?.theme || 'light';
+        applyTheme(themeSetting);
+        updateThemeDropdown(themeSetting);
+        setupThemeToggle();
+    }
+
+    /**
+     * Update theme dropdown to reflect current theme.
+     */
+    function updateThemeDropdown(theme) {
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) {
+            themeSelect.value = theme;
+        }
+    }
+
+    /**
+     * Setup theme dropdown change handler.
+     */
+    function setupThemeToggle() {
+        const themeSelect = document.getElementById('theme-select');
+        if (!themeSelect) return;
+
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            applyTheme(theme);
+            saveTheme(webAppConfig?.dataset, theme);
+        });
+    }
+
+    /**
+     * Apply theme to the document.
+     * Supports 'light', 'dark', and 'auto' (system preference).
+     */
+    function applyTheme(setting) {
+        const body = document.body;
+        currentThemeSetting = setting;
+
+        // Remove existing theme class
+        body.classList.remove('dark-theme');
+
+        // Clean up previous system listener if exists
+        if (systemThemeListener) {
+            window.matchMedia('(prefers-color-scheme: dark)')
+                .removeEventListener('change', systemThemeListener);
+            systemThemeListener = null;
+        }
+
+        let useDark = false;
+
+        if (setting === 'auto') {
+            // Detect system preference
+            useDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            // Listen for system changes
+            systemThemeListener = (e) => {
+                body.classList.toggle('dark-theme', e.matches);
+                updateStickyHeaderTheme();  // Update header when system theme changes
+                console.log('System theme changed:', e.matches ? 'dark' : 'light');
+            };
+            window.matchMedia('(prefers-color-scheme: dark)')
+                .addEventListener('change', systemThemeListener);
+        } else {
+            useDark = setting === 'dark';
+        }
+
+        if (useDark) {
+            body.classList.add('dark-theme');
+        }
+
+        // Update sticky header background to match theme
+        updateStickyHeaderTheme();
+
+        console.log('Theme applied:', setting, '(dark:', useDark, ')');
+    }
+
+    /**
+     * Update sticky header background color to match current theme.
+     */
+    function updateStickyHeaderTheme() {
+        const header = document.querySelector('.gantt .grid-header');
+        if (header) {
+            const isDark = document.body.classList.contains('dark-theme');
+            header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
+        }
+    }
+
+    // ===== GRID LINES CONFIGURATION (#34) =====
+
+    /**
+     * Apply grid line visibility and opacity settings.
+     * Controlled by showVerticalGridLines, showHorizontalGridLines, and gridLineOpacity.
+     *
+     * Called after render and view changes.
+     */
+    function applyGridSettings() {
+        const showVertical = webAppConfig?.showVerticalGridLines ?? true;
+        const showHorizontal = webAppConfig?.showHorizontalGridLines ?? true;
+        const opacity = (webAppConfig?.gridLineOpacity ?? 100) / 100;
+
+        // Vertical lines (column ticks)
+        document.querySelectorAll('.gantt .tick').forEach(el => {
+            el.style.display = showVertical ? '' : 'none';
+            el.style.opacity = opacity;
+        });
+
+        // Horizontal lines (row separators)
+        document.querySelectorAll('.gantt .row-line').forEach(el => {
+            el.style.display = showHorizontal ? '' : 'none';
+            el.style.opacity = opacity;
+        });
+
+        // Also apply to grid rows stroke (alternate approach for row lines)
+        document.querySelectorAll('.gantt .grid-row').forEach(el => {
+            el.style.strokeOpacity = showHorizontal ? opacity : 0;
+        });
+
+        console.log('Grid settings applied:', { showVertical, showHorizontal, opacity });
+    }
+
+    // ===== PILL BOX LABELS (#47) =====
+
+    /**
+     * Add pill background rectangles behind bar labels.
+     * SVG text elements don't support CSS background/padding, so we insert
+     * rect elements behind each label for contrast.
+     *
+     * Called after render and view changes.
+     */
+    function addPillBackgrounds() {
+        console.log('addPillBackgrounds: Starting...');
+        const svg = document.getElementById('gantt-svg');
+        if (!svg) {
+            console.warn('addPillBackgrounds: No SVG found');
+            return;
+        }
+
+        // Remove existing pills first (handles re-render)
+        const existingPills = svg.querySelectorAll('.bar-label-pill');
+        console.log('addPillBackgrounds: Removing', existingPills.length, 'existing pills');
+        existingPills.forEach(p => p.remove());
+
+        const barWrappers = svg.querySelectorAll('.bar-wrapper');
+        console.log('addPillBackgrounds: Found', barWrappers.length, 'bar-wrappers');
+
+        // Constants at top for easy tweaking (#47)
+        const PADDING_X = 6;
+        const PADDING_Y = 2;
+        const FILL_INTERNAL = 'rgba(255, 255, 255, 0.85)';
+        const FILL_EXTERNAL = 'rgba(255, 255, 255, 0.95)';
+
+        // PASS 1: Read all bboxes (batch reads to avoid layout thrashing)
+        const measurements = [];
+        barWrappers.forEach(wrapper => {
+            const label = wrapper.querySelector('.bar-label');
+            if (!label) return;
+
+            try {
+                const bbox = label.getBBox();
+                if (!bbox || bbox.width === 0) return;
+                measurements.push({
+                    wrapper,
+                    label,
+                    bbox,
+                    isBig: label.classList.contains('big')
+                });
+            } catch (e) {
+                // getBBox can throw if element not rendered
+                console.warn('Could not get bbox for label:', e);
+            }
+        });
+
+        // PASS 2: Create and insert pills (batch writes)
+        let pillsAdded = 0;
+        measurements.forEach(({ wrapper, label, bbox, isBig }) => {
+            if (isBig) wrapper.classList.add('has-big-label');
+
+            const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            pill.setAttribute('class', 'bar-label-pill');
+            pill.setAttribute('x', String(bbox.x - PADDING_X));
+            pill.setAttribute('y', String(bbox.y - PADDING_Y));
+            pill.setAttribute('width', String(bbox.width + (PADDING_X * 2)));
+            pill.setAttribute('height', String(bbox.height + (PADDING_Y * 2)));
+            pill.setAttribute('rx', '3');
+            pill.setAttribute('ry', '3');
+
+            // CRITICAL: Set fill directly as attribute to ensure visibility (#47)
+            pill.setAttribute('fill', isBig ? FILL_EXTERNAL : FILL_INTERNAL);
+            pill.setAttribute('opacity', '1');
+
+            // Insert BEFORE label so pill renders underneath text
+            try {
+                label.parentNode.insertBefore(pill, label);
+                pillsAdded++;
+            } catch (e) {
+                console.warn('addPillBackgrounds: Failed to insert pill:', e);
+            }
+        });
+
+        console.log('addPillBackgrounds: Created', pillsAdded, 'pills for', barWrappers.length, 'bars');
+
+        // Verify pills were actually added to DOM
+        const verifyPills = svg.querySelectorAll('.bar-label-pill');
+        console.log('addPillBackgrounds: Verification - found', verifyPills.length, 'pills in DOM');
+    }
+
+    // ===== VISUAL STACKING ORDER (#57) =====
+
+    /**
+     * Ensure proper visual stacking order for SVG elements.
+     * SVG doesn't support z-index - elements render in DOM order (later = on top).
+     *
+     * Desired order (bottom to top):
+     * 1. Grid rows and lines (background)
+     * 2. Task bars
+     * 3. Today line
+     * 4. Expected progress markers
+     *
+     * Called after render and view changes to maintain proper layering.
+     */
+    function ensureStackingOrder() {
+        const svg = document.getElementById('gantt-svg');
+        if (!svg) return;
+
+        // Find the today highlight element (frappe-gantt uses 'today-highlight' class)
+        const todayHighlight = svg.querySelector('.today-highlight');
+
+        // Find all bar wrappers (task bars)
+        const barWrappers = svg.querySelectorAll('.bar-wrapper');
+        if (barWrappers.length === 0) return;
+
+        // Get the parent of bar wrappers (the bars layer)
+        const barsLayer = barWrappers[0].parentElement;
+        if (!barsLayer) return;
+
+        // Move today highlight after all bars (renders on top of bars, but below markers)
+        if (todayHighlight && barsLayer) {
+            barsLayer.appendChild(todayHighlight);
+            console.log('Stacking order: Moved today-highlight above bars');
+        }
+
+        // Markers are now created directly in markers-layer by addExpectedProgressMarkers()
+        // Just ensure markers-layer is at end of SVG for proper z-order
+        const markersLayer = svg.querySelector('.markers-layer');
+        if (markersLayer) {
+            svg.appendChild(markersLayer);  // Move to end = topmost
+            console.log('Stacking order: Ensured markers-layer is topmost');
+        }
+    }
+
     // ===== EXPECTED PROGRESS MARKERS =====
 
     /**
@@ -1165,6 +1489,21 @@
 
         // Remove existing markers first (handles re-render/view change)
         document.querySelectorAll('.expected-progress-marker').forEach(m => m.remove());
+
+        // Get SVG and create/get markers layer at TOP of stacking order (#57)
+        const svg = document.getElementById('gantt-svg');
+        if (!svg) {
+            console.warn('Expected progress markers: no SVG found');
+            return;
+        }
+
+        // Create or reuse markers layer - appended to SVG so it renders on top of everything
+        let markersLayer = svg.querySelector('.markers-layer');
+        if (!markersLayer) {
+            markersLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            markersLayer.setAttribute('class', 'markers-layer');
+            svg.appendChild(markersLayer);
+        }
 
         // Get all bar wrappers
         const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
@@ -1216,20 +1555,20 @@
             marker.setAttribute('x2', markerX);
             marker.setAttribute('y2', barY + barHeight);
             marker.setAttribute('stroke', '#e74c3c');
-            marker.setAttribute('stroke-width', '2');
-            marker.setAttribute('stroke-dasharray', '3,2');
+            marker.setAttribute('stroke-width', '3');  // Increased from 2 for visibility (#57)
+            marker.setAttribute('stroke-dasharray', '4,2');  // Slightly larger dash
 
             // Create small triangle indicator at top
             const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             triangle.setAttribute('class', 'expected-progress-marker');
-            const triSize = 5;
+            const triSize = 8;  // Increased from 5 for visibility (#57)
             const triPoints = `${markerX - triSize},${barY - triSize} ${markerX + triSize},${barY - triSize} ${markerX},${barY}`;
             triangle.setAttribute('points', triPoints);
             triangle.setAttribute('fill', '#e74c3c');
 
-            // Insert markers into the bar group
-            barGroup.appendChild(marker);
-            barGroup.appendChild(triangle);
+            // Insert markers into top-layer group (not bar group) for proper z-order (#57)
+            markersLayer.appendChild(marker);
+            markersLayer.appendChild(triangle);
             markersAdded++;
         });
 

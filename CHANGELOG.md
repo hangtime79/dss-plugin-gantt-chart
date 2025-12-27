@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-12-27
+
+### Added
+- Configurable grid lines with show/hide toggles and opacity slider (#34)
+- Theme selector dropdown in control bar (Light/Dark/Auto)
+- Control bar layout improvements with spacing between theme and view controls
+
+### Fixed
+- Zoom state no longer carries over between view modes (#54)
+
 ## [0.8.0] - 2025-12-27
 
 ### Added
