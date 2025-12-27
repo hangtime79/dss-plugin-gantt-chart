@@ -1087,6 +1087,17 @@ body {
     background-color: var(--color-border) !important;
 }
 
+/* Ensure header text visible in dark mode */
+.dark-theme .gantt .upper-text,
+.dark-theme .gantt .lower-text {
+    fill: var(--text-muted) !important;
+}
+
+/* Progress bar visibility in dark mode */
+.dark-theme .gantt .bar-progress {
+    fill: rgba(255, 255, 255, 0.25) !important;
+}
+
 /* ===== VISUAL STACKING ORDER (#57) ===== */
 /**
  * SVG elements don't support z-index - rendering order is determined by DOM order.
@@ -1115,9 +1126,9 @@ body {
 
 /* SVG line marker styling (backup if inline styles fail) */
 line.expected-progress-marker {
-    stroke: #e74c3c;
-    stroke-width: 2;
-    stroke-dasharray: 3, 2;
+    stroke: #e74c3c !important;
+    stroke-width: 3 !important;  /* Increased from 2 for visibility (#57) */
+    stroke-dasharray: 4, 2 !important;
 }
 
 /* SVG triangle indicator styling */

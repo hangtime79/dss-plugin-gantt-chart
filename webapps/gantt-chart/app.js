@@ -1036,7 +1036,9 @@
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
-        header.style.backgroundColor = '#ffffff';
+        // Use theme-aware background color (#31)
+        const isDark = document.body.classList.contains('dark-theme');
+        header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
 
         // Force header to span full container width (fixes jank when content is narrow)
         header.style.minWidth = container.offsetWidth + 'px';
@@ -1169,14 +1171,78 @@
 
     // Track system preference listener for cleanup
     let systemThemeListener = null;
+    // Track current theme setting for sticky header updates
+    let currentThemeSetting = 'light';
 
     /**
-     * Initialize theme based on config setting.
+     * Get localStorage key for theme persistence.
+     * Uses same hash function as view mode for consistency.
+     */
+    function getThemeStorageKey(datasetName) {
+        return `gantt-theme-${hashString(datasetName || 'default')}`;
+    }
+
+    /**
+     * Load persisted theme from localStorage.
+     */
+    function loadPersistedTheme(datasetName) {
+        try {
+            const key = getThemeStorageKey(datasetName);
+            const saved = localStorage.getItem(key);
+            return ['light', 'dark', 'auto'].includes(saved) ? saved : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Save theme to localStorage.
+     */
+    function saveTheme(datasetName, theme) {
+        try {
+            const key = getThemeStorageKey(datasetName);
+            localStorage.setItem(key, theme);
+            console.log('Theme saved:', theme);
+        } catch (e) {
+            console.warn('Failed to save theme:', e);
+        }
+    }
+
+    /**
+     * Initialize theme based on persisted setting or config.
      * Called during initial render.
      */
     function initTheme() {
-        const themeSetting = webAppConfig?.theme ?? 'light';
+        // Priority: localStorage > config > default
+        const persisted = loadPersistedTheme(webAppConfig?.dataset);
+        const themeSetting = persisted || webAppConfig?.theme || 'light';
         applyTheme(themeSetting);
+        updateThemeDropdown(themeSetting);
+        setupThemeToggle();
+    }
+
+    /**
+     * Update theme dropdown to reflect current theme.
+     */
+    function updateThemeDropdown(theme) {
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) {
+            themeSelect.value = theme;
+        }
+    }
+
+    /**
+     * Setup theme dropdown change handler.
+     */
+    function setupThemeToggle() {
+        const themeSelect = document.getElementById('theme-select');
+        if (!themeSelect) return;
+
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            applyTheme(theme);
+            saveTheme(webAppConfig?.dataset, theme);
+        });
     }
 
     /**
@@ -1185,6 +1251,7 @@
      */
     function applyTheme(setting) {
         const body = document.body;
+        currentThemeSetting = setting;
 
         // Remove existing theme class
         body.classList.remove('dark-theme');
@@ -1205,6 +1272,7 @@
             // Listen for system changes
             systemThemeListener = (e) => {
                 body.classList.toggle('dark-theme', e.matches);
+                updateStickyHeaderTheme();  // Update header when system theme changes
                 console.log('System theme changed:', e.matches ? 'dark' : 'light');
             };
             window.matchMedia('(prefers-color-scheme: dark)')
@@ -1217,7 +1285,21 @@
             body.classList.add('dark-theme');
         }
 
+        // Update sticky header background to match theme
+        updateStickyHeaderTheme();
+
         console.log('Theme applied:', setting, '(dark:', useDark, ')');
+    }
+
+    /**
+     * Update sticky header background color to match current theme.
+     */
+    function updateStickyHeaderTheme() {
+        const header = document.querySelector('.gantt .grid-header');
+        if (header) {
+            const isDark = document.body.classList.contains('dark-theme');
+            header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
+        }
     }
 
     // ===== GRID LINES CONFIGURATION (#34) =====
@@ -1270,42 +1352,58 @@
         svg.querySelectorAll('.bar-label-pill').forEach(p => p.remove());
 
         const barWrappers = svg.querySelectorAll('.bar-wrapper');
-        let pillsAdded = 0;
 
+        // Constants at top for easy tweaking (#47)
+        const PADDING_X = 6;
+        const PADDING_Y = 2;
+        const FILL_INTERNAL = 'rgba(255, 255, 255, 0.85)';
+        const FILL_EXTERNAL = 'rgba(255, 255, 255, 0.95)';
+
+        // PASS 1: Read all bboxes (batch reads to avoid layout thrashing)
+        const measurements = [];
         barWrappers.forEach(wrapper => {
             const label = wrapper.querySelector('.bar-label');
             if (!label) return;
 
-            // Get label bounding box
-            const bbox = label.getBBox();
-            if (!bbox || bbox.width === 0) return;
-
-            // Check if this is an external label (.big class)
-            const isBig = label.classList.contains('big');
-            if (isBig) {
-                wrapper.classList.add('has-big-label');
+            try {
+                const bbox = label.getBBox();
+                if (!bbox || bbox.width === 0) return;
+                measurements.push({
+                    wrapper,
+                    label,
+                    bbox,
+                    isBig: label.classList.contains('big')
+                });
+            } catch (e) {
+                // getBBox can throw if element not rendered
+                console.warn('Could not get bbox for label:', e);
             }
+        });
 
-            // Create pill rectangle
+        // PASS 2: Create and insert pills (batch writes)
+        let pillsAdded = 0;
+        measurements.forEach(({ wrapper, label, bbox, isBig }) => {
+            if (isBig) wrapper.classList.add('has-big-label');
+
             const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             pill.setAttribute('class', 'bar-label-pill');
-
-            // Add padding around text
-            const paddingX = 6;
-            const paddingY = 2;
-            pill.setAttribute('x', bbox.x - paddingX);
-            pill.setAttribute('y', bbox.y - paddingY);
-            pill.setAttribute('width', bbox.width + (paddingX * 2));
-            pill.setAttribute('height', bbox.height + (paddingY * 2));
+            pill.setAttribute('x', String(bbox.x - PADDING_X));
+            pill.setAttribute('y', String(bbox.y - PADDING_Y));
+            pill.setAttribute('width', String(bbox.width + (PADDING_X * 2)));
+            pill.setAttribute('height', String(bbox.height + (PADDING_Y * 2)));
             pill.setAttribute('rx', '3');
             pill.setAttribute('ry', '3');
 
-            // Insert pill before label (so label renders on top)
+            // CRITICAL: Set fill directly as attribute to ensure visibility (#47)
+            pill.setAttribute('fill', isBig ? FILL_EXTERNAL : FILL_INTERNAL);
+            pill.setAttribute('opacity', '1');
+
+            // Insert BEFORE label so pill renders underneath text
             label.parentNode.insertBefore(pill, label);
             pillsAdded++;
         });
 
-        console.log('Pill backgrounds added:', pillsAdded);
+        console.log('Pill backgrounds added:', pillsAdded, 'of', barWrappers.length, 'bars');
     }
 
     // ===== VISUAL STACKING ORDER (#57) =====
@@ -1440,13 +1538,13 @@
             marker.setAttribute('x2', markerX);
             marker.setAttribute('y2', barY + barHeight);
             marker.setAttribute('stroke', '#e74c3c');
-            marker.setAttribute('stroke-width', '2');
-            marker.setAttribute('stroke-dasharray', '3,2');
+            marker.setAttribute('stroke-width', '3');  // Increased from 2 for visibility (#57)
+            marker.setAttribute('stroke-dasharray', '4,2');  // Slightly larger dash
 
             // Create small triangle indicator at top
             const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             triangle.setAttribute('class', 'expected-progress-marker');
-            const triSize = 5;
+            const triSize = 8;  // Increased from 5 for visibility (#57)
             const triPoints = `${markerX - triSize},${barY - triSize} ${markerX + triSize},${barY - triSize} ${markerX},${barY}`;
             triangle.setAttribute('points', triPoints);
             triangle.setAttribute('fill', '#e74c3c');
