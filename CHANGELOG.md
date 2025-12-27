@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2025-12-27
+
+### Added
+- Completion indicator (checkmark) on 100% complete tasks
+  - Adaptive color based on bar background (black on light, white on dark)
+  - Works across all color palettes
+- Dark mode styling for zoom limit banner, buttons, default tier bars, pastel palette
+
+### Fixed
+- Dark mode: Sticky header now uses CSS variable instead of hardcoded colors
+- Dark mode: Header text contrast improved for better readability
+- Dark mode: Floating year background now respects theme
+- Dark mode: Progress bar contrast improved with darker overlay
+
 ## [0.9.0] - 2025-12-27
 
 ### Added
