@@ -129,21 +129,27 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Branch Exit - Creating PR
+**Phase:** Implementation Complete - QA Round 2
 
-**Current Branch:** `feature/v0.8.0-headers-and-date-formats`
+**Current Branch:** `feature/v0.9.0-theming-and-visual-polish`
 
-**Latest Release:** v0.7.2 (2025-12-27)
+**Commits:**
+1. `fb1be8c` - feat(v0.9.0): Initial implementation
+2. `5127dc6` - fix(v0.9.0): QA fixes for markers, pills, dark mode
 
-**What's Complete (v0.8.0):**
-- ✅ #12: Year in upper headers across views
-- ✅ #14: Decade format in Year view (2020s, 2030s)
-- ✅ #35: Custom date format configuration
-- ✅ #41: Thinner header to save pixel space
-- ✅ #50: Vertical separators between header columns
-- ✅ QA Passed
+**What's In Scope (v0.9.0):**
+| Issue | Status |
+|-------|--------|
+| #31: Dark Mode | QA Round 2 - fixed header, added dropdown, localStorage |
+| #34: Grid Lines | PASSED |
+| #47: Pill Labels | QA Round 2 - fixed visibility with explicit fill |
+| #49: Palettes | Deferred - awaiting other fixes |
+| #54: Zoom Bug | PASSED |
+| #57: Markers | QA Round 2 - increased size 3px/8px |
 
-**Next Step:** Merge PR, then post-merge protocol
+**Intervention:** `plan/interventions/v0.9.0-intervention.md` (READ THIS FIRST)
+
+**Next Step:** User re-tests #57, #47, #31, #49
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -158,7 +164,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
 | ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
 | ~~**v0.8.0**~~ | ~~#12, #14, #35, #41, #50~~ | ~~Headers & Date Formats~~ ✅ |
-| **v0.9.0** | #31, #34, #47, #49 | Theming: Dark mode, grid lines, colors |
+| **v0.9.0** | #31, #34, #47, #49, #54, #57 | Theming & Visual Polish ← *current* |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
