@@ -326,6 +326,10 @@ class TaskTransformer:
             progress_tier = self._get_progress_tier(progress)
             task['custom_class'] = f'bar-default-tier-{progress_tier}'
 
+        # Add completion flag for all palettes (#31 - completion indicator)
+        task_progress = task.get('progress', 0) or 0
+        task['_is_complete'] = (task_progress == 100)
+
         # Add custom tooltip fields
         if self.config.tooltip_columns:
             custom_fields = []  # Use list to preserve order explicitly

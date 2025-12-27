@@ -724,6 +724,17 @@ body {
     }
 }
 
+/* Dark theme zoom limit banner (#31) */
+.dark-theme .zoom-limit-banner {
+    background-color: #3d3d2e;
+    border-color: #c9a227;
+    color: #f4d03f;
+}
+
+.dark-theme .zoom-limit-banner .dismiss-btn {
+    color: #f4d03f;
+}
+
 /* ===== GANTT CHART CUSTOMIZATIONS ===== */
 .gantt .grid-header {
     background-color: var(--color-surface);
@@ -987,8 +998,12 @@ body {
 }
 
 .dark-theme .btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
     border-color: var(--color-border);
+}
+
+.dark-theme .btn:active {
+    background-color: rgba(255, 255, 255, 0.25);
 }
 
 .dark-theme .btn-group {
@@ -1073,15 +1088,90 @@ body {
     background-color: var(--color-border) !important;
 }
 
-/* Ensure header text visible in dark mode */
+/* Ensure header text visible in dark mode - use bright text for contrast (#31) */
 .dark-theme .gantt .upper-text,
 .dark-theme .gantt .lower-text {
-    fill: var(--text-muted) !important;
+    fill: var(--text-main) !important;
 }
 
-/* Progress bar visibility in dark mode */
+/* Fix floating year background in dark mode - library hardcodes #fff (#31) */
+.dark-theme .gantt-container .current-upper {
+    background: var(--color-surface) !important;
+    color: var(--text-main) !important;
+}
+
+/* Progress bar visibility in dark mode - stronger contrast (#31) */
 .dark-theme .gantt .bar-progress {
-    fill: rgba(255, 255, 255, 0.25) !important;
+    fill: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ===== DEFAULT TIER DARK MODE OVERRIDES (#31) ===== */
+/* When no color column is selected, use dark slate blue bars */
+
+.dark-theme .bar-default-tier-0 .bar,
+.dark-theme .bar-default-tier-1 .bar,
+.dark-theme .bar-default-tier-25 .bar,
+.dark-theme .bar-default-tier-50 .bar,
+.dark-theme .bar-default-tier-75 .bar,
+.dark-theme .bar-default-tier-100 .bar {
+    fill: #3d566e !important;
+}
+
+/* Default tier labels - white for dark bars */
+.dark-theme .bar-default-tier-0 .bar-label,
+.dark-theme .bar-default-tier-1 .bar-label,
+.dark-theme .bar-default-tier-25 .bar-label,
+.dark-theme .bar-default-tier-50 .bar-label,
+.dark-theme .bar-default-tier-75 .bar-label,
+.dark-theme .bar-default-tier-100 .bar-label {
+    fill: #ffffff !important;
+}
+
+/* Default tier progress - progressive intensity */
+.dark-theme .bar-default-tier-0 .bar-progress { fill: #3d566e !important; }
+.dark-theme .bar-default-tier-1 .bar-progress { fill: #4a6785 !important; }
+.dark-theme .bar-default-tier-25 .bar-progress { fill: #57789c !important; }
+.dark-theme .bar-default-tier-50 .bar-progress { fill: #6489b3 !important; }
+.dark-theme .bar-default-tier-75 .bar-progress { fill: #719aca !important; }
+.dark-theme .bar-default-tier-100 .bar-progress { fill: #5dade2 !important; }
+
+/* ===== PASTEL PALETTE DARK MODE OVERRIDES (#31) ===== */
+/* Use darker/more saturated versions in dark mode */
+
+.dark-theme .bar-pastel-blue .bar { fill: #5dade2 !important; }
+.dark-theme .bar-pastel-green .bar { fill: #58d68d !important; }
+.dark-theme .bar-pastel-orange .bar { fill: #eb984e !important; }
+.dark-theme .bar-pastel-purple .bar { fill: #af7ac5 !important; }
+.dark-theme .bar-pastel-red .bar { fill: #ec7063 !important; }
+.dark-theme .bar-pastel-teal .bar { fill: #48c9b0 !important; }
+.dark-theme .bar-pastel-pink .bar { fill: #f1948a !important; }
+.dark-theme .bar-pastel-indigo .bar { fill: #7d8cff !important; }
+.dark-theme .bar-pastel-cyan .bar { fill: #52c4e0 !important; }
+.dark-theme .bar-pastel-amber .bar { fill: #f5b041 !important; }
+.dark-theme .bar-pastel-lime .bar { fill: #a0d468 !important; }
+.dark-theme .bar-pastel-gray .bar { fill: #95a5a6 !important; }
+
+/* Pastel palette labels - white text for visibility */
+.dark-theme .bar-pastel-blue .bar-label,
+.dark-theme .bar-pastel-green .bar-label,
+.dark-theme .bar-pastel-orange .bar-label,
+.dark-theme .bar-pastel-purple .bar-label,
+.dark-theme .bar-pastel-red .bar-label,
+.dark-theme .bar-pastel-teal .bar-label,
+.dark-theme .bar-pastel-pink .bar-label,
+.dark-theme .bar-pastel-indigo .bar-label,
+.dark-theme .bar-pastel-cyan .bar-label,
+.dark-theme .bar-pastel-amber .bar-label,
+.dark-theme .bar-pastel-lime .bar-label,
+.dark-theme .bar-pastel-gray .bar-label {
+    fill: #ffffff !important;
+}
+
+/* ===== COMPLETION INDICATOR (#31) ===== */
+/* SVG checkmark for 100% complete tasks - color set by JS based on bar background */
+
+.gantt .completion-indicator {
+    pointer-events: none;
 }
 
 /* ===== VISUAL STACKING ORDER (#57) ===== */

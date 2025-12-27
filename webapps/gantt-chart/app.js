@@ -888,11 +888,13 @@
                     fixProgressBarRadius();
                     updateSvgDimensions();
                     adjustHeaderLabels();
+                    updateStickyHeaderTheme();  // Ensure header theme is reapplied (#31)
                     addHeaderSeparators();  // Add column separators (#50)
                     setupStickyHeader();  // Re-setup after view change recreates DOM
                     applyGridSettings();  // Re-apply grid settings (#34)
                     // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                     addExpectedProgressMarkers();  // Re-add markers after DOM recreated
+                    addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                     ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                     updateZoomIndicator();  // Update indicator for new view's zoom
@@ -941,6 +943,7 @@
                 applyGridSettings();  // Apply grid line visibility/opacity (#34)
                 // addPillBackgrounds();  // Disabled - deferred to v0.9.4 (#47)
                 addExpectedProgressMarkers();
+                addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                 ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
 
@@ -1036,9 +1039,8 @@
         // Apply base styles for JS-controlled sticky
         header.style.position = 'relative';
         header.style.zIndex = '1001';
-        // Use theme-aware background color (#31)
-        const isDark = document.body.classList.contains('dark-theme');
-        header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
+        // Use CSS variable for theme-aware background color (#31)
+        header.style.backgroundColor = 'var(--color-surface)';
 
         // Force header to span full container width (fixes jank when content is narrow)
         header.style.minWidth = container.offsetWidth + 'px';
@@ -1293,12 +1295,12 @@
 
     /**
      * Update sticky header background color to match current theme.
+     * Uses CSS variable for automatic theme response (#31).
      */
     function updateStickyHeaderTheme() {
         const header = document.querySelector('.gantt .grid-header');
         if (header) {
-            const isDark = document.body.classList.contains('dark-theme');
-            header.style.backgroundColor = isDark ? '#16213e' : '#ffffff';
+            header.style.backgroundColor = 'var(--color-surface)';
         }
     }
 
@@ -1573,6 +1575,94 @@
         });
 
         console.log('Expected progress markers added:', markersAdded);
+    }
+
+    // ===== COMPLETION INDICATORS (#31) =====
+
+    /**
+     * Determine if a color is light or dark based on luminance.
+     * Used to choose contrasting checkmark color (black on light, white on dark).
+     */
+    function isLightColor(colorStr) {
+        // Parse rgb(r, g, b) or rgba(r, g, b, a) format
+        const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (!match) return true;  // Default to light if can't parse
+
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+
+        // Calculate relative luminance (ITU-R BT.709)
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.5;
+    }
+
+    /**
+     * Add checkmark indicators to 100% complete tasks.
+     * Uses _is_complete flag from Python backend for detection.
+     * Checkmark is centered in bar, label shifted right.
+     * Color adapts to bar background (black on light, white on dark).
+     */
+    function addCompletionIndicators() {
+        if (!currentTasks || currentTasks.length === 0) return;
+
+        // Remove existing indicators (handles re-render/view change)
+        document.querySelectorAll('.completion-indicator').forEach(el => el.remove());
+
+        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+        let indicatorsAdded = 0;
+
+        barWrappers.forEach(wrapper => {
+            const taskId = wrapper.getAttribute('data-id');
+            if (!taskId) return;
+
+            // Use _is_complete flag from Python backend
+            const task = currentTasks.find(t => t.id === taskId);
+            if (!task || !task._is_complete) return;
+
+            const bar = wrapper.querySelector('.bar');
+            const label = wrapper.querySelector('.bar-label');
+            if (!bar) return;
+
+            const x = parseFloat(bar.getAttribute('x')) || 0;
+            const y = parseFloat(bar.getAttribute('y')) || 0;
+            const width = parseFloat(bar.getAttribute('width')) || 0;
+            const height = parseFloat(bar.getAttribute('height')) || 0;
+
+            // Determine checkmark color based on bar background
+            const barFill = window.getComputedStyle(bar).fill;
+            const checkColor = isLightColor(barFill) ? '#000000' : '#ffffff';
+
+            // Center checkmark in bar (16x16 icon, scaled 1.5x)
+            const iconSize = 16;
+            const scale = 1.5;
+            const scaledSize = iconSize * scale;
+            const centerX = x + (scaledSize / 2);  // Left side of bar + half icon
+            const centerY = y + (height / 2) - (scaledSize / 2);
+
+            // Create checkmark using SVG path (cross-browser compatible)
+            const checkGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            checkGroup.setAttribute('class', 'completion-indicator');
+            checkGroup.setAttribute('transform', `translate(${centerX}, ${centerY}) scale(${scale})`);
+
+            const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            // Checkmark path (16x16 viewbox)
+            checkPath.setAttribute('d', 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z');
+            checkPath.setAttribute('fill', checkColor);
+
+            checkGroup.appendChild(checkPath);
+            wrapper.appendChild(checkGroup);
+
+            // Shift label to the right to make room for checkmark
+            if (label) {
+                const labelX = parseFloat(label.getAttribute('x')) || 0;
+                label.setAttribute('x', labelX + scaledSize + 4);  // Shift by icon size + padding
+            }
+
+            indicatorsAdded++;
+        });
+
+        console.log('Completion indicators added:', indicatorsAdded);
     }
 
     // ===== BAR WIDTH ENFORCEMENT =====
