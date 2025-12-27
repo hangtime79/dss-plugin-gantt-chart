@@ -769,32 +769,8 @@ body {
     fill: #333333 !important;
 }
 
-/* ===== PILL BOX LABELS (#47) ===== */
-/**
- * Pill background rectangles are inserted via JS (addPillBackgrounds).
- * SVG text elements don't support CSS background/padding, so we add
- * rect elements behind each label for contrast.
- */
-
-/* Internal labels (inside bar) - semi-transparent white pill with outline */
-.bar-wrapper:not(.has-big-label) .bar-label-pill {
-    fill: rgba(255, 255, 255, 0.7);
-    stroke: rgba(0, 0, 0, 0.15);
-    stroke-width: 1;
-}
-
-/* External labels (.big) - no pill needed on white background */
-.bar-wrapper.has-big-label .bar-label-pill {
-    fill: transparent;
-    stroke: none;
-}
-
-/* Force black text on internal pills (override color-based white) */
-.bar-wrapper:not(.has-big-label) .bar-label {
-    fill: #333333 !important;
-}
-
-/* External labels already have dark text from .bar-label.big rule */
+/* ===== PILL BOX LABELS (#47) - DEFERRED TO v0.9.4 ===== */
+/* Pills disabled - will implement right-side labels instead */
 
 /* Ensure header text is visible */
 .gantt .grid-header text {
@@ -1037,25 +1013,10 @@ body {
     background-color: var(--color-surface);
 }
 
-/* Pill labels in dark mode */
-.dark-theme .bar-wrapper:not(.has-big-label) .bar-label-pill {
-    fill: rgba(0, 0, 0, 0.6);
-    stroke: rgba(255, 255, 255, 0.2);
-}
-
-/* External pills hidden in dark mode too */
-.dark-theme .bar-wrapper.has-big-label .bar-label-pill {
-    fill: transparent;
-    stroke: none;
-}
+/* Pill labels in dark mode - DEFERRED TO v0.9.4 */
 
 /* External labels need white text in dark mode */
 .dark-theme .gantt .bar-label.big {
-    fill: #ffffff !important;
-}
-
-/* Internal labels on dark pill still need light text */
-.dark-theme .bar-wrapper:not(.has-big-label) .bar-label {
     fill: #ffffff !important;
 }
 
