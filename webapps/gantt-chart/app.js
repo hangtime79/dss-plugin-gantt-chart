@@ -1023,6 +1023,27 @@
                     // Library adds +10 to x and -10 to y, so compensate
                     opts.x = tooltipTopRight.x - tooltipWidth - 10;
                     opts.y = tooltipTopRight.y + 10;
+
+                    // DEBUG: Log all four corners of bar and tooltip
+                    const tooltipHeight = popup.offsetHeight || 100;
+                    const tooltipLeft = opts.x + 10;  // what library will set
+                    const tooltipTop = opts.y - 10;   // what library will set
+
+                    console.log('=== TOOLTIP POSITIONING DEBUG ===');
+                    console.log('TASK BAR (container coords):');
+                    console.log('  top-left:     ', { x: barRect.left - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
+                    console.log('  top-right:    ', { x: barRect.right - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
+                    console.log('  bottom-left:  ', { x: barRect.left - containerRect.left + container.scrollLeft, y: barRect.bottom - containerRect.top + container.scrollTop });
+                    console.log('  bottom-right: ', { x: barRect.right - containerRect.left + container.scrollLeft, y: barRect.bottom - containerRect.top + container.scrollTop });
+                    console.log('  dimensions:   ', { width: barRect.width, height: barRect.height });
+                    console.log('');
+                    console.log('TOOLTIP (final position):');
+                    console.log('  top-left:     ', { x: tooltipLeft, y: tooltipTop });
+                    console.log('  top-right:    ', { x: tooltipLeft + tooltipWidth, y: tooltipTop });
+                    console.log('  bottom-left:  ', { x: tooltipLeft, y: tooltipTop + tooltipHeight });
+                    console.log('  bottom-right: ', { x: tooltipLeft + tooltipWidth, y: tooltipTop + tooltipHeight });
+                    console.log('  dimensions:   ', { width: tooltipWidth, height: tooltipHeight });
+                    console.log('=================================');
                 }
                 originalShowPopup(opts);
             };
