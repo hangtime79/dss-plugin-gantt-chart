@@ -994,71 +994,73 @@
                 view_mode: ganttInstance.options?.view_mode
             });
 
-            // Patch show_popup to anchor tooltip trailing behind task bar (#66)
-            // Tooltip's top-right corner is 30px right/down from bar's bottom-left
+            // Patch show_popup to position tooltip centered below bar (#66)
+            // Let Frappe render first, then correct position in requestAnimationFrame
             const originalShowPopup = ganttInstance.show_popup.bind(ganttInstance);
             ganttInstance.show_popup = function(opts) {
-                if (opts.target) {
-                    const barRect = opts.target.getBoundingClientRect();
-                    const containerRect = ganttInstance.$container.getBoundingClientRect();
-                    const container = ganttInstance.$container;
-                    const popup = ganttInstance.$popup_wrapper;
-
-                    // Get bar's bottom-left in container coordinates
-                    const barBottomLeft = {
-                        x: barRect.left - containerRect.left + container.scrollLeft,
-                        y: barRect.bottom - containerRect.top + container.scrollTop
-                    };
-
-                    // Offset 30px left, 30px down = tooltip's top-right corner
-                    const tooltipTopRight = {
-                        x: barBottomLeft.x - 30,
-                        y: barBottomLeft.y + 30
-                    };
-
-                    // Get tooltip dimensions (fallback to estimate if not yet rendered)
-                    const tooltipWidth = popup.offsetWidth || 200;
-                    const tooltipHeight = popup.offsetHeight || 100;
-
-                    // Tooltip left = top-right.x - width
-                    // Library adds +10 to x and -10 to y, so compensate
-                    let tooltipLeft = tooltipTopRight.x - tooltipWidth;
-                    let tooltipTop = tooltipTopRight.y - tooltipHeight;
-
-                    // Get SVG dimensions for boundary clamping
-                    const svg = ganttInstance.$svg;
-                    const svgWidth = svg ? svg.getBoundingClientRect().width : container.clientWidth;
-                    const svgHeight = svg ? svg.getBoundingClientRect().height : container.clientHeight;
-
-                    // Clamp to SVG boundaries
-                    if (tooltipLeft < 0) tooltipLeft = 0;
-                    if (tooltipTop < 0) tooltipTop = 0;
-                    if (tooltipLeft + tooltipWidth > svgWidth) tooltipLeft = svgWidth - tooltipWidth;
-                    if (tooltipTop + tooltipHeight > svgHeight) tooltipTop = svgHeight - tooltipHeight;
-
-                    // Apply with library offset compensation (+10 to x, -10 to y)
-                    opts.x = tooltipLeft - 10;
-                    opts.y = tooltipTop + 10;
-
-                    // DEBUG: Log all four corners of bar and tooltip
-                    console.log('=== TOOLTIP POSITIONING DEBUG ===');
-                    console.log('SVG BOUNDS:', { width: svgWidth, height: svgHeight });
-                    console.log('TASK BAR (container coords):');
-                    console.log('  top-left:     ', { x: barRect.left - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
-                    console.log('  top-right:    ', { x: barRect.right - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
-                    console.log('  bottom-left:  ', { x: barRect.left - containerRect.left + container.scrollLeft, y: barRect.bottom - containerRect.top + container.scrollTop });
-                    console.log('  bottom-right: ', { x: barRect.right - containerRect.left + container.scrollLeft, y: barRect.bottom - containerRect.top + container.scrollTop });
-                    console.log('  dimensions:   ', { width: barRect.width, height: barRect.height });
-                    console.log('');
-                    console.log('TOOLTIP (final position):');
-                    console.log('  top-left:     ', { x: tooltipLeft, y: tooltipTop });
-                    console.log('  top-right:    ', { x: tooltipLeft + tooltipWidth, y: tooltipTop });
-                    console.log('  bottom-left:  ', { x: tooltipLeft, y: tooltipTop + tooltipHeight });
-                    console.log('  bottom-right: ', { x: tooltipLeft + tooltipWidth, y: tooltipTop + tooltipHeight });
-                    console.log('  dimensions:   ', { width: tooltipWidth, height: tooltipHeight });
-                    console.log('=================================');
-                }
                 originalShowPopup(opts);
+
+                if (!opts.target) return;
+
+                requestAnimationFrame(() => {
+                    const popup = ganttInstance.$popup_wrapper;
+                    const container = ganttInstance.$container;
+
+                    if (!popup || !container) return;
+
+                    // Theme-driven gap from CSS variable
+                    const styles = getComputedStyle(container);
+                    const GAP = parseInt(styles.getPropertyValue('--gantt-popup-gap'), 10) || 30;
+
+                    // Geometry
+                    const barRect = opts.target.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    const scrollLeft = container.scrollLeft;
+                    const scrollTop = container.scrollTop;
+
+                    const popupWidth = popup.offsetWidth;
+                    const popupHeight = popup.offsetHeight;
+
+                    // Bar position in container coordinates
+                    const barLeft = barRect.left - containerRect.left + scrollLeft;
+                    const barRight = barRect.right - containerRect.left + scrollLeft;
+                    const barTop = barRect.top - containerRect.top + scrollTop;
+                    const barBottom = barRect.bottom - containerRect.top + scrollTop;
+
+                    // Horizontal: center on bar
+                    let left = barLeft + (barRight - barLeft) / 2 - popupWidth / 2;
+
+                    const minLeft = 0;
+                    const maxLeft = container.scrollWidth - popupWidth;
+
+                    if (left < minLeft) left = minLeft;
+                    if (left > maxLeft) left = maxLeft;
+
+                    // Vertical: prefer below, auto-flip above if needed
+                    let top = barBottom + GAP;
+
+                    const maxTop = container.scrollHeight - popupHeight;
+
+                    if (top > maxTop) {
+                        top = barTop - popupHeight - GAP;
+                    }
+
+                    if (top < 0) top = 0;
+                    if (top > maxTop) top = maxTop;
+
+                    // Disable transition for corrective move
+                    const prevTransition = popup.style.transition;
+                    popup.style.transition = 'none';
+
+                    popup.style.left = `${left}px`;
+                    popup.style.top = `${top}px`;
+
+                    // Force layout so transition removal takes effect
+                    popup.offsetHeight;
+
+                    popup.style.transition = prevTransition;
+                });
             };
 
             // Sync controls

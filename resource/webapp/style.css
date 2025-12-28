@@ -47,6 +47,9 @@
     --chart-grid-line: #f1f2f6;
     --chart-today-line: #fab1a0;
 
+    /* Tooltip */
+    --gantt-popup-gap: 24px;
+
     /* Layout */
     --header-height: 44px;
 }
