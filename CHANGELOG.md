@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2025-12-29
+
+### Added
+- Task status filter buttons in control bar (#51)
+  - Filter by: All, Completed, Overdue, In Progress, Not Started
+  - Multiple selection with OR logic
+  - Overdue tasks also appear in In Progress/Not Started filters
+- Empty state message when no tasks match selected filters
+- Dark mode styling for filter buttons
+
 ## [0.9.7] - 2025-12-29
 
 ### Added
