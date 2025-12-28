@@ -490,29 +490,21 @@
                 // Library uses textContent matching to find current element on scroll
                 text.setAttribute('data-original-text', content);
 
-                // Try to infer year from gantt dates array
-                // Find dates that fall in this month
-                const monthMap = {
-                    'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
-                    'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
-                    'august': 7, 'aug': 7, 'september': 8, 'sep': 8, 'october': 9, 'oct': 9,
-                    'november': 10, 'nov': 10, 'december': 11, 'dec': 11
-                };
-                const monthNum = monthMap[content.toLowerCase()];
+                // Look up date by position → index (fixes wrong year bug)
+                // Element's X position / column_width = index in dates array
+                const elementX = parseFloat(text.style.left) || 0;
+                const dateIndex = Math.round(elementX / columnWidth);
 
-                // Find a date with this month to get the year
                 let inferredYear = currentYear;
-                if (ganttInstance?.dates && monthNum !== undefined) {
-                    const matchingDate = ganttInstance.dates.find(d => d.getMonth() === monthNum);
-                    if (matchingDate) {
-                        inferredYear = matchingDate.getFullYear();
-                    }
+                if (ganttInstance?.dates && dateIndex >= 0 && dateIndex < ganttInstance.dates.length) {
+                    const elementDate = ganttInstance.dates[dateIndex];
+                    inferredYear = elementDate.getFullYear();
                 }
 
                 // Use abbreviated month at narrow widths (<100px), full at wider
                 // Threshold chosen to fit "Dec 2025" comfortably
                 if (columnWidth < 100) {
-                    const shortMonth = monthNamesShort[monthNum] || content.slice(0, 3);
+                    const shortMonth = content.slice(0, 3);
                     text.textContent = `${shortMonth} ${inferredYear}`;
                 } else {
                     text.textContent = `${content} ${inferredYear}`;
