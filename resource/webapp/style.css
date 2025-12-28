@@ -73,7 +73,8 @@
     --text-inverted: #1a1a2e;
 
     --chart-grid-line: #2c3e50;
-    --chart-today-line: #e74c3c;
+    --chart-today-line: #C7C7C7;
+    --g-today-highlight: #C7C7C7;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -1007,6 +1008,12 @@ body {
 .gantt-container .lower-text.current-date-highlight {
     color: #ffffff !important;
     fill: #ffffff !important;
+}
+
+/* Dark mode: light highlight needs dark text */
+.dark-theme .gantt-container .lower-text.current-date-highlight {
+    color: #1a1a2e !important;
+    fill: #1a1a2e !important;
 }
 
 /* Smaller font for narrow views */
