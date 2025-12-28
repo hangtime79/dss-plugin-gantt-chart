@@ -130,15 +130,23 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Ready for Next Milestone
+**Phase:** DEBUGGING - v0.9.4 Tooltip Positioning
 
-**Current Branch:** `main`
+**Current Branch:** `feature/v0.9.4-tooltip-polish`
 
-**Last Release:** v0.9.2 (2025-12-28)
+**Last Release:** v0.9.3 (2025-12-28)
 
-**Next Milestone:** v0.9.3 - Color Palettes (#49)
+**Active Intervention:** `plan/interventions/v0.9.4-intervention.md`
 
-**Next Step:** Run branch-open-protocol for v0.9.3
+**Current Issue:** Tooltip positioning incorrect (#66)
+- Appearance fix (#67) PASSED QA
+- Positioning fix (#66) FAILED QA - debugging in progress
+- Debug logging added, awaiting user's console output
+
+**Next Step:**
+1. Get console debug output from user
+2. Analyze coordinates to fix positioning bug
+3. Remove debug code, commit, re-test
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -156,10 +164,14 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.9.0**~~ | ~~#34, #54~~ | ~~Visual Polish~~ ✅ |
 | ~~**v0.9.1**~~ | ~~#31~~ | ~~Dark Mode~~ ✅ |
 | ~~**v0.9.2**~~ | ~~#62, #63, #64~~ | ~~Visual Polish II~~ ✅ |
-| **v0.9.3** | #49 | Color Palettes ← *next* |
-| **v0.9.4** | #57 | Expected Progress Markers |
-| **v0.9.5** | #47 | Right-side Labels |
-| **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
-| **v1.0.0** | — | Public Release: Final polish |
+| ~~**v0.9.3**~~ | ~~#71~~ | ~~Bug Fix: Header Contrast~~ ✅ |
+| **v0.9.4** | #66, #67 | Tooltip Polish I (Positioning & Appearance) ← *in progress* |
+| **v0.9.5** | #65, #68 | Tooltip Polish II (Content & Interaction) |
+| **v0.9.6** | #49, #57 | Visual Enhancements |
+| **v0.9.7** | #60 | Reset Zoom |
+| **v0.9.8** | #51 | Task Filtering |
+| **v0.10.0** | #32, #36 | i18n + Scroll Padding |
+| **v1.0.0-rc** | #24, #25 | Print + Global Params (TBD) |
+| **v1.0.0** | — | Public Release |
 
-**Next milestone:** v0.9.3
+**Current milestone:** v0.9.4 - Tooltip Polish I (#66, #67) - debugging positioning
