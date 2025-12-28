@@ -1010,10 +1010,10 @@
                         y: barRect.bottom - containerRect.top + container.scrollTop
                     };
 
-                    // Offset 30px left, 30px up = tooltip's top-right corner
+                    // Offset 30px left, 30px down = tooltip's top-right corner
                     const tooltipTopRight = {
                         x: barBottomLeft.x - 30,
-                        y: barBottomLeft.y - 30
+                        y: barBottomLeft.y + 30
                     };
 
                     // Get tooltip dimensions (fallback to estimate if not yet rendered)
