@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2025-12-29
+
+### Added
+- Reset Zoom button in control bar returns zoom to 100% or viewport floor (#60)
+  - Circular arrow icon positioned left of Zoom Out button
+  - Independent zoom state per view mode preserved
+- Visual separator between Today button and zoom controls
+
+### Fixed
+- Dark mode: Today line and ball indicator now visible (changed to light gray)
+- Dark mode: Today date highlight text now readable (dark text on light background)
+
 ## [0.9.5] - 2025-12-29
 
 ### Added
