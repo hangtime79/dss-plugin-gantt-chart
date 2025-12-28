@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2025-12-28
+
+### Added
+- CSS variable `--gantt-popup-gap` for theme-driven tooltip spacing
+- Auto-flip tooltip positioning (flips above bar when near bottom of container)
+
+### Fixed
+- Tooltip positioning: Now anchors trailing left of task bar instead of following mouse cursor (#66)
+- Tooltip appearance: Reduced padding from 10px to 5px (#67)
+- Dark mode tooltip: Added 3px border for better contrast, eliminates white halo (#67)
+
 ## [0.9.3] - 2025-12-28
 
 ### Fixed
