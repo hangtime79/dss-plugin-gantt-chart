@@ -994,13 +994,115 @@
                 view_mode: ganttInstance.options?.view_mode
             });
 
-            // Patch show_popup to position tooltip centered below bar (#66)
-            // Let Frappe render first, then correct position in requestAnimationFrame
+            // ===== PINNED TOOLTIPS SYSTEM (#68) =====
+            // Pinned tooltips are clones that persist independently of the library's single popup
+            const pinnedTooltips = new Map(); // taskId -> {element, rect}
+            const pinnedContainer = document.createElement('div');
+            pinnedContainer.className = 'pinned-tooltips-container';
+            ganttInstance.$container.appendChild(pinnedContainer);
+
+            // Helper: Check if two rects overlap
+            function rectsOverlap(r1, r2) {
+                return !(r1.right < r2.left || r1.left > r2.right ||
+                         r1.bottom < r2.top || r1.top > r2.bottom);
+            }
+
+            // Helper: Find non-overlapping position for new tooltip
+            function avoidCollisions(left, top, width, height, container) {
+                const GAP = 10;
+                let adjustedTop = top;
+                let adjustedLeft = left;
+
+                const newRect = { left, top, right: left + width, bottom: top + height };
+
+                for (const [id, pinned] of pinnedTooltips) {
+                    const pinnedRect = {
+                        left: parseFloat(pinned.element.style.left),
+                        top: parseFloat(pinned.element.style.top),
+                        right: parseFloat(pinned.element.style.left) + pinned.element.offsetWidth,
+                        bottom: parseFloat(pinned.element.style.top) + pinned.element.offsetHeight
+                    };
+
+                    if (rectsOverlap(newRect, pinnedRect)) {
+                        // Try shifting down
+                        adjustedTop = pinnedRect.bottom + GAP;
+                        newRect.top = adjustedTop;
+                        newRect.bottom = adjustedTop + height;
+
+                        // If still overlapping or out of bounds, try shifting right
+                        if (adjustedTop + height > container.scrollHeight) {
+                            adjustedTop = top; // Reset
+                            adjustedLeft = pinnedRect.right + GAP;
+                            newRect.left = adjustedLeft;
+                            newRect.right = adjustedLeft + width;
+                            newRect.top = top;
+                            newRect.bottom = top + height;
+                        }
+                    }
+                }
+
+                return { left: adjustedLeft, top: adjustedTop };
+            }
+
+            // Helper: Create pinned tooltip from current popup
+            function pinTooltip(taskId, popup, container) {
+                // Don't pin same task twice
+                if (pinnedTooltips.has(taskId)) {
+                    return;
+                }
+
+                // Clone the popup content
+                const pinnedEl = document.createElement('div');
+                pinnedEl.className = 'pinned-tooltip popup-wrapper';
+                pinnedEl.innerHTML = popup.innerHTML;
+                pinnedEl.style.left = popup.style.left;
+                pinnedEl.style.top = popup.style.top;
+                pinnedEl.dataset.taskId = taskId;
+
+                // Highlight pin button to show pinned state (clicking unpins)
+                const pinBtn = pinnedEl.querySelector('.popup-pin-btn');
+                if (pinBtn) {
+                    pinBtn.classList.add('active');
+                    pinBtn.title = 'Unpin tooltip';
+                    pinBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        pinnedEl.remove();
+                        pinnedTooltips.delete(taskId);
+                    });
+                }
+
+                // Attach close handler
+                const closeBtn = pinnedEl.querySelector('.popup-close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        pinnedEl.remove();
+                        pinnedTooltips.delete(taskId);
+                    });
+                }
+
+                pinnedContainer.appendChild(pinnedEl);
+                pinnedTooltips.set(taskId, { element: pinnedEl });
+
+                // Hide original popup after pinning
+                originalHidePopup();
+            }
+
+            // Store current task for pin handler
+            let currentPopupTaskId = null;
+
+            // Patch show_popup to position tooltip and add pin handler (#66, #68)
             const originalShowPopup = ganttInstance.show_popup.bind(ganttInstance);
+            const originalHidePopup = ganttInstance.hide_popup.bind(ganttInstance);
+
             ganttInstance.show_popup = function(opts) {
                 originalShowPopup(opts);
 
                 if (!opts.target) return;
+
+                // Extract task ID from target
+                const barWrapper = opts.target.closest('.bar-wrapper');
+                currentPopupTaskId = barWrapper ? barWrapper.getAttribute('data-id') : null;
 
                 requestAnimationFrame(() => {
                     const popup = ganttInstance.$popup_wrapper;
@@ -1024,7 +1126,6 @@
 
                     // Bar position in container coordinates
                     const barLeft = barRect.left - containerRect.left + scrollLeft;
-                    const barRight = barRect.right - containerRect.left + scrollLeft;
                     const barTop = barRect.top - containerRect.top + scrollTop;
                     const barBottom = barRect.bottom - containerRect.top + scrollTop;
 
@@ -1049,6 +1150,11 @@
                     if (top < 0) top = 0;
                     if (top > maxTop) top = maxTop;
 
+                    // Collision avoidance with pinned tooltips (#68)
+                    const adjusted = avoidCollisions(left, top, popupWidth, popupHeight, container);
+                    left = adjusted.left;
+                    top = adjusted.top;
+
                     // Disable transition for corrective move
                     const prevTransition = popup.style.transition;
                     popup.style.transition = 'none';
@@ -1060,6 +1166,28 @@
                     popup.offsetHeight;
 
                     popup.style.transition = prevTransition;
+
+                    // Attach pin/close button handlers (#68)
+                    const pinBtn = popup.querySelector('.popup-pin-btn');
+                    const closeBtn = popup.querySelector('.popup-close-btn');
+
+                    if (pinBtn && !pinBtn.dataset.handlerAttached) {
+                        pinBtn.dataset.handlerAttached = 'true';
+                        pinBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (currentPopupTaskId) {
+                                pinTooltip(currentPopupTaskId, popup, container);
+                            }
+                        });
+                    }
+
+                    if (closeBtn && !closeBtn.dataset.handlerAttached) {
+                        closeBtn.dataset.handlerAttached = 'true';
+                        closeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            originalHidePopup();
+                        });
+                    }
                 });
             };
 
@@ -1992,7 +2120,21 @@
 
         let html = `
             <div class="gantt-popup">
-                <div class="popup-title">${escapeHtml(task.name)}</div>
+                <div class="popup-header">
+                    <div class="popup-title">${escapeHtml(task.name)}</div>
+                    <div class="popup-actions">
+                        <button class="popup-pin-btn" title="Pin tooltip">
+                            <svg width="14" height="14" viewBox="0 0 384 512" fill="currentColor">
+                                <path d="M32 32C32 14.3 46.3 0 64 0H320c17.7 0 32 14.3 32 32s-14.3 32-32 32H290.5l11.4 148.2c36.7 19.9 65.6 53.2 79.5 94.7l1 3c3.3 9.8 1.6 20.5-4.4 28.8s-15.7 13.3-26 13.3H32c-10.3 0-19.9-4.9-26-13.3s-7.7-19.1-4.4-28.8l1-3c13.9-41.5 42.8-74.8 79.5-94.7L93.5 64H64C46.3 64 32 49.7 32 32zM160 384h64v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V384z"/>
+                            </svg>
+                        </button>
+                        <button class="popup-close-btn" title="Close">
+                            <svg width="14" height="14" viewBox="0 0 384 512" fill="currentColor">
+                                <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
         `;
 
         // Date range - Frappe Gantt uses _start and _end internally
