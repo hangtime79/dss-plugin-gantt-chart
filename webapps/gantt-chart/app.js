@@ -994,6 +994,39 @@
                 view_mode: ganttInstance.options?.view_mode
             });
 
+            // Patch show_popup to anchor tooltip trailing behind task bar (#66)
+            // Tooltip's top-right corner is 30px right/down from bar's bottom-left
+            const originalShowPopup = ganttInstance.show_popup.bind(ganttInstance);
+            ganttInstance.show_popup = function(opts) {
+                if (opts.target) {
+                    const barRect = opts.target.getBoundingClientRect();
+                    const containerRect = ganttInstance.$container.getBoundingClientRect();
+                    const container = ganttInstance.$container;
+                    const popup = ganttInstance.$popup_wrapper;
+
+                    // Get bar's bottom-left in container coordinates
+                    const barBottomLeft = {
+                        x: barRect.left - containerRect.left + container.scrollLeft,
+                        y: barRect.bottom - containerRect.top + container.scrollTop
+                    };
+
+                    // Offset 30px right, 30px down = tooltip's top-right corner
+                    const tooltipTopRight = {
+                        x: barBottomLeft.x + 30,
+                        y: barBottomLeft.y + 30
+                    };
+
+                    // Get tooltip width (fallback to estimate if not yet rendered)
+                    const tooltipWidth = popup.offsetWidth || 200;
+
+                    // Tooltip left = top-right.x - width
+                    // Library adds +10 to x and -10 to y, so compensate
+                    opts.x = tooltipTopRight.x - tooltipWidth - 10;
+                    opts.y = tooltipTopRight.y + 10;
+                }
+                originalShowPopup(opts);
+            };
+
             // Sync controls
             updateControlsState(ganttOptions);
 

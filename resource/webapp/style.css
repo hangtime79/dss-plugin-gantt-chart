@@ -810,10 +810,15 @@ body {
     z-index: 1010;
 }
 
-/* Hide default frappe pointer triangle if it looks bad, 
+/* Hide default frappe pointer triangle if it looks bad,
    or styling it to match: */
 .gantt-popup::before {
     border-bottom-color: var(--color-surface) !important;
+}
+
+/* Reduce tooltip padding from 10px to 5px (#67) */
+.gantt-container .popup-wrapper {
+    padding: 5px;
 }
 
 .popup-title {
@@ -1048,6 +1053,13 @@ body {
 .dark-theme .gantt-popup {
     background-color: var(--color-surface);
     border-color: var(--color-border);
+}
+
+/* Dark mode: Match tooltip wrapper background + visible border for contrast (#67) */
+.dark-theme .gantt-container .popup-wrapper {
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .dark-theme .popup-title {
