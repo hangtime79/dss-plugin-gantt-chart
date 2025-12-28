@@ -150,6 +150,44 @@ body {
     font-weight: var(--font-weight-medium);
 }
 
+/* ===== TASK FILTER BUTTONS (#51) ===== */
+.filter-group {
+    display: flex;
+    gap: 4px;
+    margin-left: var(--spacing-md);
+}
+
+.btn-filter {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-filter:hover {
+    background: var(--color-background);
+    color: var(--text-main);
+}
+
+.btn-filter.active {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+}
+
+/* Filter empty state */
+.filter-empty-state {
+    display: none;
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
 #gantt-container {
     flex: 1;
     width: 100%;
@@ -1099,6 +1137,20 @@ body {
     border-color: var(--color-border);
     background: var(--color-background);
     color: var(--text-main);
+}
+
+/* Dark mode filter buttons (#51) */
+.dark-theme .btn-filter {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+.dark-theme .btn-filter:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .btn-filter.active {
+    background: var(--color-accent);
 }
 
 .dark-theme .select-input {
