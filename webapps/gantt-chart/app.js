@@ -60,7 +60,9 @@
     let configDebounceTimer = null;  // Debounce timer for config updates
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
-    let currentTasks = [];           // Store tasks for expected progress markers
+    let allTasks = [];               // Store ALL tasks from backend (unfiltered)
+    let currentTasks = [];           // Store filtered tasks for current display
+    let lastGanttConfig = null;      // Store last config for filter re-renders (#51)
     let activeFilters = ['all'];     // Track active filter buttons (#51)
 
     // Zoom State
@@ -864,12 +866,29 @@
 
     // ===== GANTT RENDERING =====
 
-    function renderGantt(tasks, config) {
-        console.log(`Rendering Gantt with ${tasks.length} tasks`);
-        // console.log('Gantt config:', JSON.stringify(config, null, 2));
+    function renderGantt(tasks, config, isFilterRerender = false) {
+        // Store all tasks on initial load (not filter re-renders)
+        if (!isFilterRerender) {
+            allTasks = tasks;
+            lastGanttConfig = config;
+        }
 
-        // Store tasks for expected progress markers
-        currentTasks = tasks;
+        // Apply status filters to get visible tasks (#51)
+        const filteredTasks = filterTasksByStatus(tasks);
+        console.log(`Rendering Gantt with ${filteredTasks.length}/${tasks.length} tasks (filtered)`);
+
+        // Store filtered tasks for expected progress markers
+        currentTasks = filteredTasks;
+
+        // Handle empty filtered result
+        if (filteredTasks.length === 0) {
+            const container = document.getElementById('gantt-container');
+            container.innerHTML = '';
+            ganttInstance = null;
+            updateFilterEmptyState(0);
+            return;
+        }
+        updateFilterEmptyState(filteredTasks.length);
 
         const container = document.getElementById('gantt-container');
 
@@ -966,7 +985,6 @@
                     ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                     updateZoomIndicator();  // Update indicator for new view's zoom
-                    applyTaskFilters();  // Re-apply task filters after view change (#51)
                 });
             }
         };
@@ -984,8 +1002,8 @@
 
         // Initialize Frappe Gantt
         try {
-            ganttInstance = new Gantt('#gantt-svg', tasks, ganttOptions);
-            console.log(`Gantt chart created successfully with ${tasks.length} tasks`);
+            ganttInstance = new Gantt('#gantt-svg', filteredTasks, ganttOptions);
+            console.log(`Gantt chart created successfully with ${filteredTasks.length} tasks`);
 
             // Debug: Log gantt instance date boundaries
             console.log('Gantt date debug:', {
@@ -1213,7 +1231,6 @@
                 addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                 ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
-                applyTaskFilters();  // Apply task filters after render (#51)
 
                 // Restore view state if we have saved state from config update
                 if (window._ganttRestoreState) {
@@ -2318,30 +2335,35 @@
     }
 
     /**
-     * Apply active filters to hide/show task bars in DOM.
-     * Uses display:none on bar-wrapper elements.
+     * Filter tasks array based on active status filters.
+     * @param {Array} tasks - Array of task objects
+     * @returns {Array} Filtered tasks matching active filters
+     */
+    function filterTasksByStatus(tasks) {
+        // If 'all' is active, return all tasks
+        if (activeFilters.includes('all')) {
+            return tasks;
+        }
+
+        return tasks.filter(task => {
+            const taskStatuses = getTaskStatuses(task);
+            // Show if any of task's statuses match active filters (OR logic)
+            return taskStatuses.some(status => activeFilters.includes(status));
+        });
+    }
+
+    /**
+     * Apply active filters by re-rendering the Gantt chart.
+     * This properly resizes the chart container.
      */
     function applyTaskFilters() {
-        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
-        let visibleCount = 0;
+        if (!allTasks.length || !lastGanttConfig) {
+            console.log('No tasks or config available for filter re-render');
+            return;
+        }
 
-        barWrappers.forEach(wrapper => {
-            const taskId = wrapper.getAttribute('data-id');
-            const task = currentTasks.find(t => t.id === taskId);
-            if (!task) return;
-
-            const taskStatuses = getTaskStatuses(task);
-
-            // Show if 'all' is active OR any of task's statuses match active filters
-            const shouldShow = activeFilters.includes('all') ||
-                taskStatuses.some(status => activeFilters.includes(status));
-
-            wrapper.style.display = shouldShow ? '' : 'none';
-            if (shouldShow) visibleCount++;
-        });
-
-        // Update empty state if needed
-        updateFilterEmptyState(visibleCount);
+        // Re-render with filtered tasks
+        renderGantt(allTasks, lastGanttConfig, true);
     }
 
     /**
