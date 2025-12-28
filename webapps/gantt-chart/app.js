@@ -1016,20 +1016,33 @@
                         y: barBottomLeft.y - 30
                     };
 
-                    // Get tooltip width (fallback to estimate if not yet rendered)
+                    // Get tooltip dimensions (fallback to estimate if not yet rendered)
                     const tooltipWidth = popup.offsetWidth || 200;
+                    const tooltipHeight = popup.offsetHeight || 100;
 
                     // Tooltip left = top-right.x - width
                     // Library adds +10 to x and -10 to y, so compensate
-                    opts.x = tooltipTopRight.x - tooltipWidth - 10;
-                    opts.y = tooltipTopRight.y + 10;
+                    let tooltipLeft = tooltipTopRight.x - tooltipWidth;
+                    let tooltipTop = tooltipTopRight.y - tooltipHeight;
+
+                    // Get SVG dimensions for boundary clamping
+                    const svg = ganttInstance.$svg;
+                    const svgWidth = svg ? svg.getBoundingClientRect().width : container.clientWidth;
+                    const svgHeight = svg ? svg.getBoundingClientRect().height : container.clientHeight;
+
+                    // Clamp to SVG boundaries
+                    if (tooltipLeft < 0) tooltipLeft = 0;
+                    if (tooltipTop < 0) tooltipTop = 0;
+                    if (tooltipLeft + tooltipWidth > svgWidth) tooltipLeft = svgWidth - tooltipWidth;
+                    if (tooltipTop + tooltipHeight > svgHeight) tooltipTop = svgHeight - tooltipHeight;
+
+                    // Apply with library offset compensation (+10 to x, -10 to y)
+                    opts.x = tooltipLeft - 10;
+                    opts.y = tooltipTop + 10;
 
                     // DEBUG: Log all four corners of bar and tooltip
-                    const tooltipHeight = popup.offsetHeight || 100;
-                    const tooltipLeft = opts.x + 10;  // what library will set
-                    const tooltipTop = opts.y - 10;   // what library will set
-
                     console.log('=== TOOLTIP POSITIONING DEBUG ===');
+                    console.log('SVG BOUNDS:', { width: svgWidth, height: svgHeight });
                     console.log('TASK BAR (container coords):');
                     console.log('  top-left:     ', { x: barRect.left - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
                     console.log('  top-right:    ', { x: barRect.right - containerRect.left + container.scrollLeft, y: barRect.top - containerRect.top + container.scrollTop });
