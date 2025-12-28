@@ -935,6 +935,12 @@ body {
     font-weight: var(--font-weight-medium);
 }
 
+/* Fix: Current date highlight needs white text on dark background (#71) */
+.gantt-container .lower-text.current-date-highlight {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
 /* Smaller font for narrow views */
 .gantt-container[data-narrow-view="true"] .lower-text {
     font-size: 10px;
@@ -1105,6 +1111,11 @@ body {
 .dark-theme .gantt-container .current-upper {
     background: var(--color-surface) !important;
     color: var(--text-main) !important;
+}
+
+/* Fix: Task hover date range highlight needs dark background in dark mode (#71) */
+.dark-theme .gantt-container .date-range-highlight {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Progress bar visibility in dark mode - stronger contrast (#31) */
