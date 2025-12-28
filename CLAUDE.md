@@ -57,6 +57,7 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **DOM data-id location** — `data-id` attribute is on `.bar-wrapper`, not `.bar-group`. Use `wrapper.getAttribute('data-id')` directly, not `.closest('.bar-group')`.
 - **Grid header is HTML, not SVG** — `.grid-header` is an HTML `<div>` with absolutely-positioned text divs, NOT an SVG group. Header decorations (separators, etc.) must use HTML elements, not SVG lines.
 - **Position-based date lookup** — When adding year to upper header text post-render, DON'T search `ganttInstance.dates` by month name (`dates.find(d => d.getMonth() === monthNum)`) — this finds the FIRST match regardless of position. Instead, use index lookup: `dates[Math.round(elementX / columnWidth)]` to get the exact date at that element's position.
+- **Frappe Gantt popup positioning** — Library treats popup coords as anchors and re-centres vertically after render. Don't fight it by modifying `opts.x/y` before calling `show_popup()`. Instead: call `originalShowPopup(opts)` first, then correct position in `requestAnimationFrame()` by directly setting `popup.style.left/top`. Disable transition temporarily to prevent visual jump.
 
 ---
 
@@ -130,15 +131,17 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Ready for Next Milestone
+**Phase:** BRANCH EXIT - v0.9.4 Ready for Merge
 
-**Current Branch:** `main`
+**Current Branch:** `feature/v0.9.4-tooltip-polish`
 
-**Last Release:** v0.9.2 (2025-12-28)
+**Last Release:** v0.9.3 (2025-12-28)
 
-**Next Milestone:** v0.9.3 - Color Palettes (#49)
+**Completed:** v0.9.4 Tooltip Polish
+- #66 Tooltip positioning - PASSED QA
+- #67 Tooltip appearance - PASSED QA
 
-**Next Step:** Run branch-open-protocol for v0.9.3
+**Next Step:** Create PR and merge to main
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -156,10 +159,14 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.9.0**~~ | ~~#34, #54~~ | ~~Visual Polish~~ ✅ |
 | ~~**v0.9.1**~~ | ~~#31~~ | ~~Dark Mode~~ ✅ |
 | ~~**v0.9.2**~~ | ~~#62, #63, #64~~ | ~~Visual Polish II~~ ✅ |
-| **v0.9.3** | #49 | Color Palettes ← *next* |
-| **v0.9.4** | #57 | Expected Progress Markers |
-| **v0.9.5** | #47 | Right-side Labels |
-| **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
-| **v1.0.0** | — | Public Release: Final polish |
+| ~~**v0.9.3**~~ | ~~#71~~ | ~~Bug Fix: Header Contrast~~ ✅ |
+| ~~**v0.9.4**~~ | ~~#66, #67~~ | ~~Tooltip Polish I (Positioning & Appearance)~~ ✅ |
+| **v0.9.5** | #65, #68 | Tooltip Polish II (Content & Interaction) |
+| **v0.9.6** | #49, #57 | Visual Enhancements |
+| **v0.9.7** | #60 | Reset Zoom |
+| **v0.9.8** | #51 | Task Filtering |
+| **v0.10.0** | #32, #36 | i18n + Scroll Padding |
+| **v1.0.0-rc** | #24, #25 | Print + Global Params (TBD) |
+| **v1.0.0** | — | Public Release |
 
-**Next milestone:** v0.9.3
+**Current milestone:** v0.9.5 - Tooltip Polish II (#65, #68)
