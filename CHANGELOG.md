@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2025-12-29
+
+### Added
+- Dependency tooltips now show task names instead of IDs (#65)
+  - Automatic name lookup with fallback to ID for missing references
+- Pin tooltip feature to keep tooltips visible while exploring chart (#68)
+  - Pin button (thumbtack icon) in tooltip header
+  - Multiple tooltips can be pinned simultaneously
+  - Collision avoidance prevents overlap between tooltips
+  - Close button or pin toggle to dismiss
+
 ## [0.9.4] - 2025-12-28
 
 ### Added

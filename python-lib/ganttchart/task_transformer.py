@@ -146,6 +146,17 @@ class TaskTransformer:
             # Sort tasks
             tasks = sort_tasks(tasks, self.config.sort_by)
 
+            # Resolve dependency IDs to task names for display (#65)
+            id_to_name = {t['id']: t['name'] for t in tasks}
+            for task in tasks:
+                if task.get('dependencies'):
+                    resolved_names = []
+                    for dep_id in task['dependencies']:
+                        # Lookup name, fallback to ID if not found
+                        name = id_to_name.get(dep_id, dep_id)
+                        resolved_names.append(name)
+                    task['_display_dependencies'] = ', '.join(resolved_names)
+
         # Apply maxTasks limit
         if self.config.max_tasks > 0 and len(tasks) > self.config.max_tasks:
             original_count = len(tasks)
