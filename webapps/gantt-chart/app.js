@@ -1028,8 +1028,8 @@
                     const barTop = barRect.top - containerRect.top + scrollTop;
                     const barBottom = barRect.bottom - containerRect.top + scrollTop;
 
-                    // Horizontal: center on bar
-                    let left = barLeft + (barRight - barLeft) / 2 - popupWidth / 2;
+                    // Horizontal: trail bar to the left
+                    let left = barLeft - popupWidth - GAP;
 
                     const minLeft = 0;
                     const maxLeft = container.scrollWidth - popupWidth;
