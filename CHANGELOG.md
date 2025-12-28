@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2025-12-28
+
+### Fixed
+- Light mode: Current date highlight now shows white text on dark background (#71)
+- Dark mode: Task hover date range highlight now has appropriate contrast (#71)
+
 ## [0.9.2] - 2025-12-28
 
 ### Added
