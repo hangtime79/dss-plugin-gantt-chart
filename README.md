@@ -1,4 +1,4 @@
-# Gantt Chart Plugin for Dataiku DSS
+# Gantt Chart Plugin for Dataiku
 
 Visualize your project timelines, dependencies, and progress with an interactive Gantt chart. This plugin integrates the [Frappe Gantt](https://github.com/frappe/gantt) library directly into Dataiku DSS webapps.
 
