@@ -293,9 +293,6 @@
                 break;
         }
 
-        // Ensure year is visible in upper headers (#12)
-        ensureYearInUpperHeaders(viewMode);
-
         // For very narrow views, hide every other lower-text label
         // EXCEPTION: Month view uses single-letter abbreviations which fit without skipping
         if (columnWidth < 30 && viewMode !== 'Month') {
@@ -409,9 +406,6 @@
             const yearMatch = original.match(/(\d{4})/);
             if (!yearMatch) return;
 
-            // Store original text for scroll handler matching
-            text.setAttribute('data-original-text', original);
-
             const year = parseInt(yearMatch[1]);
             const decade = Math.floor(year / 10) * 10;
 
@@ -424,9 +418,6 @@
                 text.textContent = '';
             }
         });
-
-        // Ensure scroll tracking works after we modified text
-        fixCurrentUpperScrollTracking();
 
         // Process lower-text: Show individual years with responsive abbreviation
         lowerTexts.forEach(text => {
@@ -444,141 +435,6 @@
                 text.textContent = fullYear;
             }
         });
-    }
-
-    /**
-     * Ensure year is visible in upper headers across all view modes (#12).
-     * Frappe Gantt may show only month names in upper-text for Day/Week views
-     * when all visible dates are in the same year. This adds year context.
-     * Uses abbreviated format at narrow column widths for better fit.
-     */
-    function ensureYearInUpperHeaders(viewMode) {
-        const upperTexts = document.querySelectorAll('.upper-text');
-        if (!upperTexts.length) return;
-
-        // Always set up scroll tracking (fixes current-upper updates for all views)
-        fixCurrentUpperScrollTracking();
-
-        // Year and Month views already handled by formatYearLabels/formatMonthLabels
-        // Focus on Day, Week, Hour, Quarter Day, Half Day views
-        if (viewMode === 'Year' || viewMode === 'Month') return;
-
-        const columnWidth = ganttInstance?.options?.column_width ?? 45;
-
-        // Get current year from gantt dates for reference
-        const currentYear = ganttInstance?.dates?.[0]?.getFullYear() ||
-            new Date().getFullYear();
-
-        // Month name mappings for responsive formatting
-        const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-        upperTexts.forEach((text) => {
-            const content = text.textContent.trim();
-
-            // Skip if already contains a 4-digit year
-            if (/\d{4}/.test(content)) return;
-
-            // Skip if empty
-            if (!content) return;
-
-            // Check if this looks like a month name without year
-            // Frappe Gantt typically shows "December" or "Dec" for upper headers
-            const monthPattern = /^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
-            if (monthPattern.test(content)) {
-                // Store original text for library scroll handler matching
-                // Library uses textContent matching to find current element on scroll
-                text.setAttribute('data-original-text', content);
-
-                // Try to infer year from gantt dates array
-                // Find dates that fall in this month
-                const monthMap = {
-                    'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
-                    'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
-                    'august': 7, 'aug': 7, 'september': 8, 'sep': 8, 'october': 9, 'oct': 9,
-                    'november': 10, 'nov': 10, 'december': 11, 'dec': 11
-                };
-                const monthNum = monthMap[content.toLowerCase()];
-
-                // Find a date with this month to get the year
-                let inferredYear = currentYear;
-                if (ganttInstance?.dates && monthNum !== undefined) {
-                    const matchingDate = ganttInstance.dates.find(d => d.getMonth() === monthNum);
-                    if (matchingDate) {
-                        inferredYear = matchingDate.getFullYear();
-                    }
-                }
-
-                // Use abbreviated month at narrow widths (<100px), full at wider
-                // Threshold chosen to fit "Dec 2025" comfortably
-                if (columnWidth < 100) {
-                    const shortMonth = monthNamesShort[monthNum] || content.slice(0, 3);
-                    text.textContent = `${shortMonth} ${inferredYear}`;
-                } else {
-                    text.textContent = `${content} ${inferredYear}`;
-                }
-            }
-        });
-    }
-
-    /**
-     * Fix the current-upper scroll tracking after we modify textContent.
-     * The library's scroll handler uses textContent matching, but we modify textContent.
-     * This adds our own scroll handler using position-based element finding.
-     */
-    function fixCurrentUpperScrollTracking() {
-        if (!ganttInstance) return;
-
-        const container = document.querySelector('.gantt-container');
-        if (!container) return;
-
-        // Only add once per container instance
-        if (container._currentUpperScrollFixed) return;
-        container._currentUpperScrollFixed = true;
-
-        container.addEventListener('scroll', () => {
-            if (!ganttInstance || !ganttInstance.config) return;
-
-            const scrollLeft = container.scrollLeft;
-            const upperTexts = document.querySelectorAll('.gantt-container .upper-text');
-            if (!upperTexts.length) return;
-
-            // Find the rightmost upper-text element that starts at or before scrollLeft
-            // This is the element that should be "current" (sticky in top-left)
-            let currentEl = null;
-            let currentElLeft = -Infinity;
-
-            upperTexts.forEach(el => {
-                // Skip empty/hidden elements
-                if (!el.textContent.trim()) return;
-
-                // Get element's left position
-                const elLeft = parseFloat(el.style.left) || el.offsetLeft || 0;
-
-                // Find the rightmost element that's still to the left of (or at) scroll position
-                if (elLeft <= scrollLeft && elLeft > currentElLeft) {
-                    currentElLeft = elLeft;
-                    currentEl = el;
-                }
-            });
-
-            // If no element found to the left, use the first visible one
-            if (!currentEl) {
-                currentEl = Array.from(upperTexts).find(el => el.textContent.trim());
-            }
-
-            if (currentEl) {
-                // Only update if changed
-                const existingCurrent = document.querySelector('.gantt-container .upper-text.current-upper');
-                if (existingCurrent !== currentEl) {
-                    upperTexts.forEach(el => el.classList.remove('current-upper'));
-                    currentEl.classList.add('current-upper');
-                    ganttInstance.$current = currentEl;
-                }
-            }
-        });
-
-        console.log('Current-upper scroll tracking fixed (position-based)');
     }
 
     /**
@@ -890,11 +746,125 @@
         svg.id = 'gantt-svg';
         container.appendChild(svg);
 
+        // Date formatter for upper headers to include year (#12)
+        // This ensures the upper header shows "December 2024" instead of just "December"
+        const formatMonthYear = (date, prevDate, lang) => {
+            // Only show text when month changes (or first element)
+            if (prevDate && date.getMonth() === prevDate.getMonth() &&
+                date.getFullYear() === prevDate.getFullYear()) {
+                return '';
+            }
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        };
+
+        // Week lower text formatter (copied from frappe-gantt default)
+        const formatWeekRange = (date, prevDate, lang) => {
+            if (prevDate && date.getDate() === prevDate.getDate()) return '';
+            const endDate = new Date(date);
+            endDate.setDate(endDate.getDate() + 6);
+            const startDay = date.getDate();
+            const endDay = endDate.getDate();
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            if (date.getMonth() === endDate.getMonth()) {
+                return `${startDay} - ${endDay} ${monthNames[date.getMonth()]}`;
+            } else {
+                return `${startDay} ${monthNames[date.getMonth()]} - ${endDay}`;
+            }
+        };
+
+        // Custom view modes with year in upper header for Day/Week views (#12)
+        const customViewModes = [
+            {
+                name: 'Hour',
+                padding: '7d',
+                step: '1h',
+                date_format: 'YYYY-MM-DD HH:',
+                lower_text: 'HH',
+                upper_text: (n, t, e) => !t || n.getDate() !== t.getDate()
+                    ? `${n.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][n.getMonth()]}`
+                    : '',
+                upper_text_frequency: 24
+            },
+            {
+                name: 'Quarter Day',
+                padding: '7d',
+                step: '6h',
+                date_format: 'YYYY-MM-DD HH:',
+                lower_text: 'HH',
+                upper_text: (n, t, e) => !t || n.getDate() !== t.getDate()
+                    ? `${n.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][n.getMonth()]}`
+                    : '',
+                upper_text_frequency: 4
+            },
+            {
+                name: 'Half Day',
+                padding: '14d',
+                step: '12h',
+                date_format: 'YYYY-MM-DD HH:',
+                lower_text: 'HH',
+                upper_text: (n, t, e) => !t || n.getDate() !== t.getDate()
+                    ? `${n.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][n.getMonth()]}`
+                    : '',
+                upper_text_frequency: 2
+            },
+            {
+                name: 'Day',
+                padding: '7d',
+                date_format: 'YYYY-MM-DD',
+                step: '1d',
+                lower_text: (n, t, e) => !t || n.getDate() !== t.getDate() ? String(n.getDate()) : '',
+                upper_text: formatMonthYear,  // Use "MMMM YYYY" format
+                thick_line: (n) => n.getDay() === 1
+            },
+            {
+                name: 'Week',
+                padding: '1m',
+                step: '7d',
+                date_format: 'YYYY-MM-DD',
+                column_width: 140,
+                lower_text: formatWeekRange,
+                upper_text: formatMonthYear,  // Use "MMMM YYYY" format
+                thick_line: (n) => n.getDate() >= 1 && n.getDate() <= 7,
+                upper_text_frequency: 4
+            },
+            {
+                name: 'Month',
+                padding: '2m',
+                step: '1m',
+                column_width: 120,
+                date_format: 'YYYY-MM',
+                lower_text: 'MMMM',
+                upper_text: (n, t, e) => !t || n.getFullYear() !== t.getFullYear()
+                    ? String(n.getFullYear())
+                    : '',
+                thick_line: (n) => n.getMonth() % 3 === 0,
+                snap_at: '7d'
+            },
+            {
+                name: 'Year',
+                padding: '2y',
+                step: '1y',
+                column_width: 120,
+                date_format: 'YYYY',
+                upper_text: (n, t, e) => {
+                    const decade = Math.floor(n.getFullYear() / 10) * 10;
+                    const prevDecade = t ? Math.floor(t.getFullYear() / 10) * 10 : null;
+                    return decade !== prevDecade ? `${decade}s` : '';
+                },
+                lower_text: 'YYYY',
+                snap_at: '30d'
+            }
+        ];
+
         // Build options object
         const ganttOptions = {
             // View settings
             view_mode: config.view_mode ?? 'Week',
             view_mode_select: false, // Custom control used
+            view_modes: customViewModes,  // Use custom view modes with year in upper headers
 
             // Appearance - use nullish coalescing to allow 0 values
             bar_height: config.bar_height ?? 30,
