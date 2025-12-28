@@ -61,6 +61,7 @@
     let renderInProgress = false;    // Prevent overlapping renders
     const CONFIG_DEBOUNCE_MS = 300;  // 300ms debounce delay
     let currentTasks = [];           // Store tasks for expected progress markers
+    let activeFilters = ['all'];     // Track active filter buttons (#51)
 
     // Zoom State
     const ZOOM_STEP = 5;            // Increment size in pixels
@@ -638,6 +639,7 @@
 
         // Initialize Control Bar Events
         setupControls();
+        setupFilterButtons();  // Initialize filter buttons (#51)
     } catch (e) {
         console.error('Initialization error:', e);
     }
@@ -964,6 +966,7 @@
                     ensureStackingOrder();  // Ensure today line and markers on top (#57)
                     ensureEdgeToEdgeContent();  // Check edge-to-edge, zoom if needed (#21)
                     updateZoomIndicator();  // Update indicator for new view's zoom
+                    applyTaskFilters();  // Re-apply task filters after view change (#51)
                 });
             }
         };
@@ -1210,6 +1213,7 @@
                 addCompletionIndicators();  // Add checkmarks to 100% tasks (#31)
                 ensureStackingOrder();  // Ensure today line and markers on top (#57)
                 ensureEdgeToEdgeContent();  // Zoom if needed to fill viewport (#21)
+                applyTaskFilters();  // Apply task filters after render (#51)
 
                 // Restore view state if we have saved state from config update
                 if (window._ganttRestoreState) {
@@ -2277,6 +2281,137 @@
             console.log('Window resized');
         }
     });
+
+    // ===== TASK FILTERING (#51) =====
+
+    /**
+     * Determine task status based on progress and dates.
+     * Note: Overdue is NOT mutually exclusive with In-Process/Not Started.
+     * @param {Object} task - Task object with progress, start, end properties
+     * @returns {string[]} Array of applicable statuses
+     */
+    function getTaskStatuses(task) {
+        const statuses = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const endDate = new Date(task.end);
+        endDate.setHours(0, 0, 0, 0);
+
+        const progress = task.progress || 0;
+
+        if (progress === 100) {
+            statuses.push('completed');
+        } else {
+            // Not completed - check other statuses
+            if (endDate < today) {
+                statuses.push('overdue');
+            }
+            if (progress > 0) {
+                statuses.push('in-progress');
+            } else {
+                statuses.push('not-started');
+            }
+        }
+
+        return statuses;
+    }
+
+    /**
+     * Apply active filters to hide/show task bars in DOM.
+     * Uses display:none on bar-wrapper elements.
+     */
+    function applyTaskFilters() {
+        const barWrappers = document.querySelectorAll('.gantt .bar-wrapper');
+        let visibleCount = 0;
+
+        barWrappers.forEach(wrapper => {
+            const taskId = wrapper.getAttribute('data-id');
+            const task = currentTasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const taskStatuses = getTaskStatuses(task);
+
+            // Show if 'all' is active OR any of task's statuses match active filters
+            const shouldShow = activeFilters.includes('all') ||
+                taskStatuses.some(status => activeFilters.includes(status));
+
+            wrapper.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleCount++;
+        });
+
+        // Update empty state if needed
+        updateFilterEmptyState(visibleCount);
+    }
+
+    /**
+     * Show/hide empty state message when no tasks match filter.
+     */
+    function updateFilterEmptyState(visibleCount) {
+        let emptyMsg = document.getElementById('filter-empty-message');
+
+        if (visibleCount === 0 && !activeFilters.includes('all')) {
+            if (!emptyMsg) {
+                emptyMsg = document.createElement('div');
+                emptyMsg.id = 'filter-empty-message';
+                emptyMsg.className = 'filter-empty-state';
+                emptyMsg.textContent = 'No tasks match the selected filter(s)';
+                document.getElementById('gantt-container').appendChild(emptyMsg);
+            }
+            emptyMsg.style.display = 'block';
+        } else if (emptyMsg) {
+            emptyMsg.style.display = 'none';
+        }
+    }
+
+    /**
+     * Initialize filter button event listeners.
+     */
+    function setupFilterButtons() {
+        const filterButtons = document.querySelectorAll('.btn-filter');
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const status = btn.dataset.status;
+
+                if (status === 'all') {
+                    // "All" clears other filters
+                    activeFilters = ['all'];
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                } else {
+                    // Toggle this filter
+                    const allBtn = document.getElementById('btn-filter-all');
+
+                    if (activeFilters.includes('all')) {
+                        // Switching from "All" to specific filter
+                        activeFilters = [status];
+                        allBtn.classList.remove('active');
+                    } else if (activeFilters.includes(status)) {
+                        // Remove this filter
+                        activeFilters = activeFilters.filter(f => f !== status);
+                        if (activeFilters.length === 0) {
+                            // No filters = show all
+                            activeFilters = ['all'];
+                            allBtn.classList.add('active');
+                        }
+                    } else {
+                        // Add this filter
+                        activeFilters.push(status);
+                    }
+
+                    // Update button states
+                    filterButtons.forEach(b => {
+                        if (b.dataset.status === 'all') return;
+                        b.classList.toggle('active', activeFilters.includes(b.dataset.status));
+                    });
+                }
+
+                applyTaskFilters();
+                console.log('Active filters:', activeFilters);
+            });
+        });
+    }
 
     // ===== CONTROLS =====
 
