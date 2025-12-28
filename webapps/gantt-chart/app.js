@@ -994,6 +994,75 @@
                 view_mode: ganttInstance.options?.view_mode
             });
 
+            // Patch show_popup to position tooltip centered below bar (#66)
+            // Let Frappe render first, then correct position in requestAnimationFrame
+            const originalShowPopup = ganttInstance.show_popup.bind(ganttInstance);
+            ganttInstance.show_popup = function(opts) {
+                originalShowPopup(opts);
+
+                if (!opts.target) return;
+
+                requestAnimationFrame(() => {
+                    const popup = ganttInstance.$popup_wrapper;
+                    const container = ganttInstance.$container;
+
+                    if (!popup || !container) return;
+
+                    // Theme-driven gap from CSS variable
+                    const styles = getComputedStyle(container);
+                    const GAP = parseInt(styles.getPropertyValue('--gantt-popup-gap'), 10) || 30;
+
+                    // Geometry
+                    const barRect = opts.target.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    const scrollLeft = container.scrollLeft;
+                    const scrollTop = container.scrollTop;
+
+                    const popupWidth = popup.offsetWidth;
+                    const popupHeight = popup.offsetHeight;
+
+                    // Bar position in container coordinates
+                    const barLeft = barRect.left - containerRect.left + scrollLeft;
+                    const barRight = barRect.right - containerRect.left + scrollLeft;
+                    const barTop = barRect.top - containerRect.top + scrollTop;
+                    const barBottom = barRect.bottom - containerRect.top + scrollTop;
+
+                    // Horizontal: trail bar to the left
+                    let left = barLeft - popupWidth - GAP;
+
+                    const minLeft = 0;
+                    const maxLeft = container.scrollWidth - popupWidth;
+
+                    if (left < minLeft) left = minLeft;
+                    if (left > maxLeft) left = maxLeft;
+
+                    // Vertical: prefer below, auto-flip above if needed
+                    let top = barBottom + GAP;
+
+                    const maxTop = container.scrollHeight - popupHeight;
+
+                    if (top > maxTop) {
+                        top = barTop - popupHeight - GAP;
+                    }
+
+                    if (top < 0) top = 0;
+                    if (top > maxTop) top = maxTop;
+
+                    // Disable transition for corrective move
+                    const prevTransition = popup.style.transition;
+                    popup.style.transition = 'none';
+
+                    popup.style.left = `${left}px`;
+                    popup.style.top = `${top}px`;
+
+                    // Force layout so transition removal takes effect
+                    popup.offsetHeight;
+
+                    popup.style.transition = prevTransition;
+                });
+            };
+
             // Sync controls
             updateControlsState(ganttOptions);
 
