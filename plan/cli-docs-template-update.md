@@ -100,3 +100,52 @@ on_view_change: function(mode) {
 - To be integrated into: `cli-docs/reference/frappe-gantt.md` → "Callbacks" section
 
 ---
+
+### Context
+Adding year context to upper header text post-render (e.g., changing "December" to "December 2024").
+
+### The Problem
+Searching `ganttInstance.dates` by month name finds the **first** matching month in the array, regardless of where that date appears in the timeline. When a project spans multiple years (e.g., Dec 2023 → Dec 2024), searching for "December" finds Dec 2023 first, causing the header to display the wrong year.
+
+```javascript
+// BAD - Finds first December in entire dates array
+const matchingDate = ganttInstance.dates.find(d => d.getMonth() === 11);
+// If timeline starts Dec 2023, this returns Dec 2023 even for Dec 2024 header
+```
+
+### The Solution
+Use the element's position to calculate its index in the dates array, then look up the date directly. Each column has a fixed width (`columnWidth`), so position ÷ width = index.
+
+### Implementation
+
+```javascript
+// GOOD - Direct index lookup from position
+const columnWidth = ganttInstance.config.column_width;
+
+upperTexts.forEach(text => {
+    const elementX = parseFloat(text.style.left) || 0;
+    const dateIndex = Math.round(elementX / columnWidth);
+
+    // Bounds check
+    if (dateIndex >= 0 && dateIndex < ganttInstance.dates.length) {
+        const elementDate = ganttInstance.dates[dateIndex];
+        const year = elementDate.getFullYear();
+        text.textContent = `${text.textContent} ${year}`;
+    }
+});
+```
+
+### Why This Works
+1. **Position encodes index** — Element at X=450 with columnWidth=45 is index 10
+2. **dates[] is ordered** — `dates[0]` = gantt_start, `dates[N]` = gantt_end
+3. **Direct lookup, not search** — `array[i]` is O(1) and deterministic vs `.find()` which stops at first match
+
+### Verification
+1. Create a timeline spanning multiple years with the same month (e.g., Dec 2023 → Dec 2024)
+2. Scroll to view the later occurrence of the month
+3. Verify the year displayed matches the timeline position, not the first occurrence in the dataset
+
+### Related
+- To be integrated into: `cli-docs/reference/frappe-gantt.md` → "Header Manipulation" section
+
+---

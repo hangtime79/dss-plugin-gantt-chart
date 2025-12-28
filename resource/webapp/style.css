@@ -916,12 +916,14 @@ body {
 }
 
 /* ===== HEADER TEXT COLLISION FIX ===== */
+/* Header elements are HTML divs - use 'color' (also set 'fill' for any SVG fallback) */
 .gantt-container .upper-text {
     max-width: calc(var(--gv-column-width, 45px) * 4);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     fill: var(--text-muted) !important;
+    color: var(--text-muted) !important;
 }
 
 .gantt-container .lower-text {
@@ -929,6 +931,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     fill: var(--text-main) !important;
+    color: var(--text-main) !important;
     font-weight: var(--font-weight-medium);
 }
 
@@ -1089,9 +1092,13 @@ body {
 }
 
 /* Ensure header text visible in dark mode - use bright text for contrast (#31) */
+/* Header elements are HTML divs (use 'color'), but also set 'fill' for any SVG text */
 .dark-theme .gantt .upper-text,
-.dark-theme .gantt .lower-text {
+.dark-theme .gantt .lower-text,
+.dark-theme .gantt-container .upper-text,
+.dark-theme .gantt-container .lower-text {
     fill: var(--text-main) !important;
+    color: var(--text-main) !important;
 }
 
 /* Fix floating year background in dark mode - library hardcodes #fff (#31) */
