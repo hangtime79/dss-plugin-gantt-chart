@@ -2303,6 +2303,11 @@
             zoomOutBtn.addEventListener('click', () => adjustZoom(-ZOOM_STEP));
         }
 
+        const zoomResetBtn = document.getElementById('btn-zoom-reset');
+        if (zoomResetBtn) {
+            zoomResetBtn.addEventListener('click', resetZoom);
+        }
+
         // Init indicator
         updateZoomIndicator();
 
@@ -2367,6 +2372,30 @@
         ganttInstance.change_view_mode(currentViewMode);
         updateZoomIndicator();
         console.log('Zoom to:', newWidth, '(' + Math.round((newWidth / COLUMN_WIDTH_BASELINE) * 100) + '%) for', currentViewMode);
+    }
+
+    /**
+     * Reset zoom to 100% or viewport floor (whichever is larger).
+     * Uses the greater of COLUMN_WIDTH_BASELINE (75px) or the
+     * calculated minimum for the current view mode.
+     */
+    function resetZoom() {
+        if (!ganttInstance) return;
+
+        const viewFloor = minColumnWidthByViewMode[currentViewMode] || ABSOLUTE_FLOOR;
+        const targetWidth = Math.max(COLUMN_WIDTH_BASELINE, viewFloor);
+        const currentWidth = columnWidthByViewMode[currentViewMode] || COLUMN_WIDTH_BASELINE;
+
+        if (targetWidth === currentWidth) {
+            console.log('Zoom already at reset level:', targetWidth);
+            return;
+        }
+
+        columnWidthByViewMode[currentViewMode] = targetWidth;
+        ganttInstance.options.column_width = targetWidth;
+        ganttInstance.change_view_mode(currentViewMode);
+        updateZoomIndicator();
+        console.log('Zoom reset to:', targetWidth, '(' + Math.round((targetWidth / COLUMN_WIDTH_BASELINE) * 100) + '%) for', currentViewMode);
     }
 
     function updateZoomIndicator() {
