@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2025-12-28
+
+### Added
+- Task labels now consistently right-aligned with 45px offset from bar end (#62)
+- Completion checkmarks now horizontally centered in task bars (#63)
+
+### Fixed
+- Progress bar accuracy: 50% progress now visually fills 50% of bar, not 60-70% (#64)
+- Upper header year display: Fixed wrong year showing when timeline spans multiple years with same month
+
 ## [0.9.1] - 2025-12-27
 
 ### Added

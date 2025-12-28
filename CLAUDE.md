@@ -56,6 +56,7 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Frappe Gantt Month view diff() bug** — Library's `diff()` function used `o%30/30` for fractional month, which is meaningless. Patched to `(n.getDate()-1)/30` for proper day-of-month position.
 - **DOM data-id location** — `data-id` attribute is on `.bar-wrapper`, not `.bar-group`. Use `wrapper.getAttribute('data-id')` directly, not `.closest('.bar-group')`.
 - **Grid header is HTML, not SVG** — `.grid-header` is an HTML `<div>` with absolutely-positioned text divs, NOT an SVG group. Header decorations (separators, etc.) must use HTML elements, not SVG lines.
+- **Position-based date lookup** — When adding year to upper header text post-render, DON'T search `ganttInstance.dates` by month name (`dates.find(d => d.getMonth() === monthNum)`) — this finds the FIRST match regardless of position. Instead, use index lookup: `dates[Math.round(elementX / columnWidth)]` to get the exact date at that element's position.
 
 ---
 
@@ -129,29 +130,21 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Implementation Complete - QA Round 2
+**Phase:** Branch Exit - Documentation Complete
 
-**Current Branch:** `feature/v0.9.0-theming-and-visual-polish`
+**Current Branch:** `feature/v0.9.2-visual-polish`
 
-**Commits:**
-1. `fb1be8c` - feat(v0.9.0): Initial implementation
-2. `5127dc6` - fix(v0.9.0): QA fixes for markers, pills, dark mode
+**Spec:** `plan/specs/feature-v0.9.2-spec.md`
 
-**What's In Scope (v0.9.0):**
-| Issue | Status |
-|-------|--------|
-| #34: Grid Lines | ✅ PASSED |
-| #54: Zoom Bug | ✅ PASSED |
+**Completed (v0.9.2):**
+| Issue | Description | Status |
+|-------|-------------|--------|
+| #62 | Standardize task label positioning | ✅ Done |
+| #63 | Center completion checkmark | ✅ Done |
+| #64 | Fix progress bar accuracy | ✅ Done |
+| — | Fix year display bug | ✅ Done |
 
-**Deferred:**
-- #31: Dark Mode → v0.9.1
-- #49: Palettes → v0.9.2
-- #57: Markers → v0.9.3
-- #47: Right-side Labels → v0.9.4
-
-**Intervention:** `plan/interventions/v0.9.0-intervention.md` (READ THIS FIRST)
-
-**Next Step:** Ready for release - run branch-exit-protocol
+**Next Step:** PR and merge to main
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -166,12 +159,13 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.7.1**~~ | ~~#21~~ | ~~Sticky Header: Narrow content fix~~ ✅ |
 | ~~**v0.7.2**~~ | ~~#52, #53~~ | ~~Bug Fixes: Progress markers, zoom stops~~ ✅ |
 | ~~**v0.8.0**~~ | ~~#12, #14, #35, #41, #50~~ | ~~Headers & Date Formats~~ ✅ |
-| **v0.9.0** | #34, #54 | Visual Polish ← *current* |
-| **v0.9.1** | #31 | Dark Mode |
-| **v0.9.2** | #49 | Color Palettes |
-| **v0.9.3** | #57 | Expected Progress Markers |
-| **v0.9.4** | #47 | Right-side Labels |
+| ~~**v0.9.0**~~ | ~~#34, #54~~ | ~~Visual Polish~~ ✅ |
+| ~~**v0.9.1**~~ | ~~#31~~ | ~~Dark Mode~~ ✅ |
+| ~~**v0.9.2**~~ | ~~#62, #63, #64~~ | ~~Visual Polish II~~ ✅ |
+| **v0.9.3** | #49 | Color Palettes ← *next* |
+| **v0.9.4** | #57 | Expected Progress Markers |
+| **v0.9.5** | #47 | Right-side Labels |
 | **v0.10.0** | #24, #25, #32, #36, #44, #51 | Export + i18n + Interaction |
 | **v1.0.0** | — | Public Release: Final polish |
 
-**Next milestone:** v0.9.0
+**Next milestone:** v0.9.3
