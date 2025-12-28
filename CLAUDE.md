@@ -163,7 +163,7 @@ Simple fixes with plenty of context don't need intervention tracking.
 | **v0.9.6** | #49, #57 | Visual Enhancements |
 | **v0.9.7** | #60 | Reset Zoom |
 | **v0.9.8** | #51 | Task Filtering |
-| **v0.10.0** | #32, #36 | i18n + Scroll Padding |
+| **v0.10.0** | #32 | i18n |
 | **v1.0.0-rc** | #24, #25 | Print + Global Params (TBD) |
 | **v1.0.0** | — | Public Release |
 
