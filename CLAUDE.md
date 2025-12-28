@@ -137,11 +137,11 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 **Current Branch:** `main`
 
-**Last Release:** v0.9.5 (2025-12-29)
-- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.9.5)
-- [PR #78](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/78)
+**Last Release:** v0.9.8 (2025-12-29)
+- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.9.8)
+- [PR #81](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/81)
 
-**Next Milestone:** v0.9.6 - Visual Enhancements (#49, #57)
+**Next Milestone:** v0.10.0 - i18n (#32)
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -162,11 +162,12 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.9.3**~~ | ~~#71~~ | ~~Bug Fix: Header Contrast~~ ✅ |
 | ~~**v0.9.4**~~ | ~~#66, #67~~ | ~~Tooltip Polish I (Positioning & Appearance)~~ ✅ |
 | ~~**v0.9.5**~~ | ~~#65, #68~~ | ~~Tooltip Polish II (Content & Interaction)~~ ✅ |
-| **v0.9.6** | #49, #57 | Visual Enhancements |
-| **v0.9.7** | #60 | Reset Zoom |
-| **v0.9.8** | #51 | Task Filtering |
+| ~~**v0.9.6**~~ | ~~#49, #57~~ | ~~Visual Enhancements~~ ✅ |
+| ~~**v0.9.7**~~ | ~~#60~~ | ~~Reset Zoom~~ ✅ |
+| ~~**v0.9.8**~~ | ~~#51~~ | ~~Task Filtering~~ ✅ |
 | **v0.10.0** | #32 | i18n |
+| **v0.10.1** | #79 | Global Custom Palettes |
 | **v1.0.0-rc** | #24, #25 | Print + Global Params (TBD) |
 | **v1.0.0** | — | Public Release |
 
-**Current milestone:** v0.9.6 - Visual Enhancements (#49, #57)
+**Current milestone:** v0.10.0 - i18n (#32)
