@@ -131,17 +131,15 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** BRANCH EXIT - v0.9.4 Ready for Merge
+**Phase:** IDLE - Ready for next milestone
 
-**Current Branch:** `feature/v0.9.4-tooltip-polish`
+**Current Branch:** `main`
 
-**Last Release:** v0.9.3 (2025-12-28)
+**Last Release:** v0.9.4 (2025-12-28)
+- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.9.4)
+- [PR #73](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/73)
 
-**Completed:** v0.9.4 Tooltip Polish
-- #66 Tooltip positioning - PASSED QA
-- #67 Tooltip appearance - PASSED QA
-
-**Next Step:** Create PR and merge to main
+**Next Milestone:** v0.9.5 - Tooltip Polish II (#65, #68)
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
