@@ -137,9 +137,9 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 **Current Branch:** `main`
 
-**Last Release:** v0.9.4 (2025-12-28)
-- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.9.4)
-- [PR #73](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/73)
+**Last Release:** v0.9.5 (2025-12-29)
+- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.9.5)
+- [PR #78](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/78)
 
 **Next Milestone:** v0.9.6 - Visual Enhancements (#49, #57)
 
