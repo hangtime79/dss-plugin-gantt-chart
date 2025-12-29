@@ -1,0 +1,27 @@
+{
+    "meta": {
+        "label": "Custom Color Palette",
+        "description": "Define custom hex colors for Gantt chart task bars",
+        "icon": "icon-paint-brush"
+    },
+    "defaultDefinableAtProjectLevel": true,
+    "defaultDefinableInline": true,
+    "params": [
+        {
+            "name": "palette_name",
+            "label": "Palette Name",
+            "type": "STRING",
+            "description": "Display name for this palette (for reference only)",
+            "mandatory": true,
+            "defaultValue": "My Custom Palette"
+        },
+        {
+            "name": "colors",
+            "label": "Colors",
+            "type": "TEXTAREA",
+            "description": "JSON array of hex color codes.\n\nExample:\n[\"#3498db\", \"#2ecc71\", \"#e67e22\", \"#9b59b6\", \"#e74c3c\", \"#1abc9c\"]\n\nRequirements:\n- Minimum 6 colors, maximum 12\n- Format: #RGB or #RRGGBB",
+            "mandatory": true,
+            "defaultValue": "[\"#3498db\", \"#2ecc71\", \"#e67e22\", \"#9b59b6\", \"#e74c3c\", \"#1abc9c\", \"#e91e63\", \"#3f51b5\", \"#00bcd4\", \"#ffc107\", \"#cddc39\", \"#607d8b\"]"
+        }
+    ]
+}
