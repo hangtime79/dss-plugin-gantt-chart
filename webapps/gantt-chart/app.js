@@ -101,6 +101,41 @@
         'Year': ABSOLUTE_FLOOR
     };
 
+    // =============================================================================
+    // UI STRINGS (Future i18n stub - currently English only)
+    // =============================================================================
+    // These strings are centralized here for future localization.
+    // To add translations: replace string values based on webAppConfig.language
+    const UI_STRINGS = {
+        // View mode labels (displayed in view mode selector)
+        viewModes: {
+            'Hour': 'Hour',
+            'Quarter Day': 'Quarter Day',
+            'Half Day': 'Half Day',
+            'Day': 'Day',
+            'Week': 'Week',
+            'Month': 'Month',
+            'Year': 'Year'
+        },
+        // Filter button labels
+        filters: {
+            all: 'All',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            inProgress: 'In Progress',
+            notStarted: 'Not Started'
+        },
+        // Control buttons
+        controls: {
+            resetZoom: 'Reset Zoom'
+        },
+        // Empty state
+        emptyState: {
+            noTasks: 'No tasks to display',
+            noMatchingTasks: 'No tasks match the selected filters'
+        }
+    };
+
     // Track current view mode for zoom operations
     let currentViewMode = 'Week';
 
@@ -850,7 +885,7 @@
             scroll_to: webAppConfig.scrollTo || 'today',
 
             // Language
-            language: 'en'
+            language: webAppConfig.language || 'en'
         };
 
         // Handle weekend highlighting
@@ -2377,7 +2412,7 @@
                 emptyMsg = document.createElement('div');
                 emptyMsg.id = 'filter-empty-message';
                 emptyMsg.className = 'filter-empty-state';
-                emptyMsg.textContent = 'No tasks match the selected filter(s)';
+                emptyMsg.textContent = UI_STRINGS.emptyState.noMatchingTasks;
                 document.getElementById('gantt-container').appendChild(emptyMsg);
             }
             emptyMsg.style.display = 'block';
