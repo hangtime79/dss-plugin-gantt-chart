@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2025-12-29
+
+### Added
+- Custom color palettes via admin-defined presets (#79)
+  - New "Custom (Preset)" option in Color Palette dropdown
+  - Admins create palettes in plugin settings with 6-12 hex colors
+  - WCAG-compliant auto text contrast (dark text on light bars, white on dark)
+  - Dynamic CSS injection for custom bar-custom-N classes
+
+### Fixed
+- PRESET parameter resolution in webapps (requires manual API resolution)
+
 ## [0.10.0] - 2025-12-29
 
 ### Added
