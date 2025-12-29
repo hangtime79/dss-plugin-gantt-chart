@@ -64,16 +64,20 @@ def resolve_preset(preset_ref, parameter_set_id):
             plugin = client.get_plugin("gantt-chart")
             settings = plugin.get_settings()
 
-            # Get presets for this parameter set
-            presets = settings.get_presets(parameter_set_id)
-            logger.info(f"[#79] Found {len(presets)} presets for '{parameter_set_id}'")
+            # Get the parameter set, then get the preset from it
+            parameter_set = settings.get_parameter_set(parameter_set_id)
+            logger.info(f"[#79] Got parameter set '{parameter_set_id}'")
 
-            # Find the preset by name
-            for preset in presets:
-                if preset.get('name') == preset_name:
-                    preset_values = preset.get('config', {})
-                    logger.info(f"[#79] Resolved PRESET '{preset_name}': {list(preset_values.keys())}")
-                    return preset_values
+            # List available presets for debugging
+            preset_names = parameter_set.list_preset_names()
+            logger.info(f"[#79] Available presets: {preset_names}")
+
+            # Get the specific preset by name
+            preset = parameter_set.get_preset(preset_name)
+            if preset:
+                preset_values = preset.get_config()
+                logger.info(f"[#79] Resolved PRESET '{preset_name}': {list(preset_values.keys())}")
+                return preset_values
 
             logger.warning(f"[#79] Preset '{preset_name}' not found in '{parameter_set_id}'")
             return None
