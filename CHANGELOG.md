@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-12-29
+
+### Added
+- Language localization for date/month formatting (#32)
+  - 11 languages: English, Spanish, German, French, Portuguese, Russian, Turkish, Chinese, Japanese, Korean, Italian
+  - Language dropdown in Appearance settings
+  - Uses browser Intl API for locale-aware month names
+- UI_STRINGS stub for future full i18n implementation
+
+### Fixed
+- Responsive month abbreviations now work for all languages (was English-only)
+- Frappe Gantt view_mode mutation bug causing stale language in Month view
+
 ## [0.9.8] - 2025-12-29
 
 ### Added
