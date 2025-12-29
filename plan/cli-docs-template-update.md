@@ -149,3 +149,109 @@ upperTexts.forEach(text => {
 - To be integrated into: `cli-docs/reference/frappe-gantt.md` → "Header Manipulation" section
 
 ---
+
+### Context
+Using PRESET parameter type in a Dataiku webapp to reference admin-defined parameter sets (like custom color palettes).
+
+### The Problem
+In recipes and connectors, Dataiku automatically resolves PRESET parameters to their dict values. However, in webapps, you receive a **raw reference** like `{"mode": "PRESET", "name": "PRESET_3"}` instead of the resolved values. Attempting to access the preset's properties directly fails.
+
+```python
+# What you expect (works in recipes)
+preset_config = config.get('customPalettePreset')
+colors = preset_config.get('colors')  # Works!
+
+# What you actually get in webapps
+preset_config = config.get('customPalettePreset')
+# preset_config = {"mode": "PRESET", "name": "PRESET_3"}
+colors = preset_config.get('colors')  # Returns None! No 'colors' key
+```
+
+### The Solution
+Manually resolve the PRESET reference using the Dataiku API. Check the `mode` key: if `"INLINE"`, values are embedded; if `"PRESET"`, you must fetch via API.
+
+### Implementation
+
+```python
+def resolve_preset(preset_ref, parameter_set_id):
+    """Resolve a webapp PRESET parameter to its actual values."""
+    if not preset_ref:
+        return None
+
+    mode = preset_ref.get('mode')
+
+    if mode == 'INLINE':
+        # Values embedded directly
+        return {k: v for k, v in preset_ref.items() if k != 'mode'}
+
+    elif mode == 'PRESET':
+        # Must resolve via API
+        preset_name = preset_ref.get('name')
+        if not preset_name:
+            return None
+
+        import dataiku
+        client = dataiku.api_client()
+        plugin = client.get_plugin("your-plugin-id")
+        settings = plugin.get_settings()
+        parameter_set = settings.get_parameter_set(parameter_set_id)
+        preset = parameter_set.get_preset(preset_name)
+
+        if preset:
+            # IMPORTANT: config is a PROPERTY, not a method!
+            return preset.config  # NOT preset.get_config()
+        return None
+
+    else:
+        # Direct values (no mode key)
+        return preset_ref
+```
+
+### Verification
+1. Create a parameter set with a preset in Dataiku plugin settings
+2. In your webapp, select the preset via the PRESET param type
+3. Add logging to see the raw config: `{"mode": "PRESET", "name": "..."}`
+4. Verify resolve_preset() returns the actual preset values
+
+### Related
+- To be integrated into: `cli-docs/reference/parameters.md` → "PRESET Type" section
+- Related gotcha: DSSPluginPreset.config is a property, not a method
+
+---
+
+### Context
+Accessing preset configuration values after resolving a PRESET parameter via the Dataiku API.
+
+### The Problem
+After calling `parameter_set.get_preset(name)`, you get a `DSSPluginPreset` object. Attempting to call `preset.get_config()` fails with `AttributeError: 'DSSPluginPreset' object has no attribute 'get_config'`.
+
+```python
+preset = parameter_set.get_preset("PRESET_3")
+values = preset.get_config()  # AttributeError!
+```
+
+### The Solution
+`config` is a **property**, not a method. Access it directly without parentheses.
+
+### Implementation
+
+```python
+# BAD - get_config() doesn't exist
+preset = parameter_set.get_preset("PRESET_3")
+values = preset.get_config()  # AttributeError
+
+# GOOD - config is a property
+preset = parameter_set.get_preset("PRESET_3")
+values = preset.config  # Returns dict of preset values
+```
+
+### Verification
+1. In Python console: `type(preset.config)` should return `<class 'dict'>`
+2. `preset.config.keys()` should show your preset's parameter names
+3. No AttributeError when accessing `.config`
+
+### Related
+- To be integrated into: `cli-docs/reference/parameters.md` → "Accessing Preset Values" section
+- Dataiku API docs sparse on this detail
+
+---
