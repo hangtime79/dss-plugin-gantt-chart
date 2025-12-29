@@ -60,6 +60,8 @@ DSS Dataset → backend.py → TaskTransformer → dependency_validator → JSON
 - **Frappe Gantt popup positioning** — Library treats popup coords as anchors and re-centres vertically after render. Don't fight it by modifying `opts.x/y` before calling `show_popup()`. Instead: call `originalShowPopup(opts)` first, then correct position in `requestAnimationFrame()` by directly setting `popup.style.left/top`. Disable transition temporarily to prevent visual jump.
 - **Webapp icons require inline SVG** — FontAwesome classes (`fas fa-*`) don't work in Dataiku webapp context. Use inline SVG with `fill="currentColor"` for theme compatibility. FontAwesome is only available for `plugin.json` icon field.
 - **Frappe Gantt single popup** — Library has single `$popup_wrapper`. For multiple simultaneous tooltips, clone popup content into independent DOM elements in a separate container.
+- **Webapp PRESET params are raw references** — Unlike recipes/connectors where Dataiku auto-resolves PRESET params to dicts, webapps receive `{"mode": "PRESET", "name": "PRESET_3"}` and must manually resolve via API: `client.get_plugin(id).get_settings().get_parameter_set(id).get_preset(name).config`
+- **DSSPluginPreset.config is a property** — Use `preset.config`, NOT `preset.get_config()`. The config attribute is a property that returns a dict, not a method.
 
 ---
 
