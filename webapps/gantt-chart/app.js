@@ -101,6 +101,41 @@
         'Year': ABSOLUTE_FLOOR
     };
 
+    // =============================================================================
+    // UI STRINGS (Future i18n stub - currently English only)
+    // =============================================================================
+    // These strings are centralized here for future localization.
+    // To add translations: replace string values based on webAppConfig.language
+    const UI_STRINGS = {
+        // View mode labels (displayed in view mode selector)
+        viewModes: {
+            'Hour': 'Hour',
+            'Quarter Day': 'Quarter Day',
+            'Half Day': 'Half Day',
+            'Day': 'Day',
+            'Week': 'Week',
+            'Month': 'Month',
+            'Year': 'Year'
+        },
+        // Filter button labels
+        filters: {
+            all: 'All',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            inProgress: 'In Progress',
+            notStarted: 'Not Started'
+        },
+        // Control buttons
+        controls: {
+            resetZoom: 'Reset Zoom'
+        },
+        // Empty state
+        emptyState: {
+            noTasks: 'No tasks to display',
+            noMatchingTasks: 'No tasks match the selected filters'
+        }
+    };
+
     // Track current view mode for zoom operations
     let currentViewMode = 'Week';
 
@@ -250,12 +285,38 @@
 
     // ===== HEADER LABEL ADJUSTMENT =====
 
-    // Month name mappings for responsive formatting
-    const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'];
-    const MONTH_NAMES_3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const MONTH_NAMES_1 = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+    /**
+     * Generate localized month names for responsive formatting.
+     * Uses Intl.DateTimeFormat to get month names in any language.
+     * @param {string} language - BCP 47 language code (e.g., 'en', 'fr', 'ja')
+     * @returns {Object} - { full: [...], short: [...], narrow: [...] }
+     */
+    function getLocalizedMonthNames(language) {
+        const full = [], short = [], narrow = [];
+        for (let month = 0; month < 12; month++) {
+            const date = new Date(2024, month, 1);
+            full.push(new Intl.DateTimeFormat(language, { month: 'long' }).format(date));
+            short.push(new Intl.DateTimeFormat(language, { month: 'short' }).format(date));
+            narrow.push(new Intl.DateTimeFormat(language, { month: 'narrow' }).format(date));
+        }
+        return { full, short, narrow };
+    }
+
+    // Cache for localized month names (regenerated when language changes)
+    let cachedMonthNames = null;
+    let cachedMonthLanguage = null;
+
+    /**
+     * Get month names for current language (cached for performance).
+     */
+    function getMonthNames() {
+        const currentLang = webAppConfig.language || 'en';
+        if (cachedMonthLanguage !== currentLang) {
+            cachedMonthNames = getLocalizedMonthNames(currentLang);
+            cachedMonthLanguage = currentLang;
+        }
+        return cachedMonthNames;
+    }
 
     /**
      * Adjust header labels based on view mode and column width.
@@ -346,33 +407,45 @@
     }
 
     /**
-     * Format Month mode labels.
-     * >= 75: Full month "January"
-     * >= 39: 3-letter "Jan"
-     * < 39: 1-letter "J"
+     * Format Month mode labels with localized month names.
+     * >= 75: Full month (e.g., "January", "Janvier", "1月")
+     * >= 39: Short month (e.g., "Jan", "janv.", "1月")
+     * < 39: Narrow month (e.g., "J", "J", "1")
      */
     function formatMonthLabels(columnWidth) {
         // In Month view: .upper-text = years, .lower-text = month names
         const lowerTexts = document.querySelectorAll('.lower-text');
+        const monthNames = getMonthNames();
 
         lowerTexts.forEach((text) => {
             const original = text.textContent.trim();
 
-            // Try to find which month this represents
+            // Try to find which month this represents by matching against localized names
             let monthIndex = -1;
 
-            // Check if it's a full month name
-            for (let i = 0; i < MONTH_NAMES_FULL.length; i++) {
-                if (original.toLowerCase().includes(MONTH_NAMES_FULL[i].toLowerCase())) {
+            // Check full month names first
+            for (let i = 0; i < monthNames.full.length; i++) {
+                if (original.toLowerCase() === monthNames.full[i].toLowerCase()) {
                     monthIndex = i;
                     break;
                 }
             }
 
-            // If not found, check 3-letter abbreviations
+            // If not found, check short month names
             if (monthIndex === -1) {
-                for (let i = 0; i < MONTH_NAMES_3.length; i++) {
-                    if (original.toLowerCase().startsWith(MONTH_NAMES_3[i].toLowerCase())) {
+                for (let i = 0; i < monthNames.short.length; i++) {
+                    if (original.toLowerCase() === monthNames.short[i].toLowerCase()) {
+                        monthIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // If still not found, try partial match (for languages with varying formats)
+            if (monthIndex === -1) {
+                for (let i = 0; i < monthNames.full.length; i++) {
+                    if (original.toLowerCase().includes(monthNames.full[i].toLowerCase()) ||
+                        monthNames.full[i].toLowerCase().includes(original.toLowerCase())) {
                         monthIndex = i;
                         break;
                     }
@@ -383,11 +456,11 @@
 
             // Apply formatting based on column width
             if (columnWidth >= 75) {
-                text.textContent = MONTH_NAMES_FULL[monthIndex];
+                text.textContent = monthNames.full[monthIndex];
             } else if (columnWidth >= 39) {
-                text.textContent = MONTH_NAMES_3[monthIndex];
+                text.textContent = monthNames.short[monthIndex];
             } else {
-                text.textContent = MONTH_NAMES_1[monthIndex];
+                text.textContent = monthNames.narrow[monthIndex];
             }
         });
     }
@@ -486,9 +559,13 @@
             if (!content) return;
 
             // Check if this looks like a month name without year
-            // Frappe Gantt typically shows "December" or "Dec" for upper headers
-            const monthPattern = /^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
-            if (monthPattern.test(content)) {
+            // Use localized month names for pattern matching
+            const monthNames = getMonthNames();
+            const allMonthNames = [...monthNames.full, ...monthNames.short];
+            const isMonthName = allMonthNames.some(name =>
+                content.toLowerCase() === name.toLowerCase()
+            );
+            if (isMonthName) {
                 // Store original text for library scroll handler matching
                 // Library uses textContent matching to find current element on scroll
                 text.setAttribute('data-original-text', content);
@@ -850,7 +927,7 @@
             scroll_to: webAppConfig.scrollTo || 'today',
 
             // Language
-            language: 'en'
+            language: webAppConfig.language || 'en'
         };
 
         // Handle weekend highlighting
@@ -2106,10 +2183,8 @@
         const month = d.getMonth();
         const day = d.getDate();
 
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        // Use localized month names
+        const localizedMonths = getMonthNames();
 
         const pad = (n) => n.toString().padStart(2, '0');
         const format = webAppConfig?.dateFormat || 'ISO';
@@ -2120,9 +2195,9 @@
             case 'EU':
                 return `${pad(day)}/${pad(month + 1)}/${year}`;
             case 'LONG':
-                return `${monthNames[month]} ${day}, ${year}`;
+                return `${localizedMonths.full[month]} ${day}, ${year}`;
             case 'SHORT':
-                return `${monthNamesShort[month]} ${day}`;
+                return `${localizedMonths.short[month]} ${day}`;
             case 'ISO':
             default:
                 return `${year}-${pad(month + 1)}-${pad(day)}`;
@@ -2377,7 +2452,7 @@
                 emptyMsg = document.createElement('div');
                 emptyMsg.id = 'filter-empty-message';
                 emptyMsg.className = 'filter-empty-state';
-                emptyMsg.textContent = 'No tasks match the selected filter(s)';
+                emptyMsg.textContent = UI_STRINGS.emptyState.noMatchingTasks;
                 document.getElementById('gantt-container').appendChild(emptyMsg);
             }
             emptyMsg.style.display = 'block';
