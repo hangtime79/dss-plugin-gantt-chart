@@ -87,6 +87,29 @@ def get_tasks():
             }), 400
 
         # Build transformer config
+        # Handle custom palette from preset (#79)
+        color_palette = config.get('colorPalette', 'classic')
+        custom_colors = None
+
+        if color_palette == 'custom':
+            preset_config = config.get('customPalettePreset', {})
+            if preset_config:
+                colors_json = preset_config.get('colors', '[]')
+                try:
+                    parsed_colors = json.loads(colors_json)
+                    if isinstance(parsed_colors, list) and len(parsed_colors) >= 6:
+                        custom_colors = parsed_colors[:12]  # Cap at 12 colors
+                        logger.info(f"Using custom palette with {len(custom_colors)} colors")
+                    else:
+                        logger.warning("Custom palette must have at least 6 colors. Using classic.")
+                        color_palette = 'classic'
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Invalid JSON in custom palette colors: {e}. Using classic.")
+                    color_palette = 'classic'
+            else:
+                logger.warning("Custom palette selected but no preset configured. Using classic.")
+                color_palette = 'classic'
+
         try:
             transformer_config = TaskTransformerConfig(
                 id_column=config.get('idColumn'),
@@ -96,7 +119,8 @@ def get_tasks():
                 progress_column=config.get('progressColumn'),
                 dependencies_column=config.get('dependenciesColumn'),
                 color_column=config.get('colorColumn'),
-                color_palette=config.get('colorPalette', 'classic'),  # (#49)
+                color_palette=color_palette,  # (#49, #79)
+                custom_colors=custom_colors,  # (#79)
                 tooltip_columns=config.get('tooltipColumns'),
                 group_by_columns=config.get('groupByColumns'),
                 max_tasks=int(config.get('maxTasks', 1000))
@@ -152,6 +176,10 @@ def get_tasks():
         if row_limit_hit:
             result['metadata']['rowLimitHit'] = True
             result['metadata']['rowLimit'] = max_tasks
+
+        # Add custom palette colors for frontend CSS injection (#79)
+        if custom_colors:
+            result['customPaletteColors'] = custom_colors
 
         logger.info(
             f"Transformed {result['metadata']['displayedRows']} tasks "

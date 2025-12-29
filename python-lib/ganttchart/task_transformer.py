@@ -31,6 +31,7 @@ class TaskTransformerConfig:
     dependencies_column: Optional[str] = None
     color_column: Optional[str] = None
     color_palette: str = 'classic'  # (#49) Color palette selection
+    custom_colors: Optional[List[str]] = None  # (#79) Custom palette hex colors
     tooltip_columns: Optional[List[str]] = None
     group_by_columns: Optional[List[str]] = None
     sort_by: str = 'none'
@@ -110,7 +111,8 @@ class TaskTransformer:
             color_mapping = create_color_mapping(
                 df,
                 self.config.color_column,
-                self.config.color_palette  # (#49) Pass palette selection
+                self.config.color_palette,  # (#49) Pass palette selection
+                self.config.custom_colors  # (#79) Pass custom palette colors
             )
             if color_mapping:
                 logger.info(f"Created color mapping with {len(color_mapping)} categories")
