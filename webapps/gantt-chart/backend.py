@@ -75,7 +75,8 @@ def resolve_preset(preset_ref, parameter_set_id):
             # Get the specific preset by name
             preset = parameter_set.get_preset(preset_name)
             if preset:
-                preset_values = preset.get_config()
+                # Note: config is a property, not a method
+                preset_values = preset.config
                 logger.info(f"[#79] Resolved PRESET '{preset_name}': {list(preset_values.keys())}")
                 return preset_values
 
