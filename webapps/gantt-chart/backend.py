@@ -91,8 +91,13 @@ def get_tasks():
         color_palette = config.get('colorPalette', 'classic')
         custom_colors = None
 
+        # Debug logging for custom palette (#79)
+        logger.info(f"[#79 DEBUG] colorPalette = '{color_palette}'")
+        logger.info(f"[#79 DEBUG] customPalettePreset raw = {config.get('customPalettePreset')}")
+
         if color_palette == 'custom':
             preset_config = config.get('customPalettePreset', {})
+            logger.info(f"[#79 DEBUG] preset_config = {preset_config}")
             if preset_config:
                 colors_json = preset_config.get('colors', '[]')
                 try:
