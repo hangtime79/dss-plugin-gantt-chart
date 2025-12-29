@@ -4,11 +4,13 @@ Color mapping utilities for Gantt chart plugin.
 Maps categorical values to CSS class names for color-coded task bars.
 Uses a 12-color palette that cycles for datasets with >12 categories.
 Supports multiple palettes: classic, pastel, dark, dataiku (#49).
+Supports custom palettes via parameter sets (#79).
 """
 
 from typing import Dict, Any, Optional, List
 import pandas as pd
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +64,61 @@ def get_palette(name: str = 'classic') -> List[str]:
     return PALETTES.get(name, PALETTES['classic'])
 
 
+# ===== CUSTOM PALETTE VALIDATION (#79) =====
+
+def validate_custom_colors(colors: List[str]) -> Optional[List[str]]:
+    """
+    Validate and normalize custom hex colors.
+
+    Args:
+        colors: List of hex color strings
+
+    Returns:
+        List of normalized 6-digit hex colors (uppercase), or None if invalid.
+        Returns None if fewer than 6 colors provided.
+
+    Example:
+        >>> validate_custom_colors(['#3498db', '#2ecc71', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c'])
+        ['#3498DB', '#2ECC71', '#E67E22', '#9B59B6', '#E74C3C', '#1ABC9C']
+        >>> validate_custom_colors(['#abc', '#def', '#123', '#456', '#789', '#fed'])
+        ['#AABBCC', '#DDEEFF', '#112233', '#445566', '#778899', '#FFEEDD']
+        >>> validate_custom_colors(['#bad', '#format'])  # Invalid - too few colors
+        None
+    """
+    if not colors or len(colors) < 6:
+        logger.error(f"Custom palette must have at least 6 colors, got {len(colors) if colors else 0}")
+        return None
+
+    # Cap at 12 colors (matching built-in palette size)
+    colors = colors[:12]
+
+    hex_pattern = re.compile(r'^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$')
+    validated = []
+
+    for color in colors:
+        if not isinstance(color, str):
+            logger.error(f"Color must be string, got {type(color)}")
+            return None
+
+        color = color.strip()
+        if not hex_pattern.match(color):
+            logger.error(f"Invalid hex color format: {color}")
+            return None
+
+        # Normalize 3-digit to 6-digit hex (#RGB -> #RRGGBB)
+        if len(color) == 4:
+            color = f'#{color[1]*2}{color[2]*2}{color[3]*2}'
+
+        validated.append(color.upper())
+
+    return validated
+
+
 def create_color_mapping(
     df: pd.DataFrame,
     column_name: str,
-    palette_name: str = 'classic'
+    palette_name: str = 'classic',
+    custom_colors: Optional[List[str]] = None
 ) -> Dict[Any, str]:
     """
     Create a mapping from categorical values to CSS class names.
@@ -73,7 +126,8 @@ def create_color_mapping(
     Args:
         df: DataFrame containing the categorical column
         column_name: Name of the column to map
-        palette_name: Name of color palette to use ('classic', 'pastel', 'dark', 'dataiku')
+        palette_name: Name of color palette to use ('classic', 'pastel', 'dark', 'dataiku', 'custom')
+        custom_colors: List of hex colors for custom palette (#79)
 
     Returns:
         Dictionary mapping category values to CSS class names.
@@ -93,8 +147,17 @@ def create_color_mapping(
         logger.error(f"Column '{column_name}' not found in DataFrame")
         return {}
 
-    # Get the specified palette
-    palette = get_palette(palette_name)
+    # Get the specified palette (#79 - handle custom palettes)
+    if palette_name == 'custom' and custom_colors:
+        validated = validate_custom_colors(custom_colors)
+        if validated:
+            palette = [f'bar-custom-{i+1}' for i in range(len(validated))]
+            logger.info(f"Using custom palette with {len(validated)} colors")
+        else:
+            logger.warning("Invalid custom colors, falling back to classic palette")
+            palette = get_palette('classic')
+    else:
+        palette = get_palette(palette_name)
 
     try:
         # Extract unique values, excluding NaN

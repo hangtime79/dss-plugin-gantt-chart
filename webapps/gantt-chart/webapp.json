@@ -262,8 +262,17 @@
                     {"value": "classic", "label": "Classic (Vibrant)"},
                     {"value": "pastel", "label": "Pastel (Soft)"},
                     {"value": "dark", "label": "Dark Mode"},
-                    {"value": "dataiku", "label": "Dataiku"}
+                    {"value": "dataiku", "label": "Dataiku"},
+                    {"value": "custom", "label": "Custom (Preset)"}
                 ]
+            },
+            {
+                "name": "customPalettePreset",
+                "type": "PRESET",
+                "label": "Custom Palette",
+                "parameterSetId": "custom-palette",
+                "visibilityCondition": "model.colorPalette == 'custom'",
+                "mandatory": false
             },
             {
                 "name": "barHeight",
