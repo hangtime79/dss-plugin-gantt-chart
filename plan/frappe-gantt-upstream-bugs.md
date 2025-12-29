@@ -286,6 +286,43 @@ Replace `o%30/30` with `(n.getDate()-1)/30` in the `diff()` function to get prop
 
 ---
 
+## Bug #7: View Mode Object Mutation Breaks Language on Re-render
+
+**Discovered:** v0.10.0 QA (2025-12-29)
+**Severity:** MEDIUM (language not applied in some views)
+**Upstream Issue:** Not yet reported
+
+### Symptom
+In Month view, the lower header (month names) stays in English even when a different language is selected. Other views (Day, Week) correctly show localized month names.
+
+### Root Cause
+In `change_view_mode()`:
+```javascript
+this.config.view_mode = t;  // Direct reference to shared default object!
+```
+
+Then in `get_date_info()`, when `lower_text` is a string (like `"MMMM"` for Month view):
+```javascript
+typeof a == "string" && (this.config.view_mode.lower_text = (o) => d.format(o, a, this.options.language))
+```
+
+This **mutates the shared default object**. The arrow function captures `this` (the first Gantt instance). On subsequent renders with different languages, the mutated function still uses the original instance's language.
+
+### Our Patch
+Changed assignment to create a shallow copy:
+```javascript
+// BEFORE:
+this.config.view_mode = t;
+
+// AFTER:
+this.config.view_mode = {...t};  // Shallow copy
+```
+
+### Upstream Fix Suggestion
+Always create a copy of view_mode in `change_view_mode()` to prevent mutation of shared default objects.
+
+---
+
 ## Reporting Upstream
 
 ### Before Reporting
@@ -336,3 +373,4 @@ When updating Frappe Gantt, these patches must be reapplied:
 | `frappe-gantt.es.js` | ~line 1321-1324 | set_dimensions always sets pixel width |
 | `frappe-gantt.es.js` | ~line 1401-1404 | Return `[e, i]` instead of format+reparse |
 | `frappe-gantt.es.js` | ~line 1347-1350 | Change `behavior:"smooth"` to `"instant"` |
+| `frappe-gantt.umd.js` | change_view_mode | Change `this.config.view_mode=t` to `this.config.view_mode={...t}` |
