@@ -396,12 +396,12 @@ body {
 }
 
 .setup-required-icon {
-    color: var(--color-accent);
     margin-bottom: var(--spacing-md);
 }
 
-.setup-required-icon svg {
-    stroke: var(--color-accent);
+.setup-required-icon i {
+    font-size: 48px;
+    color: var(--color-accent);
 }
 
 .setup-required-title {
@@ -459,8 +459,12 @@ body {
 }
 
 .empty-dataset-icon {
-    color: var(--color-secondary);
     margin-bottom: var(--spacing-md);
+}
+
+.empty-dataset-icon i {
+    font-size: 48px;
+    color: var(--color-secondary);
     opacity: 0.6;
 }
 
