@@ -167,7 +167,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.9.8**~~ | ~~#51~~ | ~~Task Filtering~~ ✅ |
 | ~~**v0.10.0**~~ | ~~#32~~ | ~~i18n~~ ✅ |
 | **v0.10.1** | #79 | Global Custom Palettes |
-| **v1.0.0-rc** | #24, #25 | Print + Global Params (TBD) |
-| **v1.0.0** | — | Public Release |
+| **v1.0.0-rc** | #24, #25, #75, #76, #77, #83 | Release Candidate |
+| **v1.0.0** | #74, #84 | Public Release + Backlog |
 
 **Current milestone:** v0.10.1 - Global Custom Palettes (#79)
+
+### v1.0.0-rc Scope
+- #24 - Print the Gantt chart
+- #25 - Global parameter set
+- #75 - Reorganize Left Bar config
+- #76 - Enhanced ID uniqueness handling
+- #77 - Improved loading/empty states
+- #83 - Missing dependency warnings
+
+### v1.0.0 Backlog
+- #74 - Connector line (tooltip → task bar)
+- #84 - Complete UI string translations
