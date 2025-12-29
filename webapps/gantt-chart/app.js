@@ -64,6 +64,7 @@
     let currentTasks = [];           // Store filtered tasks for current display
     let lastGanttConfig = null;      // Store last config for filter re-renders (#51)
     let activeFilters = ['all'];     // Track active filter buttons (#51)
+    let unresolvedDependencies = { filtered: [], missing: [] };  // (#83) Track unresolved deps
 
     // Zoom State
     const ZOOM_STEP = 5;            // Increment size in pixels
@@ -795,7 +796,7 @@
         // We deliberately do NOT render with synchronous config because it
         // lacks the current filter state. The parent frame response includes
         // both webAppConfig AND filters, ensuring filters are applied on first render.
-        showLoading();
+        showLoading('Loading configuration...');
         window.parent.postMessage("sendConfig", "*");
 
         // Initialize Control Bar Events
@@ -815,7 +816,14 @@
 
                 console.log('Received updated config:', webAppConfig);
 
-                validateConfig(webAppConfig);
+                // Check for missing required config (#77)
+                const missingConfig = validateConfig(webAppConfig);
+                if (missingConfig.length > 0) {
+                    hideLoading();
+                    showSetupRequired(missingConfig);
+                    return;
+                }
+                hideSetupRequired();
 
                 // Validate date boundaries - block rendering if invalid
                 const dateBoundaryError = validateDateBoundaries();
@@ -871,19 +879,29 @@
 
     // ===== VALIDATION =====
 
+    /**
+     * Validate config and return missing required items (#77)
+     * @returns {Array} Array of missing item labels, or empty if valid
+     */
     function validateConfig(config) {
-        const required = ['dataset', 'idColumn', 'startColumn', 'endColumn'];
-        const missing = required.filter(param => !config[param]);
+        const requiredFields = [
+            { key: 'dataset', label: 'Dataset' },
+            { key: 'idColumn', label: 'ID Column' },
+            { key: 'startColumn', label: 'Start Date Column' },
+            { key: 'endColumn', label: 'End Date Column' }
+        ];
 
-        if (missing.length > 0) {
-            throw new Error(`Missing required parameters: ${missing.join(', ')}. Please configure all required columns.`);
-        }
+        const missing = requiredFields
+            .filter(field => !config[field.key])
+            .map(field => field.label);
+
+        return missing;
     }
 
     // ===== CHART INITIALIZATION =====
 
     function initializeChart(config, filters) {
-        showLoading();
+        showLoading('Fetching task data...');
 
         if (typeof Gantt === 'undefined') {
             hideLoading();
@@ -898,20 +916,28 @@
         // Fetch task data from backend
         fetchTasks(config, filters)
             .then(tasksResponse => {
-                hideLoading();
-
                 if (tasksResponse.error) {
+                    hideLoading();
                     displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                     return;
                 }
 
                 if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                    displayError('No Tasks', 'No valid tasks to display.');
+                    hideLoading();
+                    showEmptyDataset();
                     return;
                 }
 
+                // Update loading message before rendering (#77)
+                showLoading('Rendering chart...');
+
                 if (tasksResponse.metadata && (tasksResponse.metadata.skippedRows > 0 || tasksResponse.metadata.rowLimitHit)) {
                     displayMetadata(tasksResponse.metadata);
+                }
+
+                // Show duplicate ID warning banner (#76)
+                if (tasksResponse.metadata && tasksResponse.metadata.duplicateIds && tasksResponse.metadata.duplicateIds.length > 0) {
+                    displayDuplicateWarning(tasksResponse.metadata.duplicateIds);
                 }
 
                 // Handle custom palette colors (#79)
@@ -1051,6 +1077,7 @@
             const container = document.getElementById('gantt-container');
             container.innerHTML = '';
             ganttInstance = null;
+            hideLoading();
             updateFilterEmptyState(0);
             return;
         }
@@ -1419,11 +1446,16 @@
                     window._ganttRestoreState = null;
                 }
 
-                // Mark render as complete
+                // Mark render as complete and hide loading (#77)
+                hideLoading();
                 renderInProgress = false;
+
+                // Analyze dependencies for warnings (#83)
+                updateDependencyAnalysis();
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
+            hideLoading();
             displayError('Rendering Error', error.message, error);
             renderInProgress = false;  // Reset on error too
         }
@@ -2333,12 +2365,25 @@
             html += `<div class="popup-progress">Progress: ${task.progress}%</div>`;
         }
 
-        // Dependencies (if any) - use display version for human-readable values
-        const displayDeps = task._display_dependencies || (
-            Array.isArray(task.dependencies) ? task.dependencies.join(', ') : task.dependencies
-        );
-        if (displayDeps) {
-            html += `<div class="popup-deps">Depends on: ${escapeHtml(displayDeps)}</div>`;
+        // Dependencies with status indicators (#83)
+        const deps = task.dependencies || [];
+        if (deps.length > 0) {
+            const depStatuses = getTaskDependencyStatus(task);
+            html += '<div class="popup-deps">Depends on:';
+            html += '<ul class="popup-deps-list">';
+            for (const dep of depStatuses) {
+                let statusClass = '';
+                let statusLabel = '';
+                if (dep.status === 'filtered') {
+                    statusClass = 'dep-filtered';
+                    statusLabel = ' <span class="dep-status">(filtered)</span>';
+                } else if (dep.status === 'missing') {
+                    statusClass = 'dep-missing';
+                    statusLabel = ' <span class="dep-status">(not found)</span>';
+                }
+                html += `<li class="${statusClass}">${escapeHtml(dep.depName)}${statusLabel}</li>`;
+            }
+            html += '</ul></div>';
         }
 
         // Custom fields (user-selected tooltip columns)
@@ -2360,10 +2405,18 @@
 
     // ===== UI HELPERS =====
 
-    function showLoading() {
+    /**
+     * Show loading overlay with optional message (#77)
+     * @param {string} message - Optional loading message to display
+     */
+    function showLoading(message) {
         const loading = document.getElementById('loading');
+        const loadingMessage = document.getElementById('loading-message');
         if (loading) {
             loading.classList.remove('hide');
+        }
+        if (loadingMessage) {
+            loadingMessage.textContent = message || 'Loading...';
         }
     }
 
@@ -2372,6 +2425,63 @@
         if (loading) {
             loading.classList.add('hide');
         }
+    }
+
+    /**
+     * Show setup required state with missing items (#77)
+     * @param {Array} missingItems - Array of missing item labels
+     */
+    function showSetupRequired(missingItems) {
+        const overlay = document.getElementById('setup-required');
+        const list = document.getElementById('setup-required-items');
+        const container = document.getElementById('gantt-container');
+
+        if (list) {
+            list.innerHTML = missingItems.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+        }
+
+        if (overlay) {
+            overlay.classList.remove('hide');
+        }
+
+        // Clear the chart container
+        if (container) {
+            container.innerHTML = '';
+        }
+
+        // Reset gantt instance
+        ganttInstance = null;
+    }
+
+    function hideSetupRequired() {
+        const overlay = document.getElementById('setup-required');
+        if (overlay) {
+            overlay.classList.add('hide');
+        }
+    }
+
+    /**
+     * Show empty dataset state (#77)
+     */
+    function showEmptyDataset() {
+        const container = document.getElementById('gantt-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-dataset-container">
+                    <div class="empty-dataset-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 class="empty-dataset-title">No Tasks Found</h3>
+                    <p class="empty-dataset-message">The dataset contains no valid task rows. Check your data source.</p>
+                </div>
+            `;
+        }
+        ganttInstance = null;
     }
 
     function displayError(title, message, details) {
@@ -2445,6 +2555,42 @@
             banner.style.opacity = '0';
             setTimeout(() => banner.remove(), 500);
         }, 10000);
+    }
+
+    /**
+     * Display warning banner for duplicate IDs (#76)
+     * @param {Array} duplicateIds - Array of duplicate ID info objects
+     */
+    function displayDuplicateWarning(duplicateIds) {
+        // Remove any existing duplicate warning
+        const existing = document.getElementById('duplicate-warning-banner');
+        if (existing) existing.remove();
+
+        const count = duplicateIds.length;
+        const totalOccurrences = duplicateIds.reduce((sum, d) => sum + d.occurrences.length, 0);
+
+        const banner = document.createElement('div');
+        banner.id = 'duplicate-warning-banner';
+        banner.className = 'warning-banner duplicate-warning';
+
+        banner.innerHTML = `
+            <span class="warning-banner-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </span>
+            <span class="warning-banner-text">
+                ${count} duplicate task ID${count !== 1 ? 's' : ''} found (${totalOccurrences} total rows).
+                IDs were auto-renamed. Check Settings → Performance to change handling.
+            </span>
+            <button class="warning-banner-close" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
+        `;
+
+        document.body.appendChild(banner);
+
+        console.log('Duplicate IDs detected:', duplicateIds);
     }
 
     function escapeHtml(text) {
@@ -2548,6 +2694,116 @@
         } else if (emptyMsg) {
             emptyMsg.style.display = 'none';
         }
+    }
+
+    // ===== DEPENDENCY STATUS ANALYSIS (#83) =====
+
+    /**
+     * Analyze dependency status for all visible tasks.
+     * Tracks which dependencies are filtered out vs missing entirely.
+     * @param {Array} visibleTasks - Currently visible (filtered) tasks
+     * @param {Array} allTasks - All tasks from backend
+     * @returns {Object} {filtered: [], missing: []} - Arrays of {taskId, taskName, depId}
+     */
+    function analyzeDependencyStatus(visibleTasks, allTasksList) {
+        const visibleIds = new Set(visibleTasks.map(t => t.id));
+        const allIds = new Set(allTasksList.map(t => t.id));
+
+        const result = { filtered: [], missing: [] };
+
+        for (const task of visibleTasks) {
+            const deps = task.dependencies || [];
+            for (const depId of deps) {
+                if (!visibleIds.has(depId)) {
+                    if (allIds.has(depId)) {
+                        // Exists but not visible = filtered out
+                        result.filtered.push({ taskId: task.id, taskName: task.name, depId });
+                    } else {
+                        // Doesn't exist at all = missing
+                        result.missing.push({ taskId: task.id, taskName: task.name, depId });
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Get dependency status for a single task's dependencies.
+     * @param {Object} task - The task to analyze
+     * @returns {Array} Array of {depId, depName, status: 'visible'|'filtered'|'missing'}
+     */
+    function getTaskDependencyStatus(task) {
+        const deps = task.dependencies || [];
+        if (deps.length === 0) return [];
+
+        const visibleIds = new Set(currentTasks.map(t => t.id));
+        const allIds = new Set(allTasks.map(t => t.id));
+        const idToName = {};
+        allTasks.forEach(t => { idToName[t.id] = t.name; });
+
+        return deps.map(depId => {
+            let status = 'visible';
+            if (!visibleIds.has(depId)) {
+                status = allIds.has(depId) ? 'filtered' : 'missing';
+            }
+            return {
+                depId,
+                depName: idToName[depId] || depId,
+                status
+            };
+        });
+    }
+
+    /**
+     * Show warning banner for unresolved dependencies (#83)
+     */
+    function displayDependencyWarning() {
+        // Remove existing banner
+        const existing = document.getElementById('dependency-warning-banner');
+        if (existing) existing.remove();
+
+        const filteredCount = unresolvedDependencies.filtered.length;
+        const missingCount = unresolvedDependencies.missing.length;
+
+        if (filteredCount === 0 && missingCount === 0) {
+            return; // No issues
+        }
+
+        const banner = document.createElement('div');
+        banner.id = 'dependency-warning-banner';
+        banner.className = 'warning-banner dependency-warning';
+
+        let message = 'Some dependency arrows are hidden: ';
+        const parts = [];
+        if (filteredCount > 0) parts.push(`${filteredCount} filtered`);
+        if (missingCount > 0) parts.push(`${missingCount} missing`);
+        message += parts.join(', ') + '. Hover over tasks for details.';
+
+        banner.innerHTML = `
+            <span class="warning-banner-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </span>
+            <span class="warning-banner-text">${message}</span>
+            <button class="warning-banner-close" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
+        `;
+
+        document.body.appendChild(banner);
+    }
+
+    /**
+     * Update dependency analysis after filtering or rendering (#83)
+     */
+    function updateDependencyAnalysis() {
+        unresolvedDependencies = analyzeDependencyStatus(currentTasks, allTasks);
+
+        // Show/hide warning banner based on analysis
+        displayDependencyWarning();
     }
 
     /**
