@@ -135,15 +135,15 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** IDLE - Ready for next milestone
+**Phase:** OPEN - Spec created, ready for implementation
 
-**Current Branch:** `main`
+**Current Branch:** `feature/v0.11.0-defensive-programming`
 
 **Last Release:** v0.10.1 (2025-12-29)
 - [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.10.1)
 - [PR #85](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/85)
 
-**Next Milestone:** v1.0.0-rc - Release Candidate
+**Next Milestone:** v0.11.0 - Defensive Programming
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -169,19 +169,23 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.9.8**~~ | ~~#51~~ | ~~Task Filtering~~ ✅ |
 | ~~**v0.10.0**~~ | ~~#32~~ | ~~i18n~~ ✅ |
 | ~~**v0.10.1**~~ | ~~#79~~ | ~~Global Custom Palettes~~ ✅ |
-| **v1.0.0-rc** | #24, #25, #75, #76, #77, #83 | Release Candidate |
-| **v1.0.0** | #74, #84 | Public Release + Backlog |
+| **v0.11.0** | #76, #77, #83 | Defensive Programming |
+| **v1.0.0-rc** | #24, #25, #75 | Release Candidate |
+| **v1.0.0** | #74, #84, #97 | Public Release + Backlog |
 
-**Current milestone:** v1.0.0-rc - Release Candidate
+**Current milestone:** v0.11.0 - Defensive Programming
+
+### v0.11.0 Scope
+- #76 - Enhanced ID uniqueness handling
+- #77 - Improved loading/empty states
+- #83 - Missing dependency warnings
 
 ### v1.0.0-rc Scope
 - #24 - Print the Gantt chart
 - #25 - Global parameter set
 - #75 - Reorganize Left Bar config
-- #76 - Enhanced ID uniqueness handling
-- #77 - Improved loading/empty states
-- #83 - Missing dependency warnings
 
 ### v1.0.0 Backlog
 - #74 - Connector line (tooltip → task bar)
 - #84 - Complete UI string translations
+- #97 - Remove debug code

@@ -91,8 +91,9 @@
     <div id="gantt-container"></div>
 </div>
 
-<!-- Modern Skeleton Loader -->
+<!-- Modern Skeleton Loader with Status Message -->
 <div id="loading" class="loading-overlay">
+    <div id="loading-message" class="loading-message">Loading...</div>
     <div class="skeleton-header"></div>
     <div class="skeleton-row"></div>
     <div class="skeleton-row"></div>
@@ -100,6 +101,24 @@
     <div class="skeleton-row"></div>
     <div class="skeleton-row"></div>
     <div class="skeleton-row"></div>
+</div>
+
+<!-- Setup Required State (#77) -->
+<div id="setup-required" class="setup-required-overlay hide">
+    <div class="setup-required-card">
+        <div class="setup-required-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+        </div>
+        <h2 class="setup-required-title">Setup Required</h2>
+        <p class="setup-required-description">Configure the following settings in the left panel to display your Gantt chart:</p>
+        <ul id="setup-required-items" class="setup-required-list">
+            <!-- Items populated by JS -->
+        </ul>
+    </div>
 </div>
 
 <!-- Scripts -->
