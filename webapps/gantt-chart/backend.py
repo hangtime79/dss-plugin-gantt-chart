@@ -22,6 +22,73 @@ logger = logging.getLogger(__name__)
 logger.info("Gantt Chart backend module loading...")
 
 
+def resolve_preset(preset_ref, parameter_set_id):
+    """
+    Resolve a PRESET parameter reference to its actual values.
+
+    Dataiku webapp configs contain preset references like:
+    {"mode": "PRESET", "name": "PRESET_3"}
+
+    This function resolves these to the actual preset values.
+
+    Args:
+        preset_ref: Dict with mode and name keys, or None
+        parameter_set_id: The parameter set ID (e.g., "custom-palette")
+
+    Returns:
+        Dict with the resolved preset values, or None if not found
+    """
+    if not preset_ref:
+        return None
+
+    # Check if it's a preset reference or inline values
+    mode = preset_ref.get('mode')
+
+    if mode == 'INLINE':
+        # Inline mode - values are directly in the preset_ref
+        # Remove the mode key and return the rest
+        values = {k: v for k, v in preset_ref.items() if k != 'mode'}
+        logger.info(f"[#79] Resolved INLINE preset: {list(values.keys())}")
+        return values
+
+    elif mode == 'PRESET':
+        # Preset mode - need to resolve from plugin settings
+        preset_name = preset_ref.get('name')
+        if not preset_name:
+            logger.warning("[#79] PRESET mode but no name provided")
+            return None
+
+        try:
+            # Get the plugin settings to resolve the preset
+            client = dataiku.api_client()
+            plugin = client.get_plugin("gantt-chart")
+            settings = plugin.get_settings()
+
+            # Get presets for this parameter set
+            presets = settings.get_presets(parameter_set_id)
+            logger.info(f"[#79] Found {len(presets)} presets for '{parameter_set_id}'")
+
+            # Find the preset by name
+            for preset in presets:
+                if preset.get('name') == preset_name:
+                    preset_values = preset.get('config', {})
+                    logger.info(f"[#79] Resolved PRESET '{preset_name}': {list(preset_values.keys())}")
+                    return preset_values
+
+            logger.warning(f"[#79] Preset '{preset_name}' not found in '{parameter_set_id}'")
+            return None
+
+        except Exception as e:
+            logger.error(f"[#79] Error resolving preset: {e}")
+            logger.error(traceback.format_exc())
+            return None
+
+    else:
+        # Unknown mode or direct values (no mode key)
+        logger.info(f"[#79] No mode in preset_ref, treating as direct values")
+        return preset_ref
+
+
 @app.route('/get-tasks')
 def get_tasks():
     """
@@ -92,27 +159,30 @@ def get_tasks():
         custom_colors = None
 
         # Debug logging for custom palette (#79)
-        logger.info(f"[#79 DEBUG] colorPalette = '{color_palette}'")
-        logger.info(f"[#79 DEBUG] customPalettePreset raw = {config.get('customPalettePreset')}")
+        logger.info(f"[#79] colorPalette = '{color_palette}'")
+        logger.info(f"[#79] customPalettePreset raw = {config.get('customPalettePreset')}")
 
         if color_palette == 'custom':
-            preset_config = config.get('customPalettePreset', {})
-            logger.info(f"[#79 DEBUG] preset_config = {preset_config}")
+            # Resolve the preset reference to actual values
+            preset_ref = config.get('customPalettePreset', {})
+            preset_config = resolve_preset(preset_ref, 'custom-palette')
+            logger.info(f"[#79] Resolved preset_config = {preset_config}")
+
             if preset_config:
                 colors_json = preset_config.get('colors', '[]')
                 try:
                     parsed_colors = json.loads(colors_json)
                     if isinstance(parsed_colors, list) and len(parsed_colors) >= 6:
                         custom_colors = parsed_colors[:12]  # Cap at 12 colors
-                        logger.info(f"Using custom palette with {len(custom_colors)} colors")
+                        logger.info(f"[#79] Using custom palette with {len(custom_colors)} colors")
                     else:
-                        logger.warning("Custom palette must have at least 6 colors. Using classic.")
+                        logger.warning("[#79] Custom palette must have at least 6 colors. Using classic.")
                         color_palette = 'classic'
                 except json.JSONDecodeError as e:
-                    logger.warning(f"Invalid JSON in custom palette colors: {e}. Using classic.")
+                    logger.warning(f"[#79] Invalid JSON in custom palette colors: {e}. Using classic.")
                     color_palette = 'classic'
             else:
-                logger.warning("Custom palette selected but no preset configured. Using classic.")
+                logger.warning("[#79] Custom palette selected but no preset configured. Using classic.")
                 color_palette = 'classic'
 
         try:
