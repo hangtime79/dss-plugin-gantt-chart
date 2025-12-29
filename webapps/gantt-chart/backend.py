@@ -206,7 +206,7 @@ def get_config():
             'popup_on': config.get('popupOn', 'click'),
             'today_button': config.get('todayButton', True),
             'scroll_to': config.get('scrollTo', 'today'),
-            'language': 'en'
+            'language': config.get('language', 'en')
         }
 
         # Handle weekend highlighting
