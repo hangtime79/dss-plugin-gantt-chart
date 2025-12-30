@@ -151,7 +151,8 @@ Simple fixes with plenty of context don't need intervention tracking.
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
 
 **v0.11.0 Implementation Status:**
-- [x] #77 - Loading States (descriptive messages, setup required, empty dataset)
+- [x] #77 - Getting Started Guide (replaces skeleton/setup-required, 5 sections, auto-hides on config)
+- [x] #77 - Empty Dataset State (inline SVG icon, "No Tasks Found" message)
 - [x] #76 - ID Uniqueness (rename/skip modes, structured metadata, warning banner)
 - [x] #83 - Dependency Warnings (tooltip status, warning banner, filter re-analysis)
 - [x] All 122 unit tests pass
