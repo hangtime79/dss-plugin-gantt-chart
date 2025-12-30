@@ -915,14 +915,31 @@
                 duplicateIdInfo = {};  // Reset
                 if (tasksResponse.metadata && tasksResponse.metadata.duplicateIds && tasksResponse.metadata.duplicateIds.length > 0) {
                     const dupIds = tasksResponse.metadata.duplicateIds;
-                    // Build lookup: count skipped occurrences per task ID
+                    const handlingMode = webAppConfig.duplicateIdHandling || 'rename';
+
+                    // Build lookup for tooltip display
                     for (const dup of dupIds) {
-                        const skippedCount = dup.occurrences.filter(o => o.status === 'skipped').length;
-                        if (skippedCount > 0) {
-                            duplicateIdInfo[dup.originalId] = skippedCount;
+                        if (handlingMode === 'skip') {
+                            // Skip mode: count how many were skipped
+                            const skippedCount = dup.occurrences.filter(o => o.status === 'skipped').length;
+                            if (skippedCount > 0) {
+                                duplicateIdInfo[dup.originalId] = { mode: 'skip', count: skippedCount };
+                            }
+                        } else {
+                            // Rename mode: track all renamed IDs
+                            const renamedCount = dup.occurrences.length - 1;  // First one keeps original
+                            if (renamedCount > 0) {
+                                // Map original ID and all renamed IDs to the info
+                                duplicateIdInfo[dup.originalId] = { mode: 'rename', count: renamedCount };
+                                for (const occ of dup.occurrences) {
+                                    if (occ.assignedId && occ.assignedId !== dup.originalId) {
+                                        duplicateIdInfo[occ.assignedId] = { mode: 'rename', count: renamedCount, originalId: dup.originalId };
+                                    }
+                                }
+                            }
                         }
                     }
-                    displayDuplicateWarning(dupIds, webAppConfig.duplicateIdHandling || 'rename');
+                    displayDuplicateWarning(dupIds, handlingMode);
                 }
 
                 // Handle custom palette colors (#79)
@@ -2275,11 +2292,24 @@
             html += '</ul></div>';
         }
 
-        // Duplicate skipped indicator (#76)
-        const skippedCount = duplicateIdInfo[task.id];
-        if (skippedCount) {
+        // Duplicate ID indicator (#76)
+        const dupInfo = duplicateIdInfo[task.id];
+        if (dupInfo) {
+            let dupMessage;
+            if (dupInfo.mode === 'skip') {
+                dupMessage = `${dupInfo.count} duplicate${dupInfo.count !== 1 ? 's' : ''} skipped`;
+            } else {
+                // Rename mode
+                if (dupInfo.originalId) {
+                    // This is a renamed task
+                    dupMessage = `Renamed from "${dupInfo.originalId}"`;
+                } else {
+                    // This is the original that has duplicates
+                    dupMessage = `${dupInfo.count} duplicate${dupInfo.count !== 1 ? 's' : ''} renamed`;
+                }
+            }
             html += `<div class="popup-duplicate-info">
-                <span class="dep-status">${skippedCount} duplicate${skippedCount !== 1 ? 's' : ''} skipped</span>
+                <span class="dep-status">${dupMessage}</span>
             </div>`;
         }
 
