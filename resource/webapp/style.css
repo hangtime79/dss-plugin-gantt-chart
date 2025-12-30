@@ -94,6 +94,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* ===== UTILITY CLASSES ===== */
+.hide {
+    display: none !important;
+}
+
 /* ===== LAYOUT STRUCTURE ===== */
 .app-container {
     display: flex;

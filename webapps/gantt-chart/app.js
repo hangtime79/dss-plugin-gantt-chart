@@ -2421,6 +2421,11 @@
         if (overlay) {
             overlay.classList.remove('hide');
         }
+        // Hide control bar until configured
+        const controlBar = document.querySelector('.control-bar');
+        if (controlBar) {
+            controlBar.classList.add('hide');
+        }
     }
 
     /**
@@ -2430,6 +2435,11 @@
         const overlay = document.getElementById('getting-started');
         if (overlay) {
             overlay.classList.add('hide');
+        }
+        // Show control bar when configured
+        const controlBar = document.querySelector('.control-bar');
+        if (controlBar) {
+            controlBar.classList.remove('hide');
         }
     }
 
