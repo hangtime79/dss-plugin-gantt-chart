@@ -203,7 +203,8 @@ def get_tasks():
                 custom_colors=custom_colors,  # (#79)
                 tooltip_columns=config.get('tooltipColumns'),
                 group_by_columns=config.get('groupByColumns'),
-                max_tasks=int(config.get('maxTasks', 1000))
+                max_tasks=int(config.get('maxTasks', 1000)),
+                duplicate_id_handling=config.get('duplicateIdHandling', 'rename')  # (#76)
             )
         except Exception as e:
             return json.dumps({
