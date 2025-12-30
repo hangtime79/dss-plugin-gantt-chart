@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-12-30
+
+### Added
+- Getting Started Guide for unconfigured charts (#77)
+  - 5-section onboarding overlay: Required Columns, Settings Panel, Toolbar, Chart Preview, System States
+  - Interactive tabs in Settings Panel section
+  - Auto-hides when Task ID, Start Date, and End Date are configured
+- Duplicate ID handling options (#76)
+  - "Auto-rename" mode (default): appends suffix to duplicates
+  - "Skip duplicates" mode: keeps first occurrence only
+  - Mode-specific warning banner and tooltip indicator
+- Dependency status indicators in tooltips (#83)
+  - Shows "(filtered)" for dependencies hidden by filters
+  - Shows "(not found)" for invalid dependency references
+  - Dismissible warning banner when dependencies unresolved
+- Empty dataset state with "No Tasks Found" message (#77)
+
+### Changed
+- Replaced skeleton loader with Getting Started Guide
+- Control bar and chart hidden until configuration complete
+
 ## [0.10.1] - 2025-12-29
 
 ### Added
