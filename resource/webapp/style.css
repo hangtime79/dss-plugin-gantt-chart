@@ -1191,6 +1191,17 @@ body {
     color: #f39c12;
 }
 
+/* Duplicate skipped indicator (#76) */
+.popup-duplicate-info {
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: #f39c12;
+}
+
+.popup-duplicate-info::before {
+    content: '⚠ ';
+}
+
 /* ===== CUSTOM TOOLTIP FIELDS ===== */
 .popup-custom-fields {
     margin-top: var(--spacing-sm);

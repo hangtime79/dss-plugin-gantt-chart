@@ -65,6 +65,7 @@
     let lastGanttConfig = null;      // Store last config for filter re-renders (#51)
     let activeFilters = ['all'];     // Track active filter buttons (#51)
     let unresolvedDependencies = { filtered: [], missing: [] };  // (#83) Track unresolved deps
+    let duplicateIdInfo = {};        // (#76) Map of task ID -> skipped count for tooltip
 
     // Zoom State
     const ZOOM_STEP = 5;            // Increment size in pixels
@@ -928,9 +929,18 @@
                     displayMetadata(tasksResponse.metadata);
                 }
 
-                // Show duplicate ID warning banner (#76)
+                // Show duplicate ID warning banner and build tooltip lookup (#76)
+                duplicateIdInfo = {};  // Reset
                 if (tasksResponse.metadata && tasksResponse.metadata.duplicateIds && tasksResponse.metadata.duplicateIds.length > 0) {
-                    displayDuplicateWarning(tasksResponse.metadata.duplicateIds);
+                    const dupIds = tasksResponse.metadata.duplicateIds;
+                    // Build lookup: count skipped occurrences per task ID
+                    for (const dup of dupIds) {
+                        const skippedCount = dup.occurrences.filter(o => o.status === 'skipped').length;
+                        if (skippedCount > 0) {
+                            duplicateIdInfo[dup.originalId] = skippedCount;
+                        }
+                    }
+                    displayDuplicateWarning(dupIds, webAppConfig.duplicateIdHandling || 'rename');
                 }
 
                 // Handle custom palette colors (#79)
@@ -2375,6 +2385,14 @@
             html += '</ul></div>';
         }
 
+        // Duplicate skipped indicator (#76)
+        const skippedCount = duplicateIdInfo[task.id];
+        if (skippedCount) {
+            html += `<div class="popup-duplicate-info">
+                <span class="dep-status">${skippedCount} duplicate${skippedCount !== 1 ? 's' : ''} skipped</span>
+            </div>`;
+        }
+
         // Custom fields (user-selected tooltip columns)
         if (task.custom_fields && Array.isArray(task.custom_fields) && task.custom_fields.length > 0) {
             html += '<div class="popup-custom-fields">';
@@ -2535,14 +2553,20 @@
     /**
      * Display warning banner for duplicate IDs (#76)
      * @param {Array} duplicateIds - Array of duplicate ID info objects
+     * @param {string} handlingMode - 'rename' or 'skip'
      */
-    function displayDuplicateWarning(duplicateIds) {
+    function displayDuplicateWarning(duplicateIds, handlingMode) {
         // Remove any existing duplicate warning
         const existing = document.getElementById('duplicate-warning-banner');
         if (existing) existing.remove();
 
         const count = duplicateIds.length;
         const totalOccurrences = duplicateIds.reduce((sum, d) => sum + d.occurrences.length, 0);
+
+        // Mode-specific message (#76)
+        const actionText = handlingMode === 'skip'
+            ? 'Duplicates were skipped (first occurrence kept).'
+            : 'IDs were auto-renamed.';
 
         const banner = document.createElement('div');
         banner.id = 'duplicate-warning-banner';
@@ -2558,7 +2582,7 @@
             </span>
             <span class="warning-banner-text">
                 ${count} duplicate task ID${count !== 1 ? 's' : ''} found (${totalOccurrences} total rows).
-                IDs were auto-renamed. Check Settings → Performance to change handling.
+                ${actionText} Check Settings → Performance to change handling.
             </span>
             <button class="warning-banner-close" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
         `;
