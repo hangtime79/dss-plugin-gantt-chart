@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0-rc] - 2025-12-31
+## [1.0.0] - 2025-12-31
 
 ### Changed
 - Configuration panel reorganized for better usability (#75)
