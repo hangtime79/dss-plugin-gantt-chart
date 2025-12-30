@@ -19,7 +19,6 @@ from ganttchart.task_transformer import TaskTransformer, TaskTransformerConfig
 from ganttchart.sort_utils import sort_tasks, group_and_sort_tasks
 
 logger = logging.getLogger(__name__)
-logger.info("Gantt Chart backend module loading...")
 
 
 def resolve_preset(preset_ref, parameter_set_id):
@@ -47,15 +46,13 @@ def resolve_preset(preset_ref, parameter_set_id):
     if mode == 'INLINE':
         # Inline mode - values are directly in the preset_ref
         # Remove the mode key and return the rest
-        values = {k: v for k, v in preset_ref.items() if k != 'mode'}
-        logger.info(f"[#79] Resolved INLINE preset: {list(values.keys())}")
-        return values
+        return {k: v for k, v in preset_ref.items() if k != 'mode'}
 
     elif mode == 'PRESET':
         # Preset mode - need to resolve from plugin settings
         preset_name = preset_ref.get('name')
         if not preset_name:
-            logger.warning("[#79] PRESET mode but no name provided")
+            logger.warning("PRESET mode but no name provided")
             return None
 
         try:
@@ -66,31 +63,22 @@ def resolve_preset(preset_ref, parameter_set_id):
 
             # Get the parameter set, then get the preset from it
             parameter_set = settings.get_parameter_set(parameter_set_id)
-            logger.info(f"[#79] Got parameter set '{parameter_set_id}'")
-
-            # List available presets for debugging
-            preset_names = parameter_set.list_preset_names()
-            logger.info(f"[#79] Available presets: {preset_names}")
 
             # Get the specific preset by name
             preset = parameter_set.get_preset(preset_name)
             if preset:
                 # Note: config is a property, not a method
-                preset_values = preset.config
-                logger.info(f"[#79] Resolved PRESET '{preset_name}': {list(preset_values.keys())}")
-                return preset_values
+                return preset.config
 
-            logger.warning(f"[#79] Preset '{preset_name}' not found in '{parameter_set_id}'")
+            logger.warning(f"Preset '{preset_name}' not found in '{parameter_set_id}'")
             return None
 
         except Exception as e:
-            logger.error(f"[#79] Error resolving preset: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(f"Error resolving preset: {e}")
             return None
 
     else:
         # Unknown mode or direct values (no mode key)
-        logger.info(f"[#79] No mode in preset_ref, treating as direct values")
         return preset_ref
 
 
@@ -99,22 +87,17 @@ def get_tasks():
     """
     Transform dataset rows into Frappe Gantt task format.
     """
-    logger.info("ENTER /get-tasks")
     try:
         # Parse request parameters
         config_str = request.args.get('config', '{}')
         filters_str = request.args.get('filters', '[]')
-        logger.info(f"Received params - config: {len(config_str)} chars, filters: {len(filters_str)} chars")
-        
         config = json.loads(config_str)
         filters = json.loads(filters_str)
 
         # Extract dataset name
         dataset_name = config.get('dataset')
-        logger.info(f"Target dataset: {dataset_name}")
         
         if not dataset_name:
-            logger.error("Dataset name missing in config")
             return json.dumps({
                 'error': {
                     'code': 'DATASET_NOT_SPECIFIED',
@@ -124,7 +107,6 @@ def get_tasks():
 
         # Read dataset
         max_tasks = int(config.get('maxTasks', 1000))
-        logger.info(f"Reading dataset: {dataset_name}")
         try:
             dataset = dataiku.Dataset(dataset_name)
             df = dataset.get_dataframe()
@@ -159,19 +141,14 @@ def get_tasks():
             }), 400
 
         # Build transformer config
-        # Handle custom palette from preset (#79)
+        # Handle custom palette from preset
         color_palette = config.get('colorPalette', 'classic')
         custom_colors = None
-
-        # Debug logging for custom palette (#79)
-        logger.info(f"[#79] colorPalette = '{color_palette}'")
-        logger.info(f"[#79] customPalettePreset raw = {config.get('customPalettePreset')}")
 
         if color_palette == 'custom':
             # Resolve the preset reference to actual values
             preset_ref = config.get('customPalettePreset', {})
             preset_config = resolve_preset(preset_ref, 'custom-palette')
-            logger.info(f"[#79] Resolved preset_config = {preset_config}")
 
             if preset_config:
                 colors_json = preset_config.get('colors', '[]')
@@ -179,15 +156,14 @@ def get_tasks():
                     parsed_colors = json.loads(colors_json)
                     if isinstance(parsed_colors, list) and len(parsed_colors) >= 6:
                         custom_colors = parsed_colors[:12]  # Cap at 12 colors
-                        logger.info(f"[#79] Using custom palette with {len(custom_colors)} colors")
                     else:
-                        logger.warning("[#79] Custom palette must have at least 6 colors. Using classic.")
+                        logger.warning("Custom palette must have at least 6 colors. Using classic.")
                         color_palette = 'classic'
                 except json.JSONDecodeError as e:
-                    logger.warning(f"[#79] Invalid JSON in custom palette colors: {e}. Using classic.")
+                    logger.warning(f"Invalid JSON in custom palette colors: {e}. Using classic.")
                     color_palette = 'classic'
             else:
-                logger.warning("[#79] Custom palette selected but no preset configured. Using classic.")
+                logger.warning("Custom palette selected but no preset configured. Using classic.")
                 color_palette = 'classic'
 
         try:
@@ -216,7 +192,6 @@ def get_tasks():
             }), 400
 
         # Transform data
-        logger.info(f"Transforming {len(df)} rows")
         transformer = TaskTransformer(transformer_config)
 
         try:
@@ -258,15 +233,10 @@ def get_tasks():
             result['metadata']['rowLimitHit'] = True
             result['metadata']['rowLimit'] = max_tasks
 
-        # Add custom palette colors for frontend CSS injection (#79)
+        # Add custom palette colors for frontend CSS injection
         if custom_colors:
             result['customPaletteColors'] = custom_colors
 
-        logger.info(
-            f"Transformed {result['metadata']['displayedRows']} tasks "
-            f"({result['metadata']['skippedRows']} skipped)"
-            f"{' [LIMIT HIT]' if row_limit_hit else ''}"
-        )
         return json.dumps(result)
 
     except KeyError as e:

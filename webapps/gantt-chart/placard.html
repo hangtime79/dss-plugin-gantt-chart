@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Timeline - Getting Started</title>
+    <style>
+        :root {
+            --bg-page: #ffffff;
+            --bg-subtle: #f5f7fa;
+            --bg-hover: #eef1f5;
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-blue-light: #eff6ff;
+            --accent-green: #22c55e;
+            --accent-green-light: #f0fdf4;
+            --accent-red: #ef4444;
+            --accent-orange: #f97316;
+            --accent-yellow: #eab308;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-blue);
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .header-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .section-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: var(--accent-blue);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .section-tag {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--bg-page);
+            color: var(--text-muted);
+            border: 1px solid var(--border-light);
+        }
+
+        .section-tag.required {
+            background: #fef2f2;
+            color: var(--accent-red);
+            border-color: #fecaca;
+        }
+
+        .section-content {
+            padding: 18px;
+        }
+
+        /* Required Fields */
+        .required-section {
+            border: 2px solid var(--accent-blue);
+            box-shadow: 0 0 0 4px var(--accent-blue-light);
+        }
+
+        .required-fields {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .required-fields { grid-template-columns: 1fr; }
+        }
+
+        .required-field {
+            padding: 10px 12px;
+            background: var(--bg-subtle);
+            border: 2px dashed var(--border-medium);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .field-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .field-name {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 1px;
+        }
+
+        .field-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Direction Arrows */
+        .direction-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background: var(--accent-blue-light);
+            border: 1.5px solid var(--accent-blue);
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin-right: 8px;
+        }
+
+        .direction-arrow.up {
+            animation: bounce-up 1.5s ease-in-out infinite;
+        }
+
+        .direction-arrow.right {
+            animation: bounce-right 1.5s ease-in-out infinite;
+        }
+
+        @keyframes bounce-up {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes bounce-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(3px); }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            padding: 10px 18px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .tab {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .tab.active {
+            background: var(--bg-page);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+
+        .settings-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-subtle);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .setting-row .label {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+
+        .setting-row .value {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-page);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-light);
+        }
+
+        .setting-row .options {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .option-chip {
+            font-size: 11px;
+            padding: 2px 8px;
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .option-chip.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        /* Toolbar Preview - matches screenshot */
+        .toolbar-mock {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-right: 8px;
+        }
+
+        .toolbar-brand svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+        }
+
+        .filter-pill {
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-page);
+            color: var(--text-secondary);
+        }
+
+        .filter-pill.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .toolbar-spacer {
+            flex: 1;
+        }
+
+        .toolbar-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            background: var(--bg-page);
+        }
+
+        .toolbar-control svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .zoom-group {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .zoom-btn {
+            padding: 6px 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--bg-page);
+            border: none;
+        }
+
+        .zoom-value {
+            padding: 6px 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-subtle);
+            border-left: 1px solid var(--border-light);
+            border-right: 1px solid var(--border-light);
+        }
+
+        /* Chart Preview - matches screenshot */
+        .chart-mock {
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .chart-year {
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-right: 1px solid var(--border-light);
+        }
+
+        .chart-months {
+            display: flex;
+            flex: 1;
+        }
+
+        .chart-month {
+            flex: 1;
+            padding: 6px 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            border-right: 1px solid var(--border-light);
+        }
+
+        .chart-month:last-child {
+            border-right: none;
+        }
+
+        .chart-month.current {
+            background: var(--text-primary);
+            color: white;
+            font-weight: 500;
+        }
+
+        .chart-month.active-range {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .chart-body {
+            position: relative;
+            padding: 16px;
+            min-height: 180px;
+        }
+
+        .chart-grid {
+            position: absolute;
+            top: 0;
+            left: 80px;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(90deg, var(--border-light) 1px, transparent 1px);
+            background-size: calc(100% / 12) 100%;
+            opacity: 0.5;
+        }
+
+        .chart-today {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 55%;
+            width: 1px;
+            background: var(--text-primary);
+        }
+
+        .chart-rows {
+            position: relative;
+        }
+
+        .chart-row {
+            display: flex;
+            align-items: center;
+            height: 32px;
+            margin-bottom: 6px;
+        }
+
+        .chart-label {
+            width: 80px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: right;
+            padding-right: 12px;
+            flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chart-bar-area {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        .chart-bar {
+            position: absolute;
+            height: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 6px;
+        }
+
+        .chart-bar.blue { background: var(--accent-blue); }
+        .chart-bar.green { background: var(--accent-green); }
+
+        .chart-bar .check {
+            width: 16px;
+            height: 16px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+        }
+
+        .bar-1 { left: 5%; width: 18%; }
+        .bar-2 { left: 15%; width: 25%; }
+        .bar-3 { left: 28%; width: 20%; }
+        .bar-4 { left: 38%; width: 22%; }
+        .bar-5 { left: 20%; width: 15%; }
+        .bar-6 { left: 35%; width: 18%; }
+
+        /* Dependency arrow */
+        .dep-arrow {
+            position: absolute;
+            z-index: 1;
+        }
+
+        .arrow-line {
+            stroke: var(--text-muted);
+            stroke-width: 1.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        /* Tooltip mock */
+        .tooltip-mock {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: var(--shadow-md);
+            font-size: 12px;
+            width: 200px;
+            z-index: 10;
+        }
+
+        .tooltip-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .tooltip-pin {
+            color: var(--accent-blue);
+            font-size: 14px;
+        }
+
+        .tooltip-close {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .tooltip-dates {
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .tooltip-progress {
+            color: var(--accent-blue);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .tooltip-deps {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .tooltip-dep-name {
+            color: var(--text-secondary);
+        }
+
+        /* Legend */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-subtle);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .legend-bar {
+            width: 20px;
+            height: 10px;
+            border-radius: 5px;
+        }
+
+        .legend-line {
+            width: 16px;
+            height: 2px;
+        }
+
+        /* States */
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 700px) {
+            .states-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .state-card {
+            padding: 12px;
+            background: var(--bg-subtle);
+            border-radius: 6px;
+            border-left: 3px solid var(--border-medium);
+        }
+
+        .state-card.loading { border-left-color: var(--accent-blue); }
+        .state-card.setup { border-left-color: var(--accent-orange); }
+        .state-card.error { border-left-color: var(--accent-red); }
+        .state-card.warning { border-left-color: var(--accent-yellow); }
+
+        .state-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .state-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .footer-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .footer-text strong {
+            color: var(--text-primary);
+        }
+
+        .footer-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .arrow-up {
+            display: inline-block;
+            animation: bounce 1.5s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <h1>Project Timeline</h1>
+            <p>Map your columns below to launch the Gantt chart. Here's a preview of what you'll see:</p>
+        </header>
+
+        <!-- 1. Required -->
+        <div class="section required-section">
+            <div class="section-header">
+                <span class="section-number">1</span>
+                <span class="section-title">Map Your Columns</span>
+                <span class="direction-arrow up">↑</span>
+                <span class="section-tag required">Required</span>
+            </div>
+            <div class="section-content" style="padding: 12px 18px;">
+                <div class="required-fields">
+                    <div class="required-field">
+                        <div class="field-icon">🔑</div>
+                        <div class="field-name">Task ID</div>
+                        <div class="field-desc">Unique identifier</div>
+                    </div>
+                    <div class="required-field">
+                        <div class="field-icon">📅</div>
+                        <div class="field-name">Start Date</div>
+                        <div class="field-desc">When task begins</div>
+                    </div>
+                    <div class="required-field">
+                        <div class="field-icon">🏁</div>
+                        <div class="field-name">End Date</div>
+                        <div class="field-desc">When task ends</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Settings -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-number">2</span>
+                <span class="section-title">Settings Panel</span>
+                <span class="direction-arrow right">→</span>
+                <span class="section-tag">Left Sidebar</span>
+            </div>
+            <div class="tabs">
+                <button class="tab active" data-tab="data">Data & Columns</button>
+                <button class="tab" data-tab="view">View & Behavior</button>
+                <button class="tab" data-tab="design">Design & Appearance</button>
+            </div>
+
+            <div class="tab-content active" id="tab-data">
+                <div class="settings-grid">
+                    <div>
+                        <div class="settings-group-title">Optional Columns</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Task Name</span><span class="value">display label</span></div>
+                            <div class="setting-row"><span class="label">Progress (%)</span><span class="value">0-100</span></div>
+                            <div class="setting-row"><span class="label">Dependencies</span><span class="value">task IDs</span></div>
+                            <div class="setting-row"><span class="label">Color By</span><span class="value">category</span></div>
+                            <div class="setting-row"><span class="label">Group By</span><span class="value">grouping</span></div>
+                            <div class="setting-row"><span class="label">Tooltip Fields</span><span class="value">extra info</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="settings-group-title">Performance</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Max Tasks Limit</span><span class="value">500</span></div>
+                            <div class="setting-row">
+                                <span class="label">Duplicate ID Handling</span>
+                                <div class="options">
+                                    <span class="option-chip active">Warn</span>
+                                    <span class="option-chip">Skip</span>
+                                    <span class="option-chip">Allow</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-view">
+                <div class="settings-grid">
+                    <div>
+                        <div class="settings-group-title">View Settings</div>
+                        <div class="settings-list">
+                            <div class="setting-row">
+                                <span class="label">Default View</span>
+                                <div class="options">
+                                    <span class="option-chip">Day</span>
+                                    <span class="option-chip">Week</span>
+                                    <span class="option-chip active">Month</span>
+                                </div>
+                            </div>
+                            <div class="setting-row"><span class="label">Show View Mode Dropdown</span><span class="value">on/off</span></div>
+                            <div class="setting-row">
+                                <span class="label">Initial Scroll</span>
+                                <div class="options">
+                                    <span class="option-chip active">Today</span>
+                                    <span class="option-chip">First</span>
+                                    <span class="option-chip">Last</span>
+                                </div>
+                            </div>
+                            <div class="setting-row"><span class="label">Sort Tasks By</span><span class="value">9 options</span></div>
+                            <div class="setting-row"><span class="label">Show Expected Progress</span><span class="value">on/off</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="settings-group-title">Date Logic</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Fixed Start/End Dates</span><span class="value">on/off</span></div>
+                            <div class="setting-row"><span class="label">Highlight Weekends</span><span class="value">on/off</span></div>
+                            <div class="setting-row"><span class="label">Show Today Button</span><span class="value">on/off</span></div>
+                            <div class="setting-row">
+                                <span class="label">Show Details On</span>
+                                <div class="options">
+                                    <span class="option-chip active">Click</span>
+                                    <span class="option-chip">Hover</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-design">
+                <div class="settings-grid">
+                    <div>
+                        <div class="settings-group-title">Theme & Styling</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Language</span><span class="value">11 options</span></div>
+                            <div class="setting-row">
+                                <span class="label">Color Palette</span>
+                                <div class="options">
+                                    <span class="option-chip">Classic</span>
+                                    <span class="option-chip">Pastel</span>
+                                    <span class="option-chip">Dark</span>
+                                    <span class="option-chip active">Dataiku</span>
+                                    <span class="option-chip">Custom</span>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <span class="label">Theme</span>
+                                <div class="options">
+                                    <span class="option-chip active">Light</span>
+                                    <span class="option-chip">Dark</span>
+                                    <span class="option-chip">Auto</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="settings-group-title">Dimensions</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Bar Height</span><span class="value">px</span></div>
+                            <div class="setting-row"><span class="label">Corner Radius</span><span class="value">px</span></div>
+                            <div class="setting-row"><span class="label">Column Width</span><span class="value">auto/fixed</span></div>
+                            <div class="setting-row"><span class="label">Padding</span><span class="value">px</span></div>
+                        </div>
+                        <div class="settings-group-title" style="margin-top: 16px;">Grid & Dates</div>
+                        <div class="settings-list">
+                            <div class="setting-row"><span class="label">Grid Lines (V/H)</span><span class="value">on/off + opacity</span></div>
+                            <div class="setting-row">
+                                <span class="label">Date Format</span>
+                                <div class="options">
+                                    <span class="option-chip active">ISO</span>
+                                    <span class="option-chip">US</span>
+                                    <span class="option-chip">EU</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Toolbar -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-number">3</span>
+                <span class="section-title">Toolbar</span>
+                <span class="section-tag">Top Navigation</span>
+            </div>
+            <div class="section-content">
+                <div class="toolbar-mock">
+                    <div class="toolbar-brand">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Project Timeline
+                    </div>
+                    <span class="filter-pill active">All</span>
+                    <span class="filter-pill">Completed</span>
+                    <span class="filter-pill">Overdue</span>
+                    <span class="filter-pill">In Progress</span>
+                    <span class="filter-pill">Not Started</span>
+                    <div class="toolbar-spacer"></div>
+                    <div class="toolbar-control">Light ▾</div>
+                    <div class="toolbar-control">Month ▾</div>
+                    <div class="toolbar-control">Today</div>
+                    <div class="zoom-group">
+                        <span class="zoom-btn">↺</span>
+                        <span class="zoom-btn">−</span>
+                        <span class="zoom-value">60%</span>
+                        <span class="zoom-btn">+</span>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+                    <strong>Filters:</strong> Multi-select (OR logic) &nbsp;•&nbsp; 
+                    <strong>Zoom:</strong> Reset, out, in with percentage display
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Chart -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-number">4</span>
+                <span class="section-title">Chart Area</span>
+            </div>
+            <div class="section-content" style="padding: 0;">
+                <div class="chart-mock">
+                    <div class="chart-header">
+                        <div class="chart-year">2025</div>
+                        <div class="chart-months">
+                            <div class="chart-month">Jan</div>
+                            <div class="chart-month">Feb</div>
+                            <div class="chart-month">Mar</div>
+                            <div class="chart-month">Apr</div>
+                            <div class="chart-month">May</div>
+                            <div class="chart-month active-range">Jun</div>
+                            <div class="chart-month active-range">Jul</div>
+                            <div class="chart-month active-range">Aug</div>
+                            <div class="chart-month">Sep</div>
+                            <div class="chart-month">Oct</div>
+                            <div class="chart-month">Nov</div>
+                            <div class="chart-month current">Dec</div>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <div class="chart-grid"></div>
+                        <div class="chart-today"></div>
+                        
+                        <!-- SVG for arrows -->
+                        <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                            <defs>
+                                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#9ca3af"/>
+                                </marker>
+                            </defs>
+                            <path class="arrow-line" d="M 165 28 L 180 28 L 180 60 L 195 60"/>
+                            <path class="arrow-line" d="M 280 60 L 295 60 L 295 92 L 310 92"/>
+                        </svg>
+
+                        <div class="chart-rows">
+                            <div class="chart-row">
+                                <div class="chart-label">Identify AI use cases</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar blue bar-1"><span class="check">✓</span></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Prepare datasets</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar blue bar-2"></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Build ML pipeline</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar blue bar-3"></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Train models</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar blue bar-4"></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Define API standards</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar green bar-5"></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Implement auth</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar green bar-6"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tooltip -->
+                        <div class="tooltip-mock">
+                            <div class="tooltip-header">
+                                <span class="tooltip-title">Build ML pipeline</span>
+                                <span class="tooltip-pin">📌</span>
+                                <span class="tooltip-close">×</span>
+                            </div>
+                            <div class="tooltip-dates">2025-06-01 to 2025-08-31</div>
+                            <div class="tooltip-progress">PROGRESS: 70%</div>
+                            <div class="tooltip-deps">
+                                Depends on:<br>
+                                <span class="tooltip-dep-name">Prepare training datasets</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span style="font-size: 12px;">✓</span> Completed
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-bar" style="background: linear-gradient(90deg, rgba(0,0,0,0.1) 70%, transparent 70%); border: 1px solid var(--border-light);"></div>
+                            Progress fill
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: var(--text-primary);"></div>
+                            Today line
+                        </div>
+                        <div class="legend-item">
+                            <span style="font-size: 12px;">→</span> Dependencies
+                        </div>
+                        <div class="legend-item">
+                            <span style="font-size: 12px;">📌</span> Pin tooltip
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-bar" style="background: rgba(0,0,0,0.03);"></div>
+                            Weekend shading
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. States -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-number">5</span>
+                <span class="section-title">System States & Alerts</span>
+            </div>
+            <div class="section-content">
+                <div class="states-grid">
+                    <div class="state-card loading">
+                        <div class="state-title">⏳ Loading</div>
+                        <div class="state-desc">Initializing with messages</div>
+                    </div>
+                    <div class="state-card setup">
+                        <div class="state-title">⚙️ Setup Required</div>
+                        <div class="state-desc">Missing columns overlay</div>
+                    </div>
+                    <div class="state-card error">
+                        <div class="state-title">❌ Error</div>
+                        <div class="state-desc">"No Tasks Found"</div>
+                    </div>
+                    <div class="state-card warning">
+                        <div class="state-title">⚠️ Warning</div>
+                        <div class="state-desc">Duplicate IDs / Hidden deps</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">
+                <span class="arrow-up">☝️</span> 
+                <strong>Map the 3 required columns</strong> to launch your timeline
+            </p>
+            <p class="footer-hint">This guide closes once columns are configured</p>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                const parent = this.closest('.section');
+                parent.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                parent.querySelector(`#tab-${tabId}`).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
