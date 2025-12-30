@@ -135,23 +135,15 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** USER QA - Implementation complete, awaiting verification
+**Phase:** IDLE - Ready for next milestone
 
-**Current Branch:** `release/v1.0.0-rc`
+**Current Branch:** `main`
 
-**Active Spec:** `plan/specs/release-v1.0.0-rc-spec.md`
+**Last Release:** v1.0.0-rc (2025-12-31)
+- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v1.0.0-rc)
+- [PR #99](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/99)
 
-**Last Release:** v0.11.0 (2025-12-30)
-- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.11.0)
-- [PR #98](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/98)
-
-**Current Milestone:** v1.0.0-rc - Release Candidate
-
-**v1.0.0-rc Implementation Status:**
-- [x] #75 - webapp.json reorganized (user), hardcode 3 removed params in app.js
-- [x] #97 - Remove debug code from app.js (62 console.log removed) and backend.py (debug logs removed)
-- [x] Version bump to 1.0.0-rc
-- [ ] User QA pending
+**Next Milestone:** v1.0.0 - Public Release
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -178,14 +170,10 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.10.0**~~ | ~~#32~~ | ~~i18n~~ ✅ |
 | ~~**v0.10.1**~~ | ~~#79~~ | ~~Global Custom Palettes~~ ✅ |
 | ~~**v0.11.0**~~ | ~~#76, #77, #83~~ | ~~Defensive Programming~~ ✅ |
-| **v1.0.0-rc** | #75, #97 | Release Candidate |
+| ~~**v1.0.0-rc**~~ | ~~#75, #97~~ | ~~Release Candidate~~ ✅ |
 | **v1.0.0** | #74, #84 | Public Release |
 
-**Current milestone:** v1.0.0-rc - Release Candidate
-
-### v1.0.0-rc Scope
-- #75 - Reorganize Left Bar config
-- #97 - Remove debug code
+**Current milestone:** v1.0.0 - Public Release
 
 ### v1.0.0 Backlog (Post-Release)
 - #74 - Connector line (tooltip → task bar)
