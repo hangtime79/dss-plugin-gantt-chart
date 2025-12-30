@@ -4,15 +4,65 @@ Library-specific patterns for integrating [Frappe Gantt](https://frappe.io/gantt
 
 ---
 
-## Popup Callback Wrapper
+## Quick Reference
 
-### The Problem
+| Need to... | See Section |
+|------------|-------------|
+| Initialize the chart | [Basic Setup](#basic-setup) |
+| Handle popup clicks | [Popup Callback](#popup-callback-wrapper) |
+| Fix scroll issues | [Scrolling Container](#scrolling-container-setup) |
+| Set dependencies | [Dependencies Format](#dependencies-data-type) |
+| Debug issues | [Common Gotchas](#common-gotchas) |
 
-When implementing a custom `popup` function, the library sometimes passes a wrapper object instead of the direct Task object. Accessing `task.name` directly yields `undefined`.
+---
 
-### The Solution
+## Basic Setup
 
-Check if the passed object has a `task` property and unwrap it:
+```javascript
+const tasks = [
+    {
+        id: 'task-1',
+        name: 'Task Name',
+        start: '2024-01-01',
+        end: '2024-01-15',
+        progress: 50,
+        dependencies: ['task-0']  // Array, not string!
+    }
+];
+
+const gantt = new Gantt('#gantt-container', tasks, {
+    view_mode: 'Week',  // Case-sensitive: "Week" not "week"
+    on_click: task => console.log(task),
+    on_view_change: mode => console.log(mode.name)  // mode is object, not string
+});
+```
+
+---
+
+## Configuration
+
+### Options vs Config Objects
+
+The library maintains two state objects:
+
+| Object | Contains | Example |
+|--------|----------|---------|
+| `gantt.options` | Primitive values (strings, numbers) | `options.view_mode` → `"Week"` |
+| `gantt.config` | Computed objects, internal state | `config.view_mode` → `{name: "Week", ...}` |
+
+**Always use `options.view_mode`** when you need the string value.
+
+### View Modes
+
+Case-sensitive values: `"Hour"`, `"Quarter Day"`, `"Half Day"`, `"Day"`, `"Week"`, `"Month"`, `"Year"`
+
+---
+
+## Callbacks
+
+### Popup Callback Wrapper
+
+**The Problem:** The library sometimes passes a wrapper object instead of the Task directly.
 
 ```javascript
 popup: function(task) {
@@ -25,37 +75,66 @@ popup: function(task) {
 }
 ```
 
----
+### on_view_change Mode Parameter
 
-## Debugging Circular References
-
-### The Problem
-
-Frappe Gantt task objects contain circular references (links to DOM elements, parent SVG containers). Using `JSON.stringify(task)` crashes with `TypeError: cyclic object value`.
-
-### The Solution
-
-Log objects directly - let the browser inspector handle circular refs:
+**The Problem:** The `mode` parameter is an object, not a string. Saving it directly to localStorage stores `"[object Object]"`.
 
 ```javascript
-// BAD - Crashes
-console.log('Task:', JSON.stringify(task));
+// BAD - mode is an object
+on_view_change: function(mode) {
+    localStorage.setItem('viewMode', mode);  // Stores "[object Object]"
+}
 
-// GOOD - Works
-console.log('Task:', task);
+// GOOD - Extract mode.name for the string value
+on_view_change: function(mode) {
+    const viewModeName = typeof mode === 'string' ? mode : mode.name;
+    localStorage.setItem('viewMode', viewModeName);  // Stores "Week"
+}
+```
+
+---
+
+## DOM Structure
+
+Understanding the library's DOM helps with custom styling and post-render manipulation.
+
+### Grid Header
+
+The `.grid-header` is an **HTML `<div>`** with absolutely-positioned text elements, NOT an SVG group.
+
+```css
+/* This works - HTML elements */
+.grid-header .upper-text { font-weight: bold; }
+
+/* This WON'T work - no SVG lines in header */
+.grid-header line { stroke: red; }
+```
+
+### Month View Text
+
+The naming is counterintuitive:
+- `.upper-text` → Displays **Years**
+- `.lower-text` → Displays **Months**
+
+### Data Attributes
+
+The `data-id` attribute is on `.bar-wrapper`, not `.bar-group`:
+
+```javascript
+// CORRECT
+wrapper.getAttribute('data-id')
+
+// WRONG - bar-group doesn't have data-id
+wrapper.closest('.bar-group').getAttribute('data-id')
 ```
 
 ---
 
 ## Scrolling Container Setup
 
-### The Problem
+**The Problem:** Frappe uses CSS variable `--gv-grid-height` for dynamic height. Overriding with `height: 100%` breaks scrolling.
 
-Frappe Gantt uses CSS variable `--gv-grid-height` to dynamically set height based on task count. Overriding with `height: 100%` eliminates overflow - no scrollbars appear.
-
-### The Solution
-
-Put `overflow: auto` on YOUR outer wrapper, not on Frappe's container:
+**The Solution:** Put `overflow: auto` on YOUR wrapper, not Frappe's container:
 
 ```css
 /* Your outer container - this one scrolls */
@@ -67,40 +146,15 @@ Put `overflow: auto` on YOUR outer wrapper, not on Frappe's container:
 }
 
 /* Do NOT override Frappe's container height!
-   Frappe uses: height: var(--gv-grid-height);
-   which it calculates dynamically.
-
-   .gantt-container {
-       height: 100%;    <-- WRONG - breaks scrolling
-   }
+   .gantt-container { height: 100%; }  <-- WRONG
 */
-```
-
-### Why This Works
-
-1. Your `#gantt-container` fills the viewport with `overflow: auto`
-2. Frappe's `.gantt-container` grows larger than viewport (via `--gv-grid-height`)
-3. When Frappe exceeds your container, scrollbars appear
-
-### Common Mistake
-
-```css
-/* WRONG - Forces both to viewport height, nothing to scroll */
-#gantt-container { overflow: hidden; }
-.gantt-container { height: 100%; overflow: auto; }
 ```
 
 ---
 
 ## Dependencies Data Type
 
-### The Problem
-
-Frappe Gantt expects `task.dependencies` as an **array** of task IDs. If you pass a comma-separated string, `.map()` fails silently and no dependency arrows render.
-
-### The Solution
-
-Ensure dependencies are arrays:
+**The Problem:** Library expects `task.dependencies` as an **array**. Comma-separated strings fail silently.
 
 ```python
 # Backend (Python)
@@ -112,11 +166,171 @@ task['dependencies'] = ["task1", "task2"]
 ```
 
 ```javascript
-// Frontend check
+// Frontend check (defensive)
 if (typeof task.dependencies === 'string') {
     task.dependencies = task.dependencies.split(',').map(s => s.trim());
 }
 ```
+
+---
+
+## Popup Positioning
+
+**The Problem:** The library treats popup coordinates as anchors and re-centres after render. Modifying `opts.x/y` before `show_popup()` doesn't work reliably.
+
+**The Solution:** Call original method first, then correct position in `requestAnimationFrame`:
+
+```javascript
+const originalShowPopup = gantt.show_popup.bind(gantt);
+
+gantt.show_popup = function(opts) {
+    originalShowPopup(opts);
+
+    requestAnimationFrame(() => {
+        const popup = document.querySelector('.popup-wrapper');
+        popup.style.transition = 'none';  // Prevent visual jump
+        popup.style.left = desiredX + 'px';
+        popup.style.top = desiredY + 'px';
+    });
+};
+```
+
+---
+
+## Header Manipulation
+
+### Position-Based Date Lookup
+
+**The Problem:** When adding year to header text, searching by month name finds the FIRST match in the array, regardless of position.
+
+```javascript
+// BAD - Finds first December in entire dates array
+const matchingDate = ganttInstance.dates.find(d => d.getMonth() === 11);
+// If timeline has Dec 2023 AND Dec 2024, always returns Dec 2023
+```
+
+**The Solution:** Use position to calculate array index:
+
+```javascript
+const columnWidth = ganttInstance.config.column_width;
+
+upperTexts.forEach(text => {
+    const elementX = parseFloat(text.style.left) || 0;
+    const dateIndex = Math.round(elementX / columnWidth);
+
+    if (dateIndex >= 0 && dateIndex < ganttInstance.dates.length) {
+        const elementDate = ganttInstance.dates[dateIndex];
+        text.textContent = `${text.textContent} ${elementDate.getFullYear()}`;
+    }
+});
+```
+
+---
+
+## Common Gotchas
+
+### CSS Class Generation
+
+The library creates CSS selectors from task properties (e.g., `.highlight-{task.id}`).
+
+**Risk:** Task IDs with special characters create invalid CSS:
+- `"Task 1"` → `.highlight-Task 1` (invalid - space)
+- `"54.8"` → `.highlight-54.8` (invalid - period means class)
+
+**Fix:** Hex-encode IDs to be CSS-safe before passing to library.
+
+### custom_class Whitespace
+
+The library uses `classList.add()` for `custom_class`, which throws on whitespace:
+
+```javascript
+// WRONG - DOMException
+task.custom_class = "status-active high-priority"
+
+// CORRECT - Single class only
+task.custom_class = "status-active"
+```
+
+### No destroy() Method
+
+The library lacks a `destroy()` method. Event listeners persist after DOM is cleared, causing memory leaks or zombie handlers on re-render.
+
+**Workaround:** Guard against undefined when accessing potentially stale DOM refs.
+
+### Debugging Circular References
+
+Task objects contain circular refs (DOM elements, SVG containers). `JSON.stringify(task)` crashes.
+
+```javascript
+// BAD - Crashes
+console.log('Task:', JSON.stringify(task));
+
+// GOOD - Let browser handle circular refs
+console.log('Task:', task);
+```
+
+### Scroll Behavior Race Condition
+
+Using `behavior: "smooth"` triggers a race condition if you read `scrollLeft` immediately after.
+
+```javascript
+// BAD - scrollLeft is stale
+container.scrollTo({ left: 100, behavior: 'smooth' });
+console.log(container.scrollLeft);  // Wrong value!
+
+// GOOD - Use instant for synchronous updates
+container.scrollTo({ left: 100, behavior: 'instant' });
+console.log(container.scrollLeft);  // Correct
+```
+
+### maintain_scroll Issues
+
+The library's `maintain_scroll` feature preserves pixel positions across view modes, which is often meaningless (Week position 500px ≠ Month position 500px).
+
+---
+
+## Rendering & Sizing
+
+### SVG Width Bug
+
+The library sets `width="100%"` which can break layout in some containers.
+
+**Workaround:** Explicitly set pixel width after render:
+
+```javascript
+requestAnimationFrame(() => {
+    const svg = document.querySelector('.gantt svg');
+    svg.setAttribute('width', container.scrollWidth + 'px');
+});
+```
+
+### Post-Render DOM Manipulation
+
+Libraries manipulate DOM asynchronously. Use `requestAnimationFrame` for custom adjustments:
+
+```javascript
+ganttInstance = new Gantt("#gantt", tasks, options);
+
+// Defer until after library render
+requestAnimationFrame(() => {
+    applyCustomStyles();
+});
+```
+
+For layout-dependent calculations, use double rAF:
+
+```javascript
+requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+        // Layout is now settled
+        measureAndAdjust();
+    });
+});
+```
+
+### Hardcoded Colors
+
+Some elements like `.current-upper` (floating year) have hardcoded `background: #fff`, requiring `!important` for dark mode overrides.
 
 ---
 

@@ -429,7 +429,7 @@ List of key-value pairs.
 
 ### PRESET
 
-Reference to a parameter set preset.
+Reference to a parameter set preset. Allows users to select admin-defined configurations.
 
 ```json
 {
@@ -438,6 +438,68 @@ Reference to a parameter set preset.
     "type": "PRESET",
     "parameterSetId": "my-connection-settings"
 }
+```
+
+#### PRESET Resolution in Webapps
+
+**Important:** Unlike recipes/connectors where Dataiku auto-resolves PRESETs to dicts, webapps receive a **raw reference**:
+
+```python
+# What you expect (works in recipes)
+preset_config = config.get('customPalettePreset')
+colors = preset_config.get('colors')  # Works!
+
+# What you actually get in webapps
+preset_config = config.get('customPalettePreset')
+# preset_config = {"mode": "PRESET", "name": "PRESET_3"}
+colors = preset_config.get('colors')  # Returns None!
+```
+
+**Solution:** Manually resolve PRESET references via API:
+
+```python
+def resolve_preset(preset_ref, parameter_set_id, plugin_id):
+    """Resolve a webapp PRESET parameter to its actual values."""
+    if not preset_ref:
+        return None
+
+    mode = preset_ref.get('mode')
+
+    if mode == 'INLINE':
+        # Values embedded directly
+        return {k: v for k, v in preset_ref.items() if k != 'mode'}
+
+    elif mode == 'PRESET':
+        # Must resolve via API
+        preset_name = preset_ref.get('name')
+        if not preset_name:
+            return None
+
+        import dataiku
+        client = dataiku.api_client()
+        plugin = client.get_plugin(plugin_id)
+        settings = plugin.get_settings()
+        parameter_set = settings.get_parameter_set(parameter_set_id)
+        preset = parameter_set.get_preset(preset_name)
+
+        if preset:
+            # IMPORTANT: config is a PROPERTY, not a method!
+            return preset.config  # NOT preset.get_config()
+        return None
+
+    else:
+        # Direct values (no mode key)
+        return preset_ref
+```
+
+**Common Mistake:**
+
+```python
+# WRONG - get_config() doesn't exist
+values = preset.get_config()  # AttributeError!
+
+# CORRECT - config is a property
+values = preset.config  # Returns dict
 ```
 
 ---

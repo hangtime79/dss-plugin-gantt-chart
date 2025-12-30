@@ -461,6 +461,126 @@ def old_function(x):
 
 ---
 
+## JavaScript & Frontend
+
+### Monkey-Patching Third-Party Libraries
+
+When modifying library behavior without forking:
+
+```javascript
+// 1. Store original method BEFORE creating instance
+const OriginalClass = window.LibraryClass;
+const originalMethod = OriginalClass.prototype.method;
+
+// 2. Override with your version
+OriginalClass.prototype.method = function(...args) {
+    // Pre-processing
+    console.log('Before original');
+
+    // Call original (preserve 'this' context)
+    const result = originalMethod.apply(this, args);
+
+    // Post-processing
+    console.log('After original');
+    return result;
+};
+
+// 3. NOW create instance - it uses patched method
+const instance = new OriginalClass();
+```
+
+**Key Points:**
+- Patch BEFORE instantiation
+- Store original to preserve core functionality
+- Use `apply(this, args)` to maintain context
+
+### DOM Manipulation Timing
+
+Libraries manipulate DOM asynchronously. Use `requestAnimationFrame` for post-render fixes:
+
+```javascript
+// Single rAF - waits for next paint
+requestAnimationFrame(() => {
+    applyCustomStyles();
+});
+
+// Double rAF - waits for layout to settle
+requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+        // Layout-dependent calculations now accurate
+        measureAndAdjust();
+    });
+});
+```
+
+**When to use:**
+- Single rAF: Style overrides, DOM queries
+- Double rAF: Calculations depending on element dimensions
+
+### CSS Variables for Theming
+
+Use CSS variables for values that change with themes:
+
+```css
+:root {
+    --popup-gap: 8px;
+    --text-primary: #333;
+}
+
+[data-theme="dark"] {
+    --text-primary: #eee;
+}
+```
+
+```javascript
+// Read in JS when needed
+const gap = getComputedStyle(document.documentElement)
+    .getPropertyValue('--popup-gap');
+```
+
+---
+
+## Development Workflow
+
+### Incremental Development
+
+Implement ONE feature at a time and test. Massive commits with multiple features lead to unmanageable debugging:
+
+```
+# Good - Atomic commits
+feat: Add tooltip display
+fix: Correct tooltip positioning
+style: Improve tooltip appearance
+
+# Bad - Kitchen sink commit
+feat: Add tooltips, filtering, dark mode, and fix 12 bugs
+```
+
+### Spec-Driven Development
+
+Detailed specs with implementation plans reduce churn significantly:
+
+1. **Investigation** - Understand the problem
+2. **Spec** - Document the approach with examples
+3. **Implement** - Follow the spec
+4. **Verify** - Test against spec criteria
+
+Jumping straight to code often leads to rewrites.
+
+### Test What You Fix
+
+Every bugfix should include a regression test:
+
+```python
+def test_handles_negative_progress():
+    """Regression: Progress < 0 caused render crash (v0.7.2)."""
+    task = {"progress": -10}
+    result = transform_task(task)
+    assert result["progress"] == 0  # Clamped to valid range
+```
+
+---
+
 ## Quick Checklist
 
 ### Before Writing Code
