@@ -2421,10 +2421,14 @@
         if (overlay) {
             overlay.classList.remove('hide');
         }
-        // Hide control bar until configured
+        // Hide control bar and gantt container until configured
         const controlBar = document.querySelector('.control-bar');
         if (controlBar) {
             controlBar.classList.add('hide');
+        }
+        const ganttContainer = document.getElementById('gantt-container');
+        if (ganttContainer) {
+            ganttContainer.classList.add('hide');
         }
     }
 
@@ -2436,10 +2440,14 @@
         if (overlay) {
             overlay.classList.add('hide');
         }
-        // Show control bar when configured
+        // Show control bar and gantt container when configured
         const controlBar = document.querySelector('.control-bar');
         if (controlBar) {
             controlBar.classList.remove('hide');
+        }
+        const ganttContainer = document.getElementById('gantt-container');
+        if (ganttContainer) {
+            ganttContainer.classList.remove('hide');
         }
     }
 
