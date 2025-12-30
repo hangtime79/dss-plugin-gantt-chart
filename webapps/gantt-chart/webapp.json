@@ -46,14 +46,21 @@
         "leftBarParams": [
             {
                 "type": "SEPARATOR",
-                "label": "Optional Columns"
+                "label": "1. Data & Identity"
             },
             {
                 "name": "nameColumn",
                 "type": "DATASET_COLUMN",
                 "datasetParamName": "dataset",
                 "label": "Task Name",
-                "description": "Display name for each task",
+                "mandatory": false
+            },
+           {
+                "name": "dependenciesColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Dependencies",
+                "description": "Task(s) that must finish first (e.g., A or A, B, C)",
                 "mandatory": false
             },
             {
@@ -65,92 +72,32 @@
                 "mandatory": false
             },
             {
-                "name": "dependenciesColumn",
-                "type": "DATASET_COLUMN",
+                "name": "tooltipColumns",
+                "type": "DATASET_COLUMNS",
                 "datasetParamName": "dataset",
-                "label": "Dependencies",
-                "description": "Comma-separated task IDs that must complete first",
+                "label": "Additional Tooltip Field",
+                "description": "Extra data shown when clicking/hovering a bar",
                 "mandatory": false
             },
-            {
-                "name": "colorColumn",
-                "type": "DATASET_COLUMN",
-                "datasetParamName": "dataset",
-                "label": "Color By",
-                "description": "Categorical column for color-coding tasks",
-                "mandatory": false
-            },
+
             {
                 "type": "SEPARATOR",
-                "label": "Task Grouping"
+                "label": "2. Arrangement (Task Grouping and Sorting)"
             },
             {
                 "name": "groupByColumns",
                 "type": "DATASET_COLUMNS",
                 "datasetParamName": "dataset",
-                "label": "Group By",
-                "description": "Group tasks hierarchically by these columns. Drag to set grouping order (first = outermost group).",
+                "label": "Primary Grouping",
+                "description": "Macro-structure swimlanes (e.g., Workstream)",
                 "mandatory": false
-            },
-
-            {
-                "type": "SEPARATOR",
-                "label": "Tooltip Fields"
-            },
-            {
-                "name": "tooltipColumns",
-                "type": "DATASET_COLUMNS",
-                "datasetParamName": "dataset",
-                "label": "Additional Fields",
-                "description": "Select columns to display in task popup. Drag to reorder.",
-                "mandatory": false
-            },
-
-            {
-                "type": "SEPARATOR",
-                "label": "View Settings"
-            },
-            {
-                "name": "viewMode",
-                "type": "SELECT",
-                "label": "Default View",
-                "description": "Initial time scale",
-                "mandatory": true,
-                "defaultValue": "Week",
-                "selectChoices": [
-                    {"value": "Hour", "label": "Hour"},
-                    {"value": "Quarter Day", "label": "Quarter Day"},
-                    {"value": "Half Day", "label": "Half Day"},
-                    {"value": "Day", "label": "Day"},
-                    {"value": "Week", "label": "Week"},
-                    {"value": "Month", "label": "Month"},
-                    {"value": "Year", "label": "Year"}
-                ]
-            },
-            {
-                "name": "viewModeSelect",
-                "type": "BOOLEAN",
-                "label": "Show view mode dropdown",
-                "description": "Allow users to change time scale",
-                "defaultValue": true
-            },
-            {
-                "name": "scrollTo",
-                "type": "SELECT",
-                "label": "Initial scroll position",
-                "defaultValue": "today",
-                "selectChoices": [
-                    {"value": "today", "label": "Today"},
-                    {"value": "start", "label": "First task"},
-                    {"value": "end", "label": "Last task"}
-                ]
             },
             {
                 "name": "sortBy",
                 "type": "SELECT",
-                "label": "Sort Tasks By",
-                "description": "Order tasks are displayed in the chart",
-                "defaultValue": "none",
+                "label": "Sort Within Groups",
+                "description": "Micro-order inside each swimlane",
+                "defaultValue": "dependencies",
                 "selectChoices": [
                     {"value": "none", "label": "Dataset Order"},
                     {"value": "start_asc", "label": "Start Date (Earliest First)"},
@@ -165,92 +112,42 @@
                 ]
             },
             {
+                "type": "SEPARATOR",
+                "label": "3. Timeline & Interactivity"
+            },
+
+            {
                 "name": "showExpectedProgress",
                 "type": "BOOLEAN",
                 "label": "Show expected progress",
                 "description": "Display marker showing where progress should be based on current date",
                 "defaultValue": false
             },
-
-            {
-                "type": "SEPARATOR",
-                "label": "Date Boundaries"
-            },
             {
                 "name": "chartStartDate",
-                "type": "STRING",
+                "type": "DATE",
                 "label": "Fixed Start Date",
                 "description": "YYYY-MM-DD format. Leave empty for automatic.",
                 "mandatory": false
             },
             {
                 "name": "chartEndDate",
-                "type": "STRING",
+                "type": "DATE",
                 "label": "Fixed End Date",
                 "description": "YYYY-MM-DD format. Leave empty for automatic.",
                 "mandatory": false
             },
-
             {
                 "type": "SEPARATOR",
-                "label": "Grid Lines"
+                "label": "4. Visual Styling"
             },
             {
-                "name": "showVerticalGridLines",
-                "type": "BOOLEAN",
-                "label": "Show vertical grid lines",
-                "defaultValue": true
-            },
-            {
-                "name": "showHorizontalGridLines",
-                "type": "BOOLEAN",
-                "label": "Show horizontal grid lines",
-                "defaultValue": true
-            },
-            {
-                "name": "gridLineOpacity",
-                "type": "INT",
-                "label": "Grid line opacity (%)",
-                "defaultValue": 100,
-                "minI": 0,
-                "maxI": 100
-            },
-
-            {
-                "type": "SEPARATOR",
-                "label": "Appearance"
-            },
-            {
-                "name": "theme",
-                "type": "SELECT",
-                "label": "Theme",
-                "description": "Color theme for the chart",
-                "defaultValue": "light",
-                "selectChoices": [
-                    {"value": "light", "label": "Light"},
-                    {"value": "dark", "label": "Dark"},
-                    {"value": "auto", "label": "Auto (System)"}
-                ]
-            },
-            {
-                "name": "language",
-                "type": "SELECT",
-                "label": "Language",
-                "description": "Language for date/month formatting",
-                "defaultValue": "en",
-                "selectChoices": [
-                    {"value": "en", "label": "English"},
-                    {"value": "es", "label": "Español"},
-                    {"value": "de", "label": "Deutsch"},
-                    {"value": "fr", "label": "Français"},
-                    {"value": "pt", "label": "Português"},
-                    {"value": "ru", "label": "Русский"},
-                    {"value": "tr", "label": "Türkçe"},
-                    {"value": "zh", "label": "中文"},
-                    {"value": "ja", "label": "日本語"},
-                    {"value": "ko", "label": "한국어"},
-                    {"value": "it", "label": "Italiano"}
-                ]
+                "name": "colorColumn",
+                "type": "DATASET_COLUMN",
+                "datasetParamName": "dataset",
+                "label": "Color By",
+                "description": "Categorical column for color-coding tasks (e.g., Status, Streams)",
+                "mandatory": false
             },
             {
                 "name": "colorPalette",
@@ -258,6 +155,7 @@
                 "label": "Color Palette",
                 "description": "Color scheme for task bars",
                 "defaultValue": "classic",
+                "visibilityCondition": "model.colorColumn != null",
                 "selectChoices": [
                     {"value": "classic", "label": "Classic (Vibrant)"},
                     {"value": "pastel", "label": "Pastel (Soft)"},
@@ -274,11 +172,20 @@
                 "visibilityCondition": "model.colorPalette == 'custom'",
                 "mandatory": false
             },
+
+            {
+                "name": "showStylingAdvanced",
+                "type": "BOOLEAN",
+                "label": "Customize bar & grid dimensions?",
+                "defaultValue": false
+            },
+
             {
                 "name": "barHeight",
                 "type": "INT",
                 "label": "Bar Height",
                 "description": "Height of task bars in pixels",
+                "visibilityCondition": "model.showStylingAdvanced",
                 "defaultValue": 30,
                 "minI": 15,
                 "maxI": 60
@@ -288,6 +195,7 @@
                 "type": "INT",
                 "label": "Bar Corner Radius",
                 "description": "Roundness of bar corners",
+                "visibilityCondition": "model.showStylingAdvanced",
                 "defaultValue": 10,
                 "minI": 0,
                 "maxI": 15
@@ -296,7 +204,8 @@
                 "name": "columnWidth",
                 "type": "INT",
                 "label": "Column Width",
-                "description": "Width of time columns",
+                "description": "Pixel width of time columns",
+                "visibilityCondition": "model.showStylingAdvanced",
                 "defaultValue": 45,
                 "minI": 25,
                 "maxI": 500
@@ -305,21 +214,114 @@
                 "name": "padding",
                 "type": "INT",
                 "label": "Padding",
-                "description": "Padding between elements",
+                "description": "Pixel padding between elements",
+                "visibilityCondition": "model.showStylingAdvanced",
                 "defaultValue": 18,
                 "minI": 5,
                 "maxI": 40
             },
 
             {
+                "name": "showVerticalGridLines",
+                "type": "BOOLEAN",
+                "label": "Show vertical grid lines",
+                "defaultValue": true,
+                "visibilityCondition": "model.showStylingAdvanced"
+            },
+            {
+                "name": "showHorizontalGridLines",
+                "type": "BOOLEAN",
+                "label": "Show horizontal grid lines",
+                "defaultValue": true,
+                "visibilityCondition": "model.showStylingAdvanced"
+            },
+            {
+                "name": "gridLineOpacity",
+                "type": "INT",
+                "label": "Grid line opacity (%)",
+                "visibilityCondition": "model.showStylingAdvanced",
+                "defaultValue": 100,
+                "minI": 0,
+                "maxI": 100
+            },
+            {
                 "type": "SEPARATOR",
-                "label": "Date Display"
+                "label": "5. System Settings"
+            },
+            {
+                "name": "showSystemAdvanced",
+                "type": "BOOLEAN",
+                "label": "Show System Settings?",
+                "defaultValue": false
+            },
+            {
+                "name": "viewMode",
+                "type": "SELECT",
+                "label": "Default View",
+                "description": "Initial time scale",
+                "mandatory": true,
+                "defaultValue": "Month",
+                "visibilityCondition": "model.showSystemAdvanced",
+                "selectChoices": [
+                    {"value": "Hour", "label": "Hour"},
+                    {"value": "Quarter Day", "label": "Quarter Day"},
+                    {"value": "Half Day", "label": "Half Day"},
+                    {"value": "Day", "label": "Day"},
+                    {"value": "Week", "label": "Week"},
+                    {"value": "Month", "label": "Month"},
+                    {"value": "Year", "label": "Year"}
+                ]
+            },
+            {
+                "name": "scrollTo",
+                "type": "SELECT",
+                "label": "Initial scroll position",
+                "defaultValue": "today",
+                "visibilityCondition": "model.showSystemAdvanced",
+                "selectChoices": [
+                    {"value": "today", "label": "Today"},
+                    {"value": "start", "label": "First task"},
+                    {"value": "end", "label": "Last task"}
+                ]
+            },
+            {
+                "name": "popupOn",
+                "type": "SELECT",
+                "label": "Show task details on",
+                "defaultValue": "click",
+                "visibilityCondition": "model.showSystemAdvanced",
+                "selectChoices": [
+                    {"value": "click", "label": "Click"},
+                    {"value": "hover", "label": "Hover"}
+                ]
+            },
+            {
+                "name": "language",
+                "type": "SELECT",
+                "label": "Language",
+                "description": "Language for date/month formatting",
+                "visibilityCondition": "model.showSystemAdvanced",
+                "defaultValue": "en",
+                "selectChoices": [
+                    {"value": "en", "label": "English"},
+                    {"value": "es", "label": "Español"},
+                    {"value": "de", "label": "Deutsch"},
+                    {"value": "fr", "label": "Français"},
+                    {"value": "pt", "label": "Português"},
+                    {"value": "ru", "label": "Русский"},
+                    {"value": "tr", "label": "Türkçe"},
+                    {"value": "zh", "label": "中文"},
+                    {"value": "ja", "label": "日本語"},
+                    {"value": "ko", "label": "한국어"},
+                    {"value": "it", "label": "Italiano"}
+                ]
             },
             {
                 "name": "dateFormat",
                 "type": "SELECT",
                 "label": "Date Format",
                 "description": "Format for dates shown in task popups",
+                "visibilityCondition": "model.showSystemAdvanced",
                 "defaultValue": "ISO",
                 "selectChoices": [
                     {"value": "ISO", "label": "ISO 8601 (2024-12-27)"},
@@ -329,56 +331,33 @@
                     {"value": "SHORT", "label": "Short (Dec 27)"}
                 ]
             },
-
-            {
-                "type": "SEPARATOR",
-                "label": "Behavior"
-            },
-            {
-                "name": "popupOn",
-                "type": "SELECT",
-                "label": "Show task details on",
-                "defaultValue": "click",
-                "selectChoices": [
-                    {"value": "click", "label": "Click"},
-                    {"value": "hover", "label": "Hover"}
-                ]
-            },
-            {
-                "name": "todayButton",
-                "type": "BOOLEAN",
-                "label": "Show 'Today' button",
-                "defaultValue": true
-            },
             {
                 "name": "highlightWeekends",
                 "type": "BOOLEAN",
                 "label": "Highlight weekends",
+                "visibilityCondition": "model.showSystemAdvanced",
                 "defaultValue": false
-            },
-
-            {
-                "type": "SEPARATOR",
-                "label": "Performance"
-            },
-            {
-                "name": "maxTasks",
-                "type": "INT",
-                "label": "Max tasks to display",
-                "description": "0 = unlimited (use with caution on large datasets)",
-                "defaultValue": 1000,
-                "minI": 0
             },
             {
                 "name": "duplicateIdHandling",
                 "type": "SELECT",
                 "label": "Duplicate ID handling",
                 "description": "How to handle duplicate task IDs in the dataset",
+                "visibilityCondition": "model.showSystemAdvanced",
                 "defaultValue": "rename",
                 "selectChoices": [
                     {"value": "rename", "label": "Auto-rename (append suffix)"},
                     {"value": "skip", "label": "Skip duplicates (keep first)"}
                 ]
+            },
+            {
+                "name": "maxTasks",
+                "type": "INT",
+                "label": "Max tasks to display",
+                "description": "0 = unlimited (use with caution on large datasets)",
+                "visibilityCondition": "model.showSystemAdvanced",
+                "defaultValue": 1000,
+                "minI": 0
             }
         ],
         "canFilter": true,
