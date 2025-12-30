@@ -796,12 +796,13 @@
         // We deliberately do NOT render with synchronous config because it
         // lacks the current filter state. The parent frame response includes
         // both webAppConfig AND filters, ensuring filters are applied on first render.
-        showLoading('Loading configuration...');
+        // Getting started guide is visible by default until config is complete
         window.parent.postMessage("sendConfig", "*");
 
         // Initialize Control Bar Events
         setupControls();
         setupFilterButtons();  // Initialize filter buttons (#51)
+        initGettingStartedTabs();  // Initialize getting started guide tabs
     } catch (e) {
         console.error('Initialization error:', e);
     }
@@ -819,11 +820,11 @@
                 // Check for missing required config (#77)
                 const missingConfig = validateConfig(webAppConfig);
                 if (missingConfig.length > 0) {
-                    hideLoading();
-                    showSetupRequired(missingConfig);
+                    // Keep getting started guide visible
+                    showGettingStarted();
                     return;
                 }
-                hideSetupRequired();
+                hideGettingStarted();
 
                 // Validate date boundaries - block rendering if invalid
                 const dateBoundaryError = validateDateBoundaries();
@@ -901,10 +902,7 @@
     // ===== CHART INITIALIZATION =====
 
     function initializeChart(config, filters) {
-        showLoading('Fetching task data...');
-
         if (typeof Gantt === 'undefined') {
-            hideLoading();
             displayError('Library Error', 'Frappe Gantt library failed to load.');
             return;
         }
@@ -917,19 +915,14 @@
         fetchTasks(config, filters)
             .then(tasksResponse => {
                 if (tasksResponse.error) {
-                    hideLoading();
                     displayError(tasksResponse.error.code, tasksResponse.error.message, tasksResponse.error.details);
                     return;
                 }
 
                 if (!tasksResponse.tasks || tasksResponse.tasks.length === 0) {
-                    hideLoading();
                     showEmptyDataset();
                     return;
                 }
-
-                // Update loading message before rendering (#77)
-                showLoading('Rendering chart...');
 
                 if (tasksResponse.metadata && (tasksResponse.metadata.skippedRows > 0 || tasksResponse.metadata.rowLimitHit)) {
                     displayMetadata(tasksResponse.metadata);
@@ -951,7 +944,6 @@
             })
             .catch(error => {
                 console.error('Chart load failed:', error);
-                hideLoading();
                 displayError('Failed to load chart', error.message || error);
             });
     }
@@ -1077,7 +1069,6 @@
             const container = document.getElementById('gantt-container');
             container.innerHTML = '';
             ganttInstance = null;
-            hideLoading();
             updateFilterEmptyState(0);
             return;
         }
@@ -1446,8 +1437,7 @@
                     window._ganttRestoreState = null;
                 }
 
-                // Mark render as complete and hide loading (#77)
-                hideLoading();
+                // Mark render as complete
                 renderInProgress = false;
 
                 // Analyze dependencies for warnings (#83)
@@ -1455,7 +1445,6 @@
             });
         } catch (error) {
             console.error('Error rendering Gantt:', error);
-            hideLoading();
             displayError('Rendering Error', error.message, error);
             renderInProgress = false;  // Reset on error too
         }
@@ -2406,58 +2395,45 @@
     // ===== UI HELPERS =====
 
     /**
-     * Show loading overlay with optional message (#77)
-     * @param {string} message - Optional loading message to display
+     * Show getting started guide overlay
+     * Replaces skeleton loader + setup required (#77)
      */
-    function showLoading(message) {
-        const loading = document.getElementById('loading');
-        const loadingMessage = document.getElementById('loading-message');
-        if (loading) {
-            loading.classList.remove('hide');
-        }
-        if (loadingMessage) {
-            loadingMessage.textContent = message || 'Loading...';
-        }
-    }
-
-    function hideLoading() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-            loading.classList.add('hide');
+    function showGettingStarted() {
+        const overlay = document.getElementById('getting-started');
+        if (overlay) {
+            overlay.classList.remove('hide');
         }
     }
 
     /**
-     * Show setup required state with missing items (#77)
-     * @param {Array} missingItems - Array of missing item labels
+     * Hide getting started guide overlay
      */
-    function showSetupRequired(missingItems) {
-        const overlay = document.getElementById('setup-required');
-        const list = document.getElementById('setup-required-items');
-        const container = document.getElementById('gantt-container');
-
-        if (list) {
-            list.innerHTML = missingItems.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-        }
-
-        if (overlay) {
-            overlay.classList.remove('hide');
-        }
-
-        // Clear the chart container
-        if (container) {
-            container.innerHTML = '';
-        }
-
-        // Reset gantt instance
-        ganttInstance = null;
-    }
-
-    function hideSetupRequired() {
-        const overlay = document.getElementById('setup-required');
+    function hideGettingStarted() {
+        const overlay = document.getElementById('getting-started');
         if (overlay) {
             overlay.classList.add('hide');
         }
+    }
+
+    /**
+     * Initialize getting started guide tab switching
+     */
+    function initGettingStartedTabs() {
+        document.querySelectorAll('.gs-tab').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                const parent = this.closest('.gs-section');
+                if (parent) {
+                    parent.querySelectorAll('.gs-tab').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    parent.querySelectorAll('.gs-tab-content').forEach(c => c.classList.remove('active'));
+                    const targetTab = parent.querySelector(`#gs-tab-${tabId}`);
+                    if (targetTab) {
+                        targetTab.classList.add('active');
+                    }
+                }
+            });
+        });
     }
 
     /**
