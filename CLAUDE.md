@@ -135,17 +135,23 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** Ready for next milestone
+**Phase:** USER QA - Implementation complete, awaiting verification
 
-**Current Branch:** `main`
+**Current Branch:** `release/v1.0.0-rc`
 
-**Active Intervention:** None
+**Active Spec:** `plan/specs/release-v1.0.0-rc-spec.md`
 
 **Last Release:** v0.11.0 (2025-12-30)
 - [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v0.11.0)
 - [PR #98](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/98)
 
-**Next Milestone:** v1.0.0-rc - Release Candidate
+**Current Milestone:** v1.0.0-rc - Release Candidate
+
+**v1.0.0-rc Implementation Status:**
+- [x] #75 - webapp.json reorganized (user), hardcode 3 removed params in app.js
+- [x] #97 - Remove debug code from app.js (62 console.log removed) and backend.py (debug logs removed)
+- [x] Version bump to 1.0.0-rc
+- [ ] User QA pending
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
