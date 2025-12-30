@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-rc] - 2025-12-31
+
+### Changed
+- Configuration panel reorganized for better usability (#75)
+- View Mode Select, Today Button, and Theme controls now always enabled (hardcoded)
+
+### Removed
+- Debug console.log statements from app.js (62 removed) (#97)
+- Debug-level logging from backend.py (#97)
+
+### Fixed
+- Duplicate ID tooltip now displays correctly in both skip and rename modes (#76)
+- Dark mode: Dependency arrows now visible with lighter color
+
 ## [0.11.0] - 2025-12-30
 
 ### Added
