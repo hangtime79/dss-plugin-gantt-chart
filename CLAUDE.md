@@ -172,17 +172,19 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.10.0**~~ | ~~#32~~ | ~~i18n~~ ✅ |
 | ~~**v0.10.1**~~ | ~~#79~~ | ~~Global Custom Palettes~~ ✅ |
 | ~~**v0.11.0**~~ | ~~#76, #77, #83~~ | ~~Defensive Programming~~ ✅ |
-| **v1.0.0-rc** | #24, #25, #75 | Release Candidate |
-| **v1.0.0** | #74, #84, #97 | Public Release + Backlog |
+| **v1.0.0-rc** | #75, #97 | Release Candidate |
+| **v1.0.0** | #74, #84 | Public Release |
 
 **Current milestone:** v1.0.0-rc - Release Candidate
 
 ### v1.0.0-rc Scope
-- #24 - Print the Gantt chart
-- #25 - Global parameter set
 - #75 - Reorganize Left Bar config
+- #97 - Remove debug code
 
-### v1.0.0 Backlog
+### v1.0.0 Backlog (Post-Release)
 - #74 - Connector line (tooltip → task bar)
 - #84 - Complete UI string translations
-- #97 - Remove debug code
+
+### Future: Print Studio Epic
+- #86 - Print Studio epic (parent)
+- #87-96 - Print sub-features (date range, scaling, PDF, etc.)
