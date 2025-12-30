@@ -135,15 +135,15 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Session State
 
-**Phase:** IDLE - Ready for next milestone
+**Phase:** IDLE - v1.0.0 Released
 
 **Current Branch:** `main`
 
-**Last Release:** v1.0.0-rc (2025-12-31)
-- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v1.0.0-rc)
-- [PR #99](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/99)
+**Last Release:** v1.0.0 (2025-12-31)
+- [Release](https://github.com/hangtime79/dss-plugin-gantt-chart/releases/tag/v1.0.0)
+- [PR #100](https://github.com/hangtime79/dss-plugin-gantt-chart/pull/100)
 
-**Next Milestone:** v1.0.0 - Public Release
+**Next Milestone:** Post-v1.0.0 enhancements
 
 **Backlog:** [GitHub Issues](https://github.com/hangtime79/dss-plugin-gantt-chart/issues)
 **Upstream Bugs:** `plan/frappe-gantt-upstream-bugs.md`
@@ -171,9 +171,9 @@ Simple fixes with plenty of context don't need intervention tracking.
 | ~~**v0.10.1**~~ | ~~#79~~ | ~~Global Custom Palettes~~ ✅ |
 | ~~**v0.11.0**~~ | ~~#76, #77, #83~~ | ~~Defensive Programming~~ ✅ |
 | ~~**v1.0.0-rc**~~ | ~~#75, #97~~ | ~~Release Candidate~~ ✅ |
-| **v1.0.0** | #74, #84 | Public Release |
+| ~~**v1.0.0**~~ | - | ~~Public Release~~ ✅ |
 
-**Current milestone:** v1.0.0 - Public Release
+**v1.0.0 Released!**
 
 ### v1.0.0 Backlog (Post-Release)
 - #74 - Connector line (tooltip → task bar)
