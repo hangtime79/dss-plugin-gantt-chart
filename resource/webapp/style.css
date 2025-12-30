@@ -1606,6 +1606,11 @@ body {
     fill: #ffffff !important;
 }
 
+/* Dark mode: Dependency arrows need lighter color for visibility */
+.dark-theme .gantt .arrow {
+    stroke: #95a5a6 !important;
+}
+
 /* ===== COMPLETION INDICATOR (#31) ===== */
 /* SVG checkmark for 100% complete tasks - color set by JS based on bar background */
 
