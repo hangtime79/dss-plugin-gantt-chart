@@ -368,6 +368,17 @@
                 "description": "0 = unlimited (use with caution on large datasets)",
                 "defaultValue": 1000,
                 "minI": 0
+            },
+            {
+                "name": "duplicateIdHandling",
+                "type": "SELECT",
+                "label": "Duplicate ID handling",
+                "description": "How to handle duplicate task IDs in the dataset",
+                "defaultValue": "rename",
+                "selectChoices": [
+                    {"value": "rename", "label": "Auto-rename (append suffix)"},
+                    {"value": "skip", "label": "Skip duplicates (keep first)"}
+                ]
             }
         ],
         "canFilter": true,

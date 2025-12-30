@@ -36,6 +36,7 @@ class TaskTransformerConfig:
     group_by_columns: Optional[List[str]] = None
     sort_by: str = 'none'
     max_tasks: int = 1000
+    duplicate_id_handling: str = 'rename'  # (#76) 'rename' or 'skip'
 
 
 class TaskTransformer:
@@ -117,26 +118,78 @@ class TaskTransformer:
             if color_mapping:
                 logger.info(f"Created color mapping with {len(color_mapping)} categories")
 
-        # Process rows
+        # Process rows with enhanced duplicate tracking (#76)
         tasks = []
-        seen_ids = {}  # Track duplicate IDs
+        seen_ids = {}  # Track duplicate IDs: {id: [list of row indices]}
+        duplicate_info = {}  # Structured duplicate data for metadata
 
         for row_idx, row in df.iterrows():
             task = self._process_row(row, row_idx, color_mapping)
             if task:
-                # Handle duplicate IDs
                 task_id = task['id']
+
                 if task_id in seen_ids:
-                    seen_ids[task_id] += 1
-                    task['id'] = f"{task_id}_{seen_ids[task_id]}"
-                    self.warnings.append(
-                        f"Duplicate task ID '{task_id}' at row {row_idx}. "
-                        f"Renamed to '{task['id']}'."
-                    )
+                    # Duplicate found - compute suffix before appending
+                    suffix = len(seen_ids[task_id])
+                    seen_ids[task_id].append(row_idx)
+
+                    if self.config.duplicate_id_handling == 'skip':
+                        # Skip mode: don't add duplicate, track it
+                        self._increment_skip_reason('duplicate_id')
+                        if task_id not in duplicate_info:
+                            duplicate_info[task_id] = {
+                                'originalId': task_id,
+                                'occurrences': [{'rowIndex': seen_ids[task_id][0], 'status': 'kept'}]
+                            }
+                        duplicate_info[task_id]['occurrences'].append({
+                            'rowIndex': row_idx,
+                            'status': 'skipped'
+                        })
+                        continue  # Skip this row
+                    else:
+                        # Rename mode (default): rename and add
+                        new_id = f"{task_id}_{suffix}"
+                        task['id'] = new_id
+
+                        # Track for structured metadata
+                        if task_id not in duplicate_info:
+                            duplicate_info[task_id] = {
+                                'originalId': task_id,
+                                'occurrences': [{'rowIndex': seen_ids[task_id][0], 'assignedId': task_id}]
+                            }
+                        duplicate_info[task_id]['occurrences'].append({
+                            'rowIndex': row_idx,
+                            'assignedId': new_id
+                        })
+
+                        self.warnings.append(
+                            f"Duplicate task ID '{task_id}' at row {row_idx}. "
+                            f"Renamed to '{new_id}'."
+                        )
                 else:
-                    seen_ids[task_id] = 0
+                    seen_ids[task_id] = [row_idx]
 
                 tasks.append(task)
+
+        # Store structured duplicate info in stats for metadata (#76)
+        if duplicate_info:
+            self.stats['duplicate_ids'] = list(duplicate_info.values())
+
+            # Check for dependency impact when IDs were renamed (#76)
+            if self.config.duplicate_id_handling == 'rename':
+                renamed_ids = set()
+                for dup in duplicate_info.values():
+                    renamed_ids.add(dup['originalId'])
+
+                # Check if any task dependencies reference renamed IDs
+                for task in tasks:
+                    deps = task.get('dependencies', [])
+                    for dep_id in deps:
+                        if dep_id in renamed_ids:
+                            self.warnings.append(
+                                f"Task '{task['name']}' depends on '{dep_id}' which has duplicates. "
+                                f"Dependency may be ambiguous."
+                            )
 
         logger.info(f"Processed {len(tasks)} valid tasks from {self.stats['total_rows']} rows")
 
@@ -180,7 +233,8 @@ class TaskTransformer:
                 'displayedRows': self.stats['displayed_rows'],
                 'skippedRows': self.stats['skipped_rows'],
                 'skipReasons': self.stats['skip_reasons'],
-                'warnings': self.warnings
+                'warnings': self.warnings,
+                'duplicateIds': self.stats.get('duplicate_ids', [])  # (#76) Structured duplicate info
             }
         }
 
