@@ -754,3 +754,193 @@ requestAnimationFrame(() => {
 ```
 
 Without this, your adjustments may be overwritten by the library's render cycle.
+
+---
+
+## Gotchas & Common Issues
+
+Hard-won lessons from production webapp development.
+
+### Development Environment
+
+#### Committed Code Only
+
+Dataiku loads plugin code from the **committed** state in Git, not your working directory.
+
+```bash
+# Changes won't appear until committed
+git add .
+git commit -m "Fix bug"
+# NOW refresh the webapp in DSS
+```
+
+**Symptom:** "I changed the code but nothing happened"
+**Fix:** Commit changes, then reload plugin or refresh browser
+
+#### The "Two app.js" Problem
+
+For `STANDARD` webapps, Dataiku automatically injects `webapps/{id}/app.js`. Do NOT manually include it:
+
+```html
+<!-- body.html -->
+<!-- BAD - app.js runs twice, causing race conditions -->
+<script src="app.js"></script>
+
+<!-- GOOD - Dataiku auto-loads app.js, only add helpers -->
+<script src="/plugins/PLUGIN_ID/resource/webapp/dku-helpers.js"></script>
+```
+
+**Symptoms:**
+- Console logs appear twice
+- Event handlers fire twice
+- Flickering UI
+
+### Iframe Context
+
+Webapps run inside an iframe:
+
+```javascript
+// document refers to the iframe, not parent
+document.querySelector('.my-element')  // Searches iframe only
+
+// Access parent window (if same origin)
+window.parent.postMessage("sendConfig", "*");
+```
+
+**Implications:**
+- Browser console queries from parent return empty
+- Debug logging must be in your code, not browser console
+- Some browser APIs may be restricted
+
+### HTML Fragments
+
+`body.html` is injected into Dataiku's wrapper - it's NOT a standalone document:
+
+```html
+<!-- WRONG - Triggers Quirks Mode warning -->
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="chart"></div>
+</body>
+</html>
+
+<!-- CORRECT - Just the fragment -->
+<link rel="stylesheet" href="/plugins/PLUGIN_ID/resource/webapp/style.css">
+<div id="chart"></div>
+```
+
+### Configuration Lifecycle
+
+#### No Auto-Heartbeat
+
+Dataiku does NOT automatically push config updates. You must request them:
+
+```javascript
+// Request config from parent frame
+window.parent.postMessage("sendConfig", "*");
+
+// Listen for response
+window.addEventListener('message', function(event) {
+    if (event.data) {
+        const data = JSON.parse(event.data);
+        handleConfig(data['webAppConfig'], data['filters']);
+    }
+});
+```
+
+**Note:** "Keep alive" pings every 10s don't include config - only real user changes trigger config messages.
+
+### Icons
+
+FontAwesome classes (`fas fa-*`) don't work in webapp context:
+
+```html
+<!-- WRONG - FontAwesome not loaded -->
+<i class="fas fa-chart-bar"></i>
+
+<!-- CORRECT - Inline SVG -->
+<svg viewBox="0 0 512 512" width="16" height="16">
+    <path fill="currentColor" d="M..."/>
+</svg>
+```
+
+**Exception:** FontAwesome works in `plugin.json` icon field.
+
+### File Structure
+
+Static assets must be in `resource/` folder to be web-accessible:
+
+```
+resource/
+├── webapp/
+│   ├── style.css      ← Link from body.html
+│   └── dku-helpers.js ← Load before app.js
+```
+
+**Path:** `/plugins/PLUGIN_ID/resource/webapp/file.css`
+
+---
+
+## Chart-Specific Configuration
+
+### Parameter Organization
+
+Use SEPARATORs to group related parameters:
+
+```json
+{
+    "leftBarParams": [
+        {"type": "SEPARATOR", "label": "Data Mapping"},
+        {"name": "x_column", "type": "DATASET_COLUMN", ...},
+        {"name": "y_column", "type": "DATASET_COLUMN", ...},
+
+        {"type": "SEPARATOR", "label": "Appearance"},
+        {"name": "color_scheme", "type": "SELECT", ...},
+        {"name": "show_legend", "type": "BOOLEAN", ...}
+    ]
+}
+```
+
+### Multi-Column Selection
+
+`DATASET_COLUMNS` (plural) provides drag-to-reorder multi-select:
+
+```json
+{
+    "name": "tooltip_fields",
+    "type": "DATASET_COLUMNS",
+    "datasetParamName": "dataset",
+    "label": "Tooltip Fields",
+    "description": "Columns to show in tooltips (drag to reorder)"
+}
+```
+
+### Pandas Type Coercion
+
+NaN values in Pandas columns coerce integers to floats:
+
+```python
+# ID column with NaN: [1, 2, NaN] becomes [1.0, 2.0, NaN]
+# String matching "1" vs "1.0" fails!
+
+# Fix: Normalize IDs to strings
+df['id'] = df['id'].apply(lambda x: str(int(x)) if pd.notna(x) and x == int(x) else str(x))
+```
+
+### CSS Auto-Loading
+
+Dataiku does NOT reliably auto-load `style.css` from `webapps/{id}/`:
+
+```html
+<!-- body.html - Always link explicitly from resource/ -->
+<link rel="stylesheet" href="/plugins/PLUGIN_ID/resource/webapp/style.css">
+```
+
+---
+
+## Related
+
+- [Parameters Reference](../reference/parameters.md) - All parameter types including PRESET
+- [Plugin Overview](plugin-overview.md) - General plugin architecture
+- [Frappe Gantt Reference](../reference/frappe-gantt.md) - Library-specific patterns

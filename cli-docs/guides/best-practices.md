@@ -76,6 +76,60 @@ def process(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
 ---
 
+## Python & Data Handling
+
+### Plugin python-lib Auto-Pathing
+
+Dataiku automatically includes `python-lib/` in PYTHONPATH for plugins. Don't manually modify sys.path:
+
+```python
+# BAD - Unnecessary and error-prone
+import sys
+sys.path.append(dataiku.get_datadir() + '/python-lib')  # Invalid API!
+
+# GOOD - Just import directly
+from my_plugin_lib import process_data  # Works automatically
+```
+
+### ID Normalization Pattern
+
+External data often has type mismatches (Pandas NaN coercion, float IDs, etc.). Create a central normalizer:
+
+```python
+def _normalize_id(value):
+    """Normalize ID to string, handling float-integers safely."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, float) and value == int(value):
+        return str(int(value))  # 277.0 → "277"
+    return str(value)
+```
+
+**Why this matters:** Without normalization:
+- ID column (no NaN): `277` → `"277"`
+- Dependency column (with NaN): `276.0` → `"276.0"`
+- IDs don't match, dependencies break silently!
+
+### Pandas NaN Type Coercion
+
+When a column contains NaN values, Pandas reads it as float64 even if all non-NaN values are integers:
+
+```python
+# DataFrame with NaN in one column
+df = pd.DataFrame({
+    'id': [1, 2, 3],           # int64 (no NaN)
+    'parent': [1, 2, None]     # float64 (has NaN) → [1.0, 2.0, NaN]
+})
+
+# String conversion differs!
+str(df['id'][0])      # "1"
+str(df['parent'][0])  # "1.0"  ← Mismatch!
+```
+
+**Fix:** Always normalize IDs before comparison (see pattern above).
+
+---
+
 ## Code Quality
 
 ### Use Type Hints
@@ -457,6 +511,156 @@ def old_function(x):
         stacklevel=2
     )
     return new_function(x)
+```
+
+---
+
+## JavaScript & Frontend
+
+### Monkey-Patching Third-Party Libraries
+
+When modifying library behavior without forking:
+
+```javascript
+// 1. Store original method BEFORE creating instance
+const OriginalClass = window.LibraryClass;
+const originalMethod = OriginalClass.prototype.method;
+
+// 2. Override with your version
+OriginalClass.prototype.method = function(...args) {
+    // Pre-processing
+    console.log('Before original');
+
+    // Call original (preserve 'this' context)
+    const result = originalMethod.apply(this, args);
+
+    // Post-processing
+    console.log('After original');
+    return result;
+};
+
+// 3. NOW create instance - it uses patched method
+const instance = new OriginalClass();
+```
+
+**Key Points:**
+- Patch BEFORE instantiation
+- Store original to preserve core functionality
+- Use `apply(this, args)` to maintain context
+
+### DOM Manipulation Timing
+
+Libraries manipulate DOM asynchronously. Use `requestAnimationFrame` for post-render fixes:
+
+```javascript
+// Single rAF - waits for next paint
+requestAnimationFrame(() => {
+    applyCustomStyles();
+});
+
+// Double rAF - waits for layout to settle
+requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+        // Layout-dependent calculations now accurate
+        measureAndAdjust();
+    });
+});
+```
+
+**When to use:**
+- Single rAF: Style overrides, DOM queries
+- Double rAF: Calculations depending on element dimensions
+
+### CSS Variables for Theming
+
+Use CSS variables for values that change with themes:
+
+```css
+:root {
+    --popup-gap: 8px;
+    --text-primary: #333;
+}
+
+[data-theme="dark"] {
+    --text-primary: #eee;
+}
+```
+
+```javascript
+// Read in JS when needed
+const gap = getComputedStyle(document.documentElement)
+    .getPropertyValue('--popup-gap');
+```
+
+---
+
+## Development Workflow
+
+### Incremental Development
+
+Implement ONE feature at a time and test. Massive commits with multiple features lead to unmanageable debugging:
+
+```
+# Good - Atomic commits
+feat: Add tooltip display
+fix: Correct tooltip positioning
+style: Improve tooltip appearance
+
+# Bad - Kitchen sink commit
+feat: Add tooltips, filtering, dark mode, and fix 12 bugs
+```
+
+### Spec-Driven Development
+
+Detailed specs with implementation plans reduce churn significantly:
+
+1. **Investigation** - Understand the problem
+2. **Spec** - Document the approach with examples
+3. **Implement** - Follow the spec
+4. **Verify** - Test against spec criteria
+
+**Evidence from this project:**
+- v0.3.0 (with spec): 0% churn, delivered perfectly on first commit
+- v0.1.0 (no spec): 74% churn, 28 fix/debug commits for 4 features
+
+Jumping straight to code often leads to rewrites.
+
+### Early Deferral
+
+When a feature doesn't work after 2-3 iterations, **defer it** rather than continuing to debug:
+
+```
+# After 2-3 failed attempts
+- Create issue for the problem
+- Document what was tried and why it failed
+- Ship without the feature
+- Return with fresh perspective later
+```
+
+**Anti-pattern:** v0.1.0 had 11 scrollbar fix attempts before finally deferring. The eventual fix took 30 minutes with fresh eyes.
+
+### User Collaboration for Debugging
+
+When debugging platform behavior, collaborate with user for console testing:
+
+```javascript
+// User runs in browser console to test hypothesis
+console.log('Config heartbeats:', window._configMessages);
+// Result disproves hypothesis in ~30 min vs hours of wrong solution
+```
+
+This is especially valuable for Dataiku platform behavior where you can't easily reproduce the environment.
+
+### Test What You Fix
+
+Every bugfix should include a regression test:
+
+```python
+def test_handles_negative_progress():
+    """Regression: Progress < 0 caused render crash (v0.7.2)."""
+    task = {"progress": -10}
+    result = transform_task(task)
+    assert result["progress"] == 0  # Clamped to valid range
 ```
 
 ---

@@ -112,24 +112,35 @@ Simple fixes with plenty of context don't need intervention tracking.
 
 ## Documentation (Read When Needed)
 
-**Don't load upfront. Read when you hit that domain.**
+**Progressive disclosure: Read only when you hit that domain.**
+
+```
+QUICK_START.md           ← Layer 1: Get started fast
+guides/                  ← Layer 2: How to do X (includes gotchas)
+reference/               ← Layer 3: Full API details
+CLAUDE.md                ← Layer 4: Project-specific institutional memory
+```
 
 ### Plugin Development
 | Need to understand... | Read |
 |-----------------------|------|
-| Webapp structure, backend.py | `cli-docs/guides/webapps.md` |
-| Parameter types, webapp.json | `cli-docs/reference/parameters.md` |
+| Webapp structure, gotchas | `cli-docs/guides/webapps.md` |
+| Parameter types, PRESET resolution | `cli-docs/reference/parameters.md` |
 | Dataset API | `cli-docs/reference/dataset-api-quick.md` |
 | Generic plugin patterns | `cli-docs/guides/plugin-overview.md` |
+| JS patterns, workflow | `cli-docs/guides/best-practices.md` |
 
 ### Gantt-Specific
 | Need to understand... | Read |
 |-----------------------|------|
-| frappe-gantt API, events | `cli-docs/reference/frappe-gantt.md` |
+| frappe-gantt API, DOM, gotchas | `cli-docs/reference/frappe-gantt.md` |
 | Color mapping | `python-lib/ganttchart/color_mapper.py` |
 | Previous decisions | `plan/post-mortems/` (most recent first) |
 | Current work | `plan/interventions/` |
 | Feature designs | `plan/specs/` |
+
+### Adding New Learnings
+Use staging file: `plan/cli-docs-template-update.md` → integrate into appropriate cli-docs file
 
 ---
 
