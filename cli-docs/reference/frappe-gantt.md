@@ -287,6 +287,46 @@ console.log(container.scrollLeft);  // Correct
 
 The library's `maintain_scroll` feature preserves pixel positions across view modes, which is often meaningless (Week position 500px ≠ Month position 500px).
 
+### View Mode Mutation Bug
+
+**The Problem:** The library's `change_view_mode()` assigns a default config object directly, then mutates it. Closures capture the mutated object; subsequent renders see stale values.
+
+```javascript
+// Library internals (simplified)
+const DEFAULT_MODE = { name: "Week", padding: "2m" };
+this.config.view_mode = DEFAULT_MODE;  // Direct assignment
+this.config.view_mode.language = currentLang;  // Mutates shared object!
+```
+
+**Impact:** First render captures language in closure. Later renders reuse the same mutated object with stale language.
+
+**Fix:** Shallow copy before assignment in patches:
+
+```javascript
+this.config.view_mode = { ...DEFAULT_MODE };  // New object each time
+```
+
+### Single Popup Architecture
+
+**The Problem:** Library has a single `$popup_wrapper` singleton. You can't have multiple simultaneous tooltips.
+
+**Workaround:** For pinnable/persistent tooltips, clone popup content into independent DOM elements:
+
+```javascript
+// Create separate container for pinned tooltips
+const pinnedContainer = document.createElement('div');
+pinnedContainer.className = 'pinned-tooltips';
+document.body.appendChild(pinnedContainer);
+
+// Clone popup content instead of fighting library's singleton
+function pinTooltip(popupContent) {
+    const clone = popupContent.cloneNode(true);
+    clone.classList.add('pinned-tooltip');
+    pinnedContainer.appendChild(clone);
+    return clone;
+}
+```
+
 ---
 
 ## Rendering & Sizing

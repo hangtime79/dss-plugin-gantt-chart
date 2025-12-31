@@ -76,6 +76,60 @@ def process(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
 ---
 
+## Python & Data Handling
+
+### Plugin python-lib Auto-Pathing
+
+Dataiku automatically includes `python-lib/` in PYTHONPATH for plugins. Don't manually modify sys.path:
+
+```python
+# BAD - Unnecessary and error-prone
+import sys
+sys.path.append(dataiku.get_datadir() + '/python-lib')  # Invalid API!
+
+# GOOD - Just import directly
+from my_plugin_lib import process_data  # Works automatically
+```
+
+### ID Normalization Pattern
+
+External data often has type mismatches (Pandas NaN coercion, float IDs, etc.). Create a central normalizer:
+
+```python
+def _normalize_id(value):
+    """Normalize ID to string, handling float-integers safely."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, float) and value == int(value):
+        return str(int(value))  # 277.0 → "277"
+    return str(value)
+```
+
+**Why this matters:** Without normalization:
+- ID column (no NaN): `277` → `"277"`
+- Dependency column (with NaN): `276.0` → `"276.0"`
+- IDs don't match, dependencies break silently!
+
+### Pandas NaN Type Coercion
+
+When a column contains NaN values, Pandas reads it as float64 even if all non-NaN values are integers:
+
+```python
+# DataFrame with NaN in one column
+df = pd.DataFrame({
+    'id': [1, 2, 3],           # int64 (no NaN)
+    'parent': [1, 2, None]     # float64 (has NaN) → [1.0, 2.0, NaN]
+})
+
+# String conversion differs!
+str(df['id'][0])      # "1"
+str(df['parent'][0])  # "1.0"  ← Mismatch!
+```
+
+**Fix:** Always normalize IDs before comparison (see pattern above).
+
+---
+
 ## Code Quality
 
 ### Use Type Hints
@@ -565,7 +619,37 @@ Detailed specs with implementation plans reduce churn significantly:
 3. **Implement** - Follow the spec
 4. **Verify** - Test against spec criteria
 
+**Evidence from this project:**
+- v0.3.0 (with spec): 0% churn, delivered perfectly on first commit
+- v0.1.0 (no spec): 74% churn, 28 fix/debug commits for 4 features
+
 Jumping straight to code often leads to rewrites.
+
+### Early Deferral
+
+When a feature doesn't work after 2-3 iterations, **defer it** rather than continuing to debug:
+
+```
+# After 2-3 failed attempts
+- Create issue for the problem
+- Document what was tried and why it failed
+- Ship without the feature
+- Return with fresh perspective later
+```
+
+**Anti-pattern:** v0.1.0 had 11 scrollbar fix attempts before finally deferring. The eventual fix took 30 minutes with fresh eyes.
+
+### User Collaboration for Debugging
+
+When debugging platform behavior, collaborate with user for console testing:
+
+```javascript
+// User runs in browser console to test hypothesis
+console.log('Config heartbeats:', window._configMessages);
+// Result disproves hypothesis in ~30 min vs hours of wrong solution
+```
+
+This is especially valuable for Dataiku platform behavior where you can't easily reproduce the environment.
 
 ### Test What You Fix
 
